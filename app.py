@@ -16,6 +16,7 @@ APP_TITLE = "BI Cadastro | Copel"
 DATA_FILE = Path(__file__).with_name("base_consolidada_copel.csv")
 ASSET_DIR = Path(__file__).with_name("assets")
 MUNICIPALITY_COORDINATES_FILE = ASSET_DIR / "municipios_coordenadas.csv"
+PARANA_BOUNDARY_FILE = ASSET_DIR / "parana_contorno.csv"
 LOGIN_USER = "Copel"
 PASSWORD_SALT = b"copel-bi-cadastro-v1"
 PASSWORD_HASH = bytes.fromhex(
@@ -622,6 +623,18 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
             map_style="carto-positron",
         )
         fig.update_traces(marker_opacity=0.76)
+        parana_boundary = pd.read_csv(PARANA_BOUNDARY_FILE, encoding="utf-8")
+        fig.add_trace(
+            go.Scattermap(
+                lat=parana_boundary["latitude"],
+                lon=parana_boundary["longitude"],
+                mode="lines",
+                line=dict(color="#000000", width=3),
+                hoverinfo="skip",
+                showlegend=False,
+                name="Limite do Paraná",
+            )
+        )
         fig = chart_style(fig, 620)
         fig.update_layout(
             margin=dict(l=10, r=10, t=15, b=10),
