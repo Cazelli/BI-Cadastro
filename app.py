@@ -866,7 +866,7 @@ def vehicle_page(frame: pd.DataFrame) -> None:
                 },
                 category_orders={"Situação": ["Ativas", "Controle"]},
             )
-            fig.update_traces(textangle=0)
+            fig.update_traces(textangle=0, textfont_color="#151C21")
             fig.update_layout(title="Motorização por finalidade")
             st.plotly_chart(
                 chart_style(fig, 440),
