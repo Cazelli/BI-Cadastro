@@ -222,20 +222,34 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
         )
     )
 
+    reference_frame = frame.copy()
+    reference_frame["SITUACAO_ATUAL"] = reference_frame[
+        "SITUACAO_INICIAL"
+    ].fillna(reference_frame["SITUACAO_ATUAL"])
+    removed_by_reference_date = (
+        reference_frame["DT_DISTRATO"].notna()
+        & reference_frame["DT_DISTRATO"].le(gd_reference_date)
+    )
+    reference_frame.loc[removed_by_reference_date, "SITUACAO_ATUAL"] = "Removido"
+
     filters = {
         "SITUACAO_ATUAL": st.sidebar.multiselect(
-            "Situação atual", options_for(frame, "SITUACAO_ATUAL")
+            "Situação atual",
+            options_for(reference_frame, "SITUACAO_ATUAL"),
+            help="Situação calculada conforme a data de referência e o DT_DISTRATO.",
         ),
-        "LOCAL": st.sidebar.multiselect("Município", options_for(frame, "LOCAL")),
+        "LOCAL": st.sidebar.multiselect(
+            "Município", options_for(reference_frame, "LOCAL")
+        ),
         "FINALIDADE": st.sidebar.multiselect(
-            "Finalidade", options_for(frame, "FINALIDADE")
+            "Finalidade", options_for(reference_frame, "FINALIDADE")
         ),
         "FABRI_VEIC": st.sidebar.multiselect(
-            "Fabricante do veículo", options_for(frame, "FABRI_VEIC")
+            "Fabricante do veículo", options_for(reference_frame, "FABRI_VEIC")
         ),
     }
 
-    filtered = frame.copy()
+    filtered = reference_frame.copy()
     for column, chosen in filters.items():
         if chosen:
             filtered = filtered[filtered[column].astype(str).isin(chosen)]
