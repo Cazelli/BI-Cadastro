@@ -335,7 +335,7 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
     row2[2].metric("Municípios atendidos", f"{cities:,}".replace(",", "."))
     row2[3].metric("UCs removidas", f"{removed:,}".replace(",", "."))
     st.markdown("#### Comparativos consolidados")
-    left, right = st.columns([1, 1.25])
+    left, right = st.columns([1.35, 1])
     status_population = frame[
         frame["SITUACAO_INICIAL"].isin(["Ativo", "Controle"])
     ].copy()
@@ -388,14 +388,21 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
         )
         fig.update_traces(
             textposition="outside",
-            textinfo="label+value",
+            textinfo="none",
+            texttemplate="%{label}<br><b>%{value}</b>",
+            textfont_size=13,
             sort=False,
             direction="clockwise",
             rotation=donut_rotation,
         )
-        fig.update_layout(title=f"Situação em {gd_reference_date:%d/%m/%Y}")
+        fig = chart_style(fig, 520)
+        fig.update_layout(
+            title=f"Situação em {gd_reference_date:%d/%m/%Y}",
+            showlegend=False,
+            margin=dict(l=95, r=95, t=75, b=115),
+        )
         fig.add_annotation(text=f"<b>{status_total}</b><br>UCs", showarrow=False, font_size=18)
-        st.plotly_chart(chart_style(fig), width="stretch", config={"displayModeBar": False})
+        st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
     with right:
         cities_df = count_table(frame, "LOCAL", "Município").head(10).sort_values("UCs")
         fig = px.bar(cities_df, x="UCs", y="Município", orientation="h", text="UCs", color="UCs", color_continuous_scale=["#FBE8D8", "#F5821E"])
