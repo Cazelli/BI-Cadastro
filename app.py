@@ -193,6 +193,21 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
         ],
         label_visibility="collapsed",
     )
+
+    gd_reference_date = PROJECT_START_DATE
+    if page == "Resumo executivo":
+        st.sidebar.markdown("### Data de referência")
+        gd_reference_date = pd.Timestamp(
+            st.sidebar.date_input(
+                "Data de referência",
+                value=PROJECT_START_DATE.date(),
+                help=(
+                    "Recalcula a GD inicial e a situação das UCs na data "
+                    "selecionada."
+                ),
+            )
+        )
+
     st.sidebar.divider()
     st.sidebar.markdown("### Filtros globais")
     st.sidebar.markdown(
@@ -216,20 +231,6 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
             "Fabricante do veículo", options_for(frame, "FABRI_VEIC")
         ),
     }
-
-    gd_reference_date = PROJECT_START_DATE
-    if page == "Resumo executivo":
-        st.sidebar.markdown("### Data de referência")
-        gd_reference_date = pd.Timestamp(
-            st.sidebar.date_input(
-                "Data de referência",
-                value=PROJECT_START_DATE.date(),
-                help=(
-                    "Recalcula a GD inicial e a situação das UCs na data "
-                    "selecionada."
-                ),
-            )
-        )
 
     filtered = frame.copy()
     for column, chosen in filters.items():
