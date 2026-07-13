@@ -250,9 +250,10 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
 
 
 def title(kicker: str, heading: str, subtitle: str) -> None:
+    heading_html = f'<div class="page-title">{heading}</div>' if heading else ""
     st.markdown(
         f'<div class="page-kicker">{kicker}</div>'
-        f'<div class="page-title">{heading}</div>'
+        f'{heading_html}'
         f'<div class="page-subtitle">{subtitle}</div>',
         unsafe_allow_html=True,
     )
@@ -283,7 +284,7 @@ def count_table(frame: pd.DataFrame, column: str, name: str) -> pd.DataFrame:
 def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None:
     title(
         "Visão consolidada",
-        "Grandes números",
+        "",
         "Indicadores principais das unidades consumidoras conforme os filtros ativos.",
     )
     active_initial = int(frame["SITUACAO_INICIAL"].eq("Ativo").sum())
@@ -347,25 +348,25 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
     )
     gd_row = st.columns(4)
     gd_row[0].metric(
-        "GD inicial — ativo",
+        "GD Ativos — inicial",
         f"{active_initial_gd:,}".replace(",", "."),
         f"{active_initial_gd_percentage:.1%}".replace(".", ","),
         delta_color="normal",
     )
     gd_row[1].metric(
-        "GD inicial — controle",
+        "GD Controle — inicial",
         f"{control_initial_gd:,}".replace(",", "."),
         f"{control_initial_gd_percentage:.1%}".replace(".", ","),
         delta_color="normal",
     )
     gd_row[2].metric(
-        "GD filtrada — ativo",
+        "GD Ativos — filtrada",
         f"{active_filtered_gd:,}".replace(",", "."),
         f"{active_filtered_gd_percentage:.1%}".replace(".", ","),
         delta_color="normal",
     )
     gd_row[3].metric(
-        "GD filtrada — controle",
+        "GD Controle — filtrada",
         f"{control_filtered_gd:,}".replace(",", "."),
         f"{control_filtered_gd_percentage:.1%}".replace(".", ","),
         delta_color="normal",
