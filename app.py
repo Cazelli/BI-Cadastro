@@ -48,6 +48,7 @@ def inject_css() -> None:
             padding: 14px 16px; box-shadow: 0 8px 24px rgba(21,28,33,.08);
         }
         [data-testid="stMetricValue"] { color: var(--ink); font-weight: 750; }
+        [data-testid="stMetricDelta"] svg { display:none; }
         .page-kicker { color:#F5821E; font-size:.78rem; letter-spacing:.14em;
             text-transform:uppercase; font-weight:700; margin-bottom:.25rem; }
         .page-title { color:var(--ink); font-size:2rem; line-height:1.1;
