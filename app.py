@@ -185,6 +185,13 @@ def load_data(file_mtime: float) -> pd.DataFrame:
     return frame
 
 
+@st.cache_data
+def load_map_assets() -> tuple[pd.DataFrame, dict]:
+    coordinates = pd.read_csv(MUNICIPALITY_COORDINATES_FILE, encoding="utf-8")
+    boundary = json.loads(PARANA_BOUNDARY_FILE.read_text(encoding="utf-8"))
+    return coordinates, boundary
+
+
 def clean_label(value: object) -> str:
     return "Não informado" if pd.isna(value) or str(value).strip() == "" else str(value)
 
@@ -587,9 +594,7 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
         .size()
         .reset_index(name="UCs")
     )
-    municipality_coordinates = pd.read_csv(
-        MUNICIPALITY_COORDINATES_FILE, encoding="utf-8"
-    )
+    municipality_coordinates, parana_boundary = load_map_assets()
     map_data = map_data.merge(municipality_coordinates, on="LOCAL", how="inner")
 
     if map_data.empty:
@@ -624,9 +629,6 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
             map_style="carto-positron",
         )
         fig.update_traces(marker_opacity=0.76)
-        parana_boundary = json.loads(
-            PARANA_BOUNDARY_FILE.read_text(encoding="utf-8")
-        )
         fig.update_layout(
             map_layers=[
                 dict(
@@ -659,18 +661,131 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
 
 
 def uc_page(frame: pd.DataFrame) -> None:
-    title("Distribuição operacional", "UCs e localização", "Compare a concentração territorial, as fases e as situações das UCs.")
-    left, right = st.columns([1.15, 1])
-    with left:
-        city = count_table(frame, "LOCAL", "Município").head(15).sort_values("UCs")
-        fig = px.bar(city, x="UCs", y="Município", orientation="h", color="UCs", text="UCs", color_continuous_scale=["#FFF1E6", "#F5821E"])
-        fig.update_layout(title="15 municípios com mais UCs", coloraxis_showscale=False)
-        st.plotly_chart(chart_style(fig, 470), width="stretch", config={"displayModeBar": False})
-    with right:
-        cross = pd.crosstab(frame["TIPO_FASE"].map(clean_label), frame["SITUACAO_ATUAL"].map(clean_label))
-        fig = px.imshow(cross, text_auto=True, aspect="auto", color_continuous_scale=["#F7F7F7", "#F5821E"], labels=dict(x="Situação atual", y="Tipo de fase", color="UCs"))
-        fig.update_layout(title="Situação por tipo de fase")
-        st.plotly_chart(chart_style(fig, 470), width="stretch", config={"displayModeBar": False})
+    title(
+        "Distribuição operacional",
+        "UCs e localização",
+        "Compare a distribuição municipal das UCs ativas, controle e reserva.",
+    )
+    status_labels = {
+        "Ativo": "Ativas",
+        "Controle": "Controle",
+        "Reserva": "Reserva",
+    }
+    status_colors = {
+        "Ativas": "#F5821E",
+        "Controle": "#69727D",
+        "Reserva": "#6EBAE8",
+    }
+    location_population = frame[
+        frame["SITUACAO_ATUAL"].isin(status_labels)
+        & frame["LOCAL"].notna()
+        & frame["LOCAL"].astype(str).str.strip().ne("")
+    ].copy()
+    location_population["Situação"] = location_population[
+        "SITUACAO_ATUAL"
+    ].replace(status_labels)
+    city_status = (
+        location_population.groupby(["LOCAL", "Situação"])
+        .size()
+        .reset_index(name="UCs")
+        .rename(columns={"LOCAL": "Município"})
+    )
+
+    if city_status.empty:
+        empty_state()
+        return
+
+    city_totals = (
+        city_status.groupby("Município")["UCs"]
+        .sum()
+        .sort_values()
+    )
+    municipality_order = city_totals.index.tolist()
+    chart_height = max(620, 115 + 22 * len(municipality_order))
+    fig = px.bar(
+        city_status,
+        x="UCs",
+        y="Município",
+        color="Situação",
+        orientation="h",
+        barmode="stack",
+        text="UCs",
+        color_discrete_map=status_colors,
+        category_orders={
+            "Município": municipality_order,
+            "Situação": ["Ativas", "Controle", "Reserva"],
+        },
+    )
+    fig.update_traces(textposition="inside")
+    fig.update_layout(
+        title="Todos os municípios por situação",
+        legend=dict(orientation="h", yanchor="bottom", y=1.01, x=0),
+        yaxis_title="",
+    )
+    st.plotly_chart(
+        chart_style(fig, chart_height),
+        width="stretch",
+        config={"displayModeBar": False},
+    )
+
+    st.markdown("#### Mapas por situação")
+    municipality_coordinates, parana_boundary = load_map_assets()
+    mapped_status = city_status.merge(
+        municipality_coordinates,
+        left_on="Município",
+        right_on="LOCAL",
+        how="inner",
+    )
+    maximum_city_count = int(mapped_status["UCs"].max()) if not mapped_status.empty else 1
+    common_size_reference = 2 * maximum_city_count / (38 ** 2)
+    map_columns = st.columns(3)
+
+    for column, situation in zip(
+        map_columns, ["Ativas", "Controle", "Reserva"]
+    ):
+        situation_map = mapped_status[mapped_status["Situação"].eq(situation)]
+        with column:
+            if situation_map.empty:
+                st.info(f"Nenhuma UC em {situation.lower()} para exibir.")
+                continue
+            fig = px.scatter_map(
+                situation_map,
+                lat="latitude",
+                lon="longitude",
+                size="UCs",
+                hover_name="Município",
+                hover_data={"UCs": True, "latitude": False, "longitude": False},
+                color_discrete_sequence=[status_colors[situation]],
+                size_max=38,
+                zoom=4.7,
+                center={"lat": -24.75, "lon": -51.75},
+                map_style="carto-positron",
+            )
+            fig.update_traces(
+                marker_opacity=0.78,
+                marker_sizeref=common_size_reference,
+                marker_sizemin=4,
+            )
+            fig.update_layout(
+                title=situation,
+                map_layers=[
+                    dict(
+                        sourcetype="geojson",
+                        source=parana_boundary,
+                        type="line",
+                        color="#8D979C",
+                        opacity=0.72,
+                        line=dict(width=2),
+                    )
+                ],
+            )
+            fig = chart_style(fig, 480)
+            fig.update_layout(margin=dict(l=5, r=5, t=50, b=5))
+            st.plotly_chart(
+                fig,
+                width="stretch",
+                config={"displayModeBar": False},
+            )
 
 
 def vehicle_page(frame: pd.DataFrame) -> None:
