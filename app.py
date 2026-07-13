@@ -41,6 +41,9 @@ def inject_css() -> None:
         [data-testid="stSidebar"] .stButton button * {
             color: #151C21 !important;
         }
+        [data-testid="stSidebar"] [data-testid="stDateInput"] input {
+            color: #151C21 !important;
+        }
         [data-testid="stSidebar"] hr { border-color: rgba(255,255,255,.14); }
         [data-testid="stMetric"] {
             background: rgba(255,255,255,.96); border: 1px solid #e1e3e5;
