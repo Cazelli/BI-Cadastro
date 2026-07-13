@@ -295,8 +295,15 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
     control_initial = int(frame["SITUACAO_INICIAL"].eq("Controle").sum())
     control = int(frame["SITUACAO_ATUAL"].eq("Controle").sum())
     reserve = int(frame["SITUACAO_ATUAL"].eq("Reserva").sum())
-    with_vehicle = int(frame["FABRI_VEIC"].notna().sum())
-    with_wallbox = int(frame["STATUS_WALLBOX"].eq("S").sum())
+    removed = int(frame["SITUACAO_ATUAL"].eq("Removido").sum())
+    active_mask = frame["SITUACAO_ATUAL"].eq("Ativo")
+    control_mask = frame["SITUACAO_ATUAL"].eq("Controle")
+    active_with_vehicle = int((active_mask & frame["FABRI_VEIC"].notna()).sum())
+    control_with_vehicle = int((control_mask & frame["FABRI_VEIC"].notna()).sum())
+    active_with_wallbox = int((active_mask & frame["STATUS_WALLBOX"].eq("S")).sum())
+    control_with_wallbox = int((control_mask & frame["STATUS_WALLBOX"].eq("S")).sum())
+    active_with_portable = int((active_mask & frame["STATUS_PORTATIL"].eq("S")).sum())
+    control_with_portable = int((control_mask & frame["STATUS_PORTATIL"].eq("S")).sum())
     gd_started_before_project = (
         frame["GD_BENE_INIC"].lt(PROJECT_START_DATE)
         | frame["DATA_INICIO_GD"].lt(PROJECT_START_DATE)
@@ -336,15 +343,13 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
     control_filtered_gd_percentage = (
         control_filtered_gd / control_initial if control_initial else 0
     )
-    cities = int(frame["LOCAL"].nunique())
-    removed = int(frame["SITUACAO_ATUAL"].eq("Removido").sum())
-
-    row1 = st.columns(5)
+    row1 = st.columns(6)
     row1[0].metric("UCs ativas inicial", f"{active_initial:,}".replace(",", "."))
     row1[1].metric("UCs ativas", f"{active:,}".replace(",", "."))
     row1[2].metric("UCs controle inicial", f"{control_initial:,}".replace(",", "."))
     row1[3].metric("UCs controle", f"{control:,}".replace(",", "."))
     row1[4].metric("UCs reserva", f"{reserve:,}".replace(",", "."))
+    row1[5].metric("UCs removidas", f"{removed:,}".replace(",", "."))
     st.caption(
         f"GD inicial em {PROJECT_START_DATE:%d/%m/%Y} · "
         f"GD filtrada em {gd_reference_date:%d/%m/%Y}"
@@ -374,13 +379,35 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
         f"{control_filtered_gd_percentage:.1%}".replace(".", ","),
         delta_color="normal",
     )
-    row2 = st.columns(4)
-    row2[0].metric("Com veículo", f"{with_vehicle:,}".replace(",", "."))
-    row2[1].metric("Com wallbox", f"{with_wallbox:,}".replace(",", "."))
-    row2[2].metric("Municípios atendidos", f"{cities:,}".replace(",", "."))
-    row2[3].metric("UCs removidas", f"{removed:,}".replace(",", "."))
+    st.caption("Veículos e equipamentos por situação atual")
+    active_equipment_row = st.columns(3)
+    active_equipment_row[0].metric(
+        "UCs com veículo — ativas",
+        f"{active_with_vehicle:,}".replace(",", "."),
+    )
+    active_equipment_row[1].metric(
+        "UCs com wallbox — ativas",
+        f"{active_with_wallbox:,}".replace(",", "."),
+    )
+    active_equipment_row[2].metric(
+        "UCs com portátil — ativas",
+        f"{active_with_portable:,}".replace(",", "."),
+    )
+    control_equipment_row = st.columns(3)
+    control_equipment_row[0].metric(
+        "UCs com veículo — controle",
+        f"{control_with_vehicle:,}".replace(",", "."),
+    )
+    control_equipment_row[1].metric(
+        "UCs com wallbox — controle",
+        f"{control_with_wallbox:,}".replace(",", "."),
+    )
+    control_equipment_row[2].metric(
+        "UCs com portátil — controle",
+        f"{control_with_portable:,}".replace(",", "."),
+    )
     st.markdown("#### Comparativos consolidados")
-    left, right = st.columns([1.35, 1])
+    chart_area = st.container()
     status_population = frame[
         frame["SITUACAO_INICIAL"].isin(["Ativo", "Controle"])
     ].copy()
@@ -416,7 +443,7 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
         else 0
     )
     donut_rotation = (180 - removed_midpoint) % 360
-    with left:
+    with chart_area:
         fig = px.pie(
             status,
             names="Situação",
@@ -448,12 +475,6 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
         )
         fig.add_annotation(text=f"<b>{status_total}</b><br>UCs", showarrow=False, font_size=18)
         st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
-    with right:
-        cities_df = count_table(frame, "LOCAL", "Município").head(10).sort_values("UCs")
-        fig = px.bar(cities_df, x="UCs", y="Município", orientation="h", text="UCs", color="UCs", color_continuous_scale=["#FBE8D8", "#F5821E"])
-        fig.update_layout(coloraxis_showscale=False, title="Top 10 municípios")
-        fig.update_traces(textposition="outside")
-        st.plotly_chart(chart_style(fig), width="stretch", config={"displayModeBar": False})
 
 
 def uc_page(frame: pd.DataFrame) -> None:
