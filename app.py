@@ -786,7 +786,7 @@ def uc_page(frame: pd.DataFrame) -> None:
 
 
 def vehicle_page(frame: pd.DataFrame) -> None:
-    title("Veículos Elétricos", "Perfil dos veículos", "Compare fabricantes, tecnologia do motor, finalidade e ano dos veículos cadastrados.")
+    title("Veículos Elétricos", "Perfil dos veículos", "Compare fabricantes, motorização e finalidade dos veículos cadastrados.")
     vehicles = frame[frame["FABRI_VEIC"].notna()].copy()
     if vehicles.empty:
         empty_state(); return
