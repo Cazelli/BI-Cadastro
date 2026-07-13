@@ -1,6 +1,6 @@
 # BI Cadastro Copel
 
-Dashboard Streamlit para análise consolidada das unidades consumidoras da planilha `base_consolidada_copel.xlsx`.
+Dashboard Streamlit para análise consolidada das unidades consumidoras do arquivo `base_consolidada_copel.csv`.
 
 ## Recursos
 
@@ -33,4 +33,4 @@ Acesse `http://localhost:8501` e use o login fornecido pelo administrador.
 
 ## Atualizar a base
 
-Substitua `base_consolidada_copel.xlsx` por uma nova versão mantendo o nome do arquivo, a aba `base_consolidada` e as colunas atuais. Depois, faça commit e push; o deploy será reconstruído automaticamente.
+Substitua `base_consolidada_copel.csv` por uma nova versão UTF-8 mantendo o nome e as colunas atuais. Depois, faça commit e push; o deploy será reconstruído automaticamente.

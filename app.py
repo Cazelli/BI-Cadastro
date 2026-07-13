@@ -11,7 +11,7 @@ import streamlit as st
 
 
 APP_TITLE = "BI Cadastro | Copel"
-DATA_FILE = Path(__file__).with_name("base_consolidada_copel.xlsx")
+DATA_FILE = Path(__file__).with_name("base_consolidada_copel.csv")
 LOGIN_USER = "Copel"
 PASSWORD_SALT = b"copel-bi-cadastro-v1"
 PASSWORD_HASH = bytes.fromhex(
@@ -86,10 +86,13 @@ def login_screen() -> None:
 
 @st.cache_data(show_spinner="Carregando base de UCs...")
 def load_data(file_mtime: float) -> pd.DataFrame:
-    del file_mtime  # Included only to invalidate the cache when the workbook changes.
-    frame = pd.read_excel(DATA_FILE, sheet_name="base_consolidada", engine="openpyxl")
+    del file_mtime  # Included only to invalidate the cache when the CSV changes.
+    frame = pd.read_csv(DATA_FILE, encoding="utf-8-sig", low_memory=False)
     frame.columns = [
-        str(column).strip().replace("IND_SOLICITA�AO", "IND_SOLICITACAO")
+        str(column)
+        .strip()
+        .replace("IND_SOLICITA�AO", "IND_SOLICITACAO")
+        .replace("IND_SOLICITAÇAO", "IND_SOLICITACAO")
         for column in frame.columns
     ]
     for column in [
