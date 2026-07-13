@@ -75,7 +75,7 @@ def login_screen() -> None:
             password = st.text_input(
                 "Senha", type="password", placeholder="Digite sua senha"
             )
-            submitted = st.form_submit_button("Entrar", use_container_width=True)
+            submitted = st.form_submit_button("Entrar", width="stretch")
         if submitted:
             if hmac.compare_digest(username.strip(), LOGIN_USER) and password_matches(password):
                 st.session_state.authenticated = True
@@ -164,7 +164,7 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str]:
 
     st.sidebar.divider()
     st.sidebar.metric("UCs na seleção", f"{len(filtered):,}".replace(",", "."))
-    if st.sidebar.button("Sair", use_container_width=True):
+    if st.sidebar.button("Sair", width="stretch"):
         st.session_state.authenticated = False
         st.rerun()
     return filtered, page
@@ -231,13 +231,13 @@ def executive_page(frame: pd.DataFrame) -> None:
         fig = px.pie(status, names="Situação", values="UCs", hole=.64, color_discrete_sequence=COLORS)
         fig.update_traces(textposition="outside", textinfo="percent+label")
         fig.add_annotation(text=f"<b>{total}</b><br>UCs", showarrow=False, font_size=18)
-        st.plotly_chart(chart_style(fig), use_container_width=True, config={"displayModeBar": False})
+        st.plotly_chart(chart_style(fig), width="stretch", config={"displayModeBar": False})
     with right:
         cities_df = count_table(frame, "LOCAL", "Município").head(10).sort_values("UCs")
         fig = px.bar(cities_df, x="UCs", y="Município", orientation="h", text="UCs", color="UCs", color_continuous_scale=["#dfeee6", "#007C4A"])
         fig.update_layout(coloraxis_showscale=False, title="Top 10 municípios")
         fig.update_traces(textposition="outside")
-        st.plotly_chart(chart_style(fig), use_container_width=True, config={"displayModeBar": False})
+        st.plotly_chart(chart_style(fig), width="stretch", config={"displayModeBar": False})
 
 
 def uc_page(frame: pd.DataFrame) -> None:
@@ -247,12 +247,12 @@ def uc_page(frame: pd.DataFrame) -> None:
         city = count_table(frame, "LOCAL", "Município").head(15).sort_values("UCs")
         fig = px.bar(city, x="UCs", y="Município", orientation="h", color="UCs", text="UCs", color_continuous_scale=["#fff0aa", "#65B32E"])
         fig.update_layout(title="15 municípios com mais UCs", coloraxis_showscale=False)
-        st.plotly_chart(chart_style(fig, 470), use_container_width=True, config={"displayModeBar": False})
+        st.plotly_chart(chart_style(fig, 470), width="stretch", config={"displayModeBar": False})
     with right:
         cross = pd.crosstab(frame["TIPO_FASE"].map(clean_label), frame["SITUACAO_ATUAL"].map(clean_label))
         fig = px.imshow(cross, text_auto=True, aspect="auto", color_continuous_scale=["#f4f8f5", "#007C4A"], labels=dict(x="Situação atual", y="Tipo de fase", color="UCs"))
         fig.update_layout(title="Situação por tipo de fase")
-        st.plotly_chart(chart_style(fig, 470), use_container_width=True, config={"displayModeBar": False})
+        st.plotly_chart(chart_style(fig, 470), width="stretch", config={"displayModeBar": False})
 
 
 def vehicle_page(frame: pd.DataFrame) -> None:
@@ -265,14 +265,14 @@ def vehicle_page(frame: pd.DataFrame) -> None:
         vehicles["Motor"] = vehicles["MOTOR_VEIC"].map(clean_label)
         fig = px.treemap(vehicles, path=["Motor", "FABRI_VEIC"], color="Motor", color_discrete_sequence=COLORS)
         fig.update_layout(title="Fabricantes por tipo de motor")
-        st.plotly_chart(chart_style(fig, 440), use_container_width=True, config={"displayModeBar": False})
+        st.plotly_chart(chart_style(fig, 440), width="stretch", config={"displayModeBar": False})
     with right:
         comparison = vehicles.groupby(["FINALIDADE", "MOTOR_VEIC"], dropna=False).size().reset_index(name="UCs")
         comparison["Finalidade"] = comparison["FINALIDADE"].map(clean_label)
         comparison["Motor"] = comparison["MOTOR_VEIC"].map(clean_label)
         fig = px.bar(comparison, x="Finalidade", y="UCs", color="Motor", barmode="group", text_auto=True, color_discrete_sequence=COLORS)
         fig.update_layout(title="Motor por finalidade")
-        st.plotly_chart(chart_style(fig, 440), use_container_width=True, config={"displayModeBar": False})
+        st.plotly_chart(chart_style(fig, 440), width="stretch", config={"displayModeBar": False})
 
 
 def charging_page(frame: pd.DataFrame) -> None:
@@ -292,7 +292,7 @@ def charging_page(frame: pd.DataFrame) -> None:
     with left:
         fig = px.funnel(equipment, y="Equipamento", x="UCs", color="Disponibilidade", color_discrete_map={"Sim": "#65B32E", "Não": "#cbd9d3"})
         fig.update_layout(title="Disponibilidade dos equipamentos")
-        st.plotly_chart(chart_style(fig, 430), use_container_width=True, config={"displayModeBar": False})
+        st.plotly_chart(chart_style(fig, 430), width="stretch", config={"displayModeBar": False})
     with right:
         records = []
         for motor, group in frame.groupby(frame["MOTOR_VEIC"].map(clean_label)):
@@ -301,7 +301,7 @@ def charging_page(frame: pd.DataFrame) -> None:
         compare = pd.DataFrame(records)
         fig = px.bar(compare, x="Motor", y="UCs com equipamento", color="Equipamento", barmode="group", text_auto=True, color_discrete_sequence=["#F5C400", "#007C4A"])
         fig.update_layout(title="Equipamentos por tipo de motor")
-        st.plotly_chart(chart_style(fig, 430), use_container_width=True, config={"displayModeBar": False})
+        st.plotly_chart(chart_style(fig, 430), width="stretch", config={"displayModeBar": False})
 
 
 def gd_page(frame: pd.DataFrame) -> None:
@@ -315,14 +315,14 @@ def gd_page(frame: pd.DataFrame) -> None:
         fig = px.pie(types, names="Tipo de GD", values="UCs", color_discrete_sequence=["#65B32E", "#00A6A6"], hole=.42)
         fig.update_traces(textinfo="label+value+percent")
         fig.update_layout(title="Composição por tipo de GD")
-        st.plotly_chart(chart_style(fig, 430), use_container_width=True, config={"displayModeBar": False})
+        st.plotly_chart(chart_style(fig, 430), width="stretch", config={"displayModeBar": False})
     with right:
         dated = gd.dropna(subset=["DATA_INICIO_GD"]).copy()
         dated["Ano"] = dated["DATA_INICIO_GD"].dt.year
         evolution = dated.groupby(["Ano", "TIPO_GD_GERA"]).size().reset_index(name="Novas UCs")
         fig = px.area(evolution, x="Ano", y="Novas UCs", color="TIPO_GD_GERA", markers=True, color_discrete_sequence=["#65B32E", "#00A6A6"])
         fig.update_layout(title="Evolução anual do início da GD", xaxis=dict(dtick=1))
-        st.plotly_chart(chart_style(fig, 430), use_container_width=True, config={"displayModeBar": False})
+        st.plotly_chart(chart_style(fig, 430), width="stretch", config={"displayModeBar": False})
 
 
 def quality_page(frame: pd.DataFrame) -> None:
@@ -340,13 +340,13 @@ def quality_page(frame: pd.DataFrame) -> None:
         marker=dict(color=quality["Completude"], colorscale=[[0, "#ef8b65"], [.5, "#F5C400"], [1, "#65B32E"]], cmin=0, cmax=1),
     ))
     fig.update_layout(title="Completude dos principais campos", xaxis=dict(tickformat=".0%", range=[0, 1.08]), yaxis=dict(autorange="reversed"))
-    st.plotly_chart(chart_style(fig, 520), use_container_width=True, config={"displayModeBar": False})
+    st.plotly_chart(chart_style(fig, 520), width="stretch", config={"displayModeBar": False})
     st.markdown("#### Consulta operacional (sem dados pessoais)")
     public_columns = ["NUM_UC", "NUM_UC_ANEEL", "SITUACAO_ATUAL", "SITUACAO_UC", "LOCAL", "CLASSE", "TIPO_FASE", "ETAPA", "DT_ATIVACAO", "FINALIDADE", "FABRI_VEIC", "MODELO_VEIC", "MOTOR_VEIC", "STATUS_WALLBOX", "STATUS_PORTATIL", "TIPO_GD_GERA"]
     view = frame[public_columns].copy()
     for column in ["NUM_UC", "NUM_UC_ANEEL"]:
         view[column] = view[column].apply(lambda value: "" if pd.isna(value) else str(int(value)))
-    st.dataframe(view, use_container_width=True, hide_index=True, height=410)
+    st.dataframe(view, width="stretch", hide_index=True, height=410)
 
 
 inject_css()
