@@ -79,18 +79,21 @@ def inject_css() -> None:
             letter-spacing:.16em; text-transform:uppercase; margin-bottom:4px; }
         .banner-title { font-size:1.7rem; font-weight:850; line-height:1.1; }
         .banner-copy { color:#DDE1E3; font-size:.88rem; margin-top:5px; }
-        .brand-logos { display:flex; align-items:center; gap:20px; flex-shrink:0; }
-        .copel-logo { width:210px; height:auto; display:block; }
+        .brand-logos { display:flex; align-items:center; gap:18px; flex-shrink:0; }
+        .copel-logo { width:190px; height:auto; display:block; }
         .brand-separator { height:54px; width:1px; background:rgba(255,255,255,.28); }
-        .essenz-panel { display:flex; align-items:center; justify-content:center;
-            width:176px; height:70px; }
-        .essenz-logo { max-width:170px; max-height:66px; width:auto; height:auto; display:block; }
+        .essenz-panel, .daimon-panel { display:flex; align-items:center; justify-content:center;
+            width:145px; height:70px; }
+        .essenz-logo, .daimon-logo {
+            max-width:140px; max-height:62px; width:auto; height:auto; display:block;
+        }
         @media (max-width: 760px) {
             .brand-banner { align-items:flex-start; flex-direction:column; padding:19px; }
-            .brand-logos { width:100%; justify-content:space-between; gap:12px; }
+            .brand-logos { width:100%; justify-content:flex-start; gap:12px; flex-wrap:wrap; }
+            .brand-separator { display:none; }
             .copel-logo { width:170px; }
-            .essenz-panel { width:145px; height:62px; }
-            .essenz-logo { max-width:140px; max-height:58px; }
+            .essenz-panel, .daimon-panel { width:135px; height:62px; }
+            .essenz-logo, .daimon-logo { max-width:130px; max-height:56px; }
         }
         </style>
         """,
@@ -108,19 +111,24 @@ def asset_data_uri(filename: str) -> str:
 def render_brand_banner() -> None:
     copel_logo = asset_data_uri("logo-copel.png")
     essenz_logo = asset_data_uri("logo-essenz.svg")
+    daimon_logo = asset_data_uri("logo-daimon.svg")
     st.markdown(
         f"""
         <div class="brand-banner">
             <div>
-                <div class="banner-kicker">Inteligência para energia</div>
+                <div class="banner-kicker">Tarifa Mobiflex</div>
                 <div class="banner-title">BI Cadastro de UCs</div>
-                <div class="banner-copy">Indicadores consolidados para decisões orientadas por dados</div>
+                <div class="banner-copy">Indicadores consolidados</div>
             </div>
             <div class="brand-logos">
                 <img class="copel-logo" src="{copel_logo}" alt="COPEL — Pura Energia">
                 <div class="brand-separator"></div>
                 <div class="essenz-panel">
                     <img class="essenz-logo" src="{essenz_logo}" alt="Essenz Soluções">
+                </div>
+                <div class="brand-separator"></div>
+                <div class="daimon-panel">
+                    <img class="daimon-logo" src="{daimon_logo}" alt="Daimon Engenharia">
                 </div>
             </div>
         </div>
