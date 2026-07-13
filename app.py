@@ -379,7 +379,7 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
         f"{control_filtered_gd_percentage:.1%}".replace(".", ","),
         delta_color="normal",
     )
-    st.caption("Veículos e equipamentos por situação atual")
+    st.caption("Dados de Veículos e Carregadores com filtros ativos")
     active_equipment_row = st.columns(3)
     active_equipment_row[0].metric(
         "UCs com veículo — ativas",
@@ -407,7 +407,7 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
         f"{control_with_portable:,}".replace(",", "."),
     )
     st.markdown("#### Comparativos consolidados")
-    chart_area = st.container()
+    donut_column, manufacturer_column = st.columns([1.35, 1])
     status_population = frame[
         frame["SITUACAO_INICIAL"].isin(["Ativo", "Controle"])
     ].copy()
@@ -443,7 +443,7 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
         else 0
     )
     donut_rotation = (180 - removed_midpoint) % 360
-    with chart_area:
+    with donut_column:
         fig = px.pie(
             status,
             names="Situação",
@@ -475,6 +475,36 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
         )
         fig.add_annotation(text=f"<b>{status_total}</b><br>UCs", showarrow=False, font_size=18)
         st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
+    with manufacturer_column:
+        vehicle_population = frame[
+            (active_mask | control_mask) & frame["FABRI_VEIC"].notna()
+        ]
+        if vehicle_population.empty:
+            st.info("Nenhum fabricante encontrado para os filtros selecionados.")
+        else:
+            manufacturers = count_table(
+                vehicle_population, "FABRI_VEIC", "Fabricante"
+            ).sort_values("UCs")
+            fig = px.bar(
+                manufacturers,
+                x="UCs",
+                y="Fabricante",
+                orientation="h",
+                text="UCs",
+                color="UCs",
+                color_continuous_scale=["#FBE8D8", "#F5821E"],
+            )
+            fig.update_layout(
+                title="Fabricantes — UCs ativas e controle",
+                coloraxis_showscale=False,
+                yaxis_title="",
+            )
+            fig.update_traces(textposition="outside")
+            st.plotly_chart(
+                chart_style(fig, 520),
+                width="stretch",
+                config={"displayModeBar": False},
+            )
 
 
 def uc_page(frame: pd.DataFrame) -> None:
