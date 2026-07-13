@@ -621,28 +621,24 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
             size_max=42,
             zoom=5.7,
             center={"lat": -25.35, "lon": -52.15},
-            map_style="carto-positron",
+            map_style="carto-positron-nolabels",
         )
         fig.update_traces(marker_opacity=0.76)
         parana_boundary = json.loads(
             PARANA_BOUNDARY_FILE.read_text(encoding="utf-8")
         )
-        boundary_polygons = parana_boundary["features"][0]["geometry"][
-            "coordinates"
-        ]
-        for polygon in boundary_polygons:
-            outer_ring = polygon[0]
-            fig.add_trace(
-                go.Scattermap(
-                    lat=[coordinate[1] for coordinate in outer_ring],
-                    lon=[coordinate[0] for coordinate in outer_ring],
-                    mode="lines",
-                    line=dict(color="#000000", width=3),
-                    hoverinfo="skip",
-                    showlegend=False,
-                    name="Limite do Paraná",
+        fig.update_layout(
+            map_layers=[
+                dict(
+                    sourcetype="geojson",
+                    source=parana_boundary,
+                    type="line",
+                    color="#8D979C",
+                    opacity=0.72,
+                    line=dict(width=2),
                 )
-            )
+            ]
+        )
         fig = chart_style(fig, 620)
         fig.update_layout(
             margin=dict(l=10, r=10, t=15, b=10),
