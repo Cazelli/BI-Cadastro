@@ -68,14 +68,14 @@ def inject_css() -> None:
         .copel-logo { width:210px; height:auto; display:block; }
         .brand-separator { height:54px; width:1px; background:rgba(255,255,255,.28); }
         .essenz-panel { display:flex; align-items:center; justify-content:center;
-            width:142px; height:74px; padding:7px 12px; box-sizing:border-box;
-            background:white; border-radius:12px; }
-        .essenz-logo { max-width:118px; max-height:62px; width:auto; height:auto; display:block; }
+            width:176px; height:70px; }
+        .essenz-logo { max-width:170px; max-height:66px; width:auto; height:auto; display:block; }
         @media (max-width: 760px) {
             .brand-banner { align-items:flex-start; flex-direction:column; padding:19px; }
             .brand-logos { width:100%; justify-content:space-between; gap:12px; }
             .copel-logo { width:170px; }
-            .essenz-panel { width:120px; height:66px; }
+            .essenz-panel { width:145px; height:62px; }
+            .essenz-logo { max-width:140px; max-height:58px; }
         }
         </style>
         """,
@@ -92,7 +92,7 @@ def asset_data_uri(filename: str) -> str:
 
 def render_brand_banner() -> None:
     copel_logo = asset_data_uri("logo-copel.png")
-    essenz_logo = asset_data_uri("logo-essenz.webp")
+    essenz_logo = asset_data_uri("logo-essenz.svg")
     st.markdown(
         f"""
         <div class="brand-banner">
