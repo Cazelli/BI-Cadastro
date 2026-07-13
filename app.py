@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import base64
 import hashlib
 import hmac
+import mimetypes
 from pathlib import Path
 
 import pandas as pd
@@ -12,12 +14,13 @@ import streamlit as st
 
 APP_TITLE = "BI Cadastro | Copel"
 DATA_FILE = Path(__file__).with_name("base_consolidada_copel.csv")
+ASSET_DIR = Path(__file__).with_name("assets")
 LOGIN_USER = "Copel"
 PASSWORD_SALT = b"copel-bi-cadastro-v1"
 PASSWORD_HASH = bytes.fromhex(
     "09e79419c0d0ef10fb06c88f9a68195b02c4954873140d6b0974f22e3f9fae10"
 )
-COLORS = ["#F5C400", "#65B32E", "#007C4A", "#00A6A6", "#2B4C7E", "#EB6A2C"]
+COLORS = ["#F5821E", "#FDB422", "#E65D24", "#3F444B", "#69727D", "#8D3F8F"]
 
 st.set_page_config(page_title=APP_TITLE, page_icon="⚡", layout="wide")
 
@@ -26,30 +29,86 @@ def inject_css() -> None:
     st.markdown(
         """
         <style>
-        :root { --copel-yellow:#F5C400; --copel-green:#65B32E; --ink:#17312B; }
-        .stApp { background: linear-gradient(145deg, #f7faf8 0%, #eef5f1 100%); }
-        [data-testid="stSidebar"] { background: #14352d; }
-        [data-testid="stSidebar"] * { color: #f5f8f6; }
+        :root { --copel-orange:#F5821E; --copel-gold:#FDB422; --ink:#151C21; }
+        .stApp { background: linear-gradient(145deg, #f8f9fa 0%, #eef0f2 100%); }
+        [data-testid="stSidebar"] { background: #151C21; border-right: 3px solid #F5821E; }
+        [data-testid="stSidebar"] * { color: #f7f8f8; }
         [data-testid="stSidebar"] hr { border-color: rgba(255,255,255,.14); }
         [data-testid="stMetric"] {
-            background: rgba(255,255,255,.94); border: 1px solid #dce9e2;
-            border-left: 5px solid var(--copel-yellow); border-radius: 14px;
-            padding: 14px 16px; box-shadow: 0 8px 24px rgba(20,53,45,.07);
+            background: rgba(255,255,255,.96); border: 1px solid #e1e3e5;
+            border-left: 5px solid var(--copel-orange); border-radius: 14px;
+            padding: 14px 16px; box-shadow: 0 8px 24px rgba(21,28,33,.08);
         }
         [data-testid="stMetricValue"] { color: var(--ink); font-weight: 750; }
-        .page-kicker { color:#557269; font-size:.78rem; letter-spacing:.14em;
+        .page-kicker { color:#F5821E; font-size:.78rem; letter-spacing:.14em;
             text-transform:uppercase; font-weight:700; margin-bottom:.25rem; }
         .page-title { color:var(--ink); font-size:2rem; line-height:1.1;
             font-weight:800; margin:0 0 .3rem 0; }
-        .page-subtitle { color:#61766f; margin-bottom:1.25rem; }
+        .page-subtitle { color:#69727D; margin-bottom:1.25rem; }
         .login-wrap { max-width:460px; margin:7vh auto 0 auto; padding:30px;
-            background:white; border-radius:18px; box-shadow:0 14px 42px rgba(20,53,45,.12); }
-        .brand-mark { font-size:2.2rem; font-weight:850; color:#17312B; }
-        .brand-mark span { color:#65B32E; }
-        .filter-caption { color:#b8cec6 !important; font-size:.8rem; }
-        div[data-testid="stPlotlyChart"] { background:#fff; border:1px solid #e1ebe6;
-            border-radius:14px; padding:8px; box-shadow:0 8px 24px rgba(20,53,45,.05); }
+            background:white; border-radius:18px; box-shadow:0 14px 42px rgba(21,28,33,.12); }
+        .brand-mark { font-size:2.2rem; font-weight:850; color:#151C21; }
+        .brand-mark span { color:#F5821E; }
+        .filter-caption { color:#C8CDD0 !important; font-size:.8rem; }
+        div[data-testid="stPlotlyChart"] { background:#fff; border:1px solid #E1E3E5;
+            border-radius:14px; padding:8px; box-shadow:0 8px 24px rgba(21,28,33,.06); }
+        .brand-banner {
+            display:flex; align-items:center; justify-content:space-between; gap:28px;
+            padding:22px 28px; margin:0 0 26px 0; overflow:hidden;
+            border-radius:18px; color:white;
+            background:linear-gradient(112deg, #151C21 0%, #272F35 64%, #7A3C1B 100%);
+            border-bottom:5px solid #F5821E;
+            box-shadow:0 14px 34px rgba(21,28,33,.16);
+        }
+        .banner-kicker { color:#FDB422; font-size:.72rem; font-weight:800;
+            letter-spacing:.16em; text-transform:uppercase; margin-bottom:4px; }
+        .banner-title { font-size:1.7rem; font-weight:850; line-height:1.1; }
+        .banner-copy { color:#DDE1E3; font-size:.88rem; margin-top:5px; }
+        .brand-logos { display:flex; align-items:center; gap:20px; flex-shrink:0; }
+        .copel-logo { width:210px; height:auto; display:block; }
+        .brand-separator { height:54px; width:1px; background:rgba(255,255,255,.28); }
+        .essenz-panel { display:flex; align-items:center; justify-content:center;
+            width:142px; height:74px; padding:7px 12px; box-sizing:border-box;
+            background:white; border-radius:12px; }
+        .essenz-logo { max-width:118px; max-height:62px; width:auto; height:auto; display:block; }
+        @media (max-width: 760px) {
+            .brand-banner { align-items:flex-start; flex-direction:column; padding:19px; }
+            .brand-logos { width:100%; justify-content:space-between; gap:12px; }
+            .copel-logo { width:170px; }
+            .essenz-panel { width:120px; height:66px; }
+        }
         </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def asset_data_uri(filename: str) -> str:
+    path = ASSET_DIR / filename
+    mime_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+    return f"data:{mime_type};base64,{encoded}"
+
+
+def render_brand_banner() -> None:
+    copel_logo = asset_data_uri("logo-copel.png")
+    essenz_logo = asset_data_uri("logo-essenz.webp")
+    st.markdown(
+        f"""
+        <div class="brand-banner">
+            <div>
+                <div class="banner-kicker">Inteligência para energia</div>
+                <div class="banner-title">BI Cadastro de UCs</div>
+                <div class="banner-copy">Indicadores consolidados para decisões orientadas por dados</div>
+            </div>
+            <div class="brand-logos">
+                <img class="copel-logo" src="{copel_logo}" alt="COPEL — Pura Energia">
+                <div class="brand-separator"></div>
+                <div class="essenz-panel">
+                    <img class="essenz-logo" src="{essenz_logo}" alt="Essenz Soluções">
+                </div>
+            </div>
+        </div>
         """,
         unsafe_allow_html=True,
     )
@@ -66,8 +125,8 @@ def login_screen() -> None:
     left, center, right = st.columns([1, 1.15, 1])
     with center:
         st.markdown(
-            '<div class="brand-mark">⚡ BI <span>Cadastro</span></div>'
-            '<p style="color:#61766f">Painel consolidado de unidades consumidoras</p>',
+            '<div class="brand-mark">BI <span>Cadastro</span></div>'
+            '<p style="color:#69727D">Painel consolidado de unidades consumidoras</p>',
             unsafe_allow_html=True,
         )
         with st.form("login_form", clear_on_submit=False):
@@ -120,7 +179,7 @@ def options_for(frame: pd.DataFrame, column: str) -> list[str]:
 
 
 def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str]:
-    st.sidebar.markdown("## ⚡ BI Cadastro")
+    st.sidebar.markdown("## BI Cadastro")
     page = st.sidebar.radio(
         "Navegação",
         [
@@ -189,7 +248,7 @@ def chart_style(fig: go.Figure, height: int = 390) -> go.Figure:
         margin=dict(l=20, r=20, t=55, b=20),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Arial", color="#29483f"),
+        font=dict(family="Arial", color="#33373D"),
         colorway=COLORS,
         legend_title_text="",
     )
@@ -234,7 +293,7 @@ def executive_page(frame: pd.DataFrame) -> None:
         st.plotly_chart(chart_style(fig), width="stretch", config={"displayModeBar": False})
     with right:
         cities_df = count_table(frame, "LOCAL", "Município").head(10).sort_values("UCs")
-        fig = px.bar(cities_df, x="UCs", y="Município", orientation="h", text="UCs", color="UCs", color_continuous_scale=["#dfeee6", "#007C4A"])
+        fig = px.bar(cities_df, x="UCs", y="Município", orientation="h", text="UCs", color="UCs", color_continuous_scale=["#FBE8D8", "#F5821E"])
         fig.update_layout(coloraxis_showscale=False, title="Top 10 municípios")
         fig.update_traces(textposition="outside")
         st.plotly_chart(chart_style(fig), width="stretch", config={"displayModeBar": False})
@@ -245,12 +304,12 @@ def uc_page(frame: pd.DataFrame) -> None:
     left, right = st.columns([1.15, 1])
     with left:
         city = count_table(frame, "LOCAL", "Município").head(15).sort_values("UCs")
-        fig = px.bar(city, x="UCs", y="Município", orientation="h", color="UCs", text="UCs", color_continuous_scale=["#fff0aa", "#65B32E"])
+        fig = px.bar(city, x="UCs", y="Município", orientation="h", color="UCs", text="UCs", color_continuous_scale=["#FFF1E6", "#F5821E"])
         fig.update_layout(title="15 municípios com mais UCs", coloraxis_showscale=False)
         st.plotly_chart(chart_style(fig, 470), width="stretch", config={"displayModeBar": False})
     with right:
         cross = pd.crosstab(frame["TIPO_FASE"].map(clean_label), frame["SITUACAO_ATUAL"].map(clean_label))
-        fig = px.imshow(cross, text_auto=True, aspect="auto", color_continuous_scale=["#f4f8f5", "#007C4A"], labels=dict(x="Situação atual", y="Tipo de fase", color="UCs"))
+        fig = px.imshow(cross, text_auto=True, aspect="auto", color_continuous_scale=["#F7F7F7", "#F5821E"], labels=dict(x="Situação atual", y="Tipo de fase", color="UCs"))
         fig.update_layout(title="Situação por tipo de fase")
         st.plotly_chart(chart_style(fig, 470), width="stretch", config={"displayModeBar": False})
 
@@ -290,7 +349,7 @@ def charging_page(frame: pd.DataFrame) -> None:
     )
     left, right = st.columns([1, 1.25])
     with left:
-        fig = px.funnel(equipment, y="Equipamento", x="UCs", color="Disponibilidade", color_discrete_map={"Sim": "#65B32E", "Não": "#cbd9d3"})
+        fig = px.funnel(equipment, y="Equipamento", x="UCs", color="Disponibilidade", color_discrete_map={"Sim": "#F5821E", "Não": "#C8CDD0"})
         fig.update_layout(title="Disponibilidade dos equipamentos")
         st.plotly_chart(chart_style(fig, 430), width="stretch", config={"displayModeBar": False})
     with right:
@@ -299,7 +358,7 @@ def charging_page(frame: pd.DataFrame) -> None:
             for column, label in [("STATUS_WALLBOX", "Wallbox"), ("STATUS_PORTATIL", "Portátil")]:
                 records.append({"Motor": motor, "Equipamento": label, "UCs com equipamento": int(group[column].eq("S").sum())})
         compare = pd.DataFrame(records)
-        fig = px.bar(compare, x="Motor", y="UCs com equipamento", color="Equipamento", barmode="group", text_auto=True, color_discrete_sequence=["#F5C400", "#007C4A"])
+        fig = px.bar(compare, x="Motor", y="UCs com equipamento", color="Equipamento", barmode="group", text_auto=True, color_discrete_sequence=["#F5821E", "#FDB422"])
         fig.update_layout(title="Equipamentos por tipo de motor")
         st.plotly_chart(chart_style(fig, 430), width="stretch", config={"displayModeBar": False})
 
@@ -312,7 +371,7 @@ def gd_page(frame: pd.DataFrame) -> None:
     left, right = st.columns([1, 1.3])
     with left:
         types = count_table(gd, "TIPO_GD_GERA", "Tipo de GD")
-        fig = px.pie(types, names="Tipo de GD", values="UCs", color_discrete_sequence=["#65B32E", "#00A6A6"], hole=.42)
+        fig = px.pie(types, names="Tipo de GD", values="UCs", color_discrete_sequence=["#F5821E", "#FDB422"], hole=.42)
         fig.update_traces(textinfo="label+value+percent")
         fig.update_layout(title="Composição por tipo de GD")
         st.plotly_chart(chart_style(fig, 430), width="stretch", config={"displayModeBar": False})
@@ -320,7 +379,7 @@ def gd_page(frame: pd.DataFrame) -> None:
         dated = gd.dropna(subset=["DATA_INICIO_GD"]).copy()
         dated["Ano"] = dated["DATA_INICIO_GD"].dt.year
         evolution = dated.groupby(["Ano", "TIPO_GD_GERA"]).size().reset_index(name="Novas UCs")
-        fig = px.area(evolution, x="Ano", y="Novas UCs", color="TIPO_GD_GERA", markers=True, color_discrete_sequence=["#65B32E", "#00A6A6"])
+        fig = px.area(evolution, x="Ano", y="Novas UCs", color="TIPO_GD_GERA", markers=True, color_discrete_sequence=["#F5821E", "#FDB422"])
         fig.update_layout(title="Evolução anual do início da GD", xaxis=dict(dtick=1))
         st.plotly_chart(chart_style(fig, 430), width="stretch", config={"displayModeBar": False})
 
@@ -337,7 +396,7 @@ def quality_page(frame: pd.DataFrame) -> None:
     fig = go.Figure(go.Bar(
         x=quality["Completude"], y=quality["Campo"], orientation="h",
         text=(quality["Completude"] * 100).round(1).astype(str) + "%",
-        marker=dict(color=quality["Completude"], colorscale=[[0, "#ef8b65"], [.5, "#F5C400"], [1, "#65B32E"]], cmin=0, cmax=1),
+        marker=dict(color=quality["Completude"], colorscale=[[0, "#A83D2D"], [.5, "#FDB422"], [1, "#F5821E"]], cmin=0, cmax=1),
     ))
     fig.update_layout(title="Completude dos principais campos", xaxis=dict(tickformat=".0%", range=[0, 1.08]), yaxis=dict(autorange="reversed"))
     st.plotly_chart(chart_style(fig, 520), width="stretch", config={"displayModeBar": False})
@@ -350,6 +409,7 @@ def quality_page(frame: pd.DataFrame) -> None:
 
 
 inject_css()
+render_brand_banner()
 if not st.session_state.get("authenticated", False):
     login_screen()
     st.stop()

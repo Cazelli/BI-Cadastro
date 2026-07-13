@@ -9,7 +9,12 @@ Dashboard Streamlit para análise consolidada das unidades consumidoras do arqui
 - filtros globais de situação, município, fase, etapa, finalidade e fabricante;
 - páginas comparativas de UCs, veículos, recarga, geração distribuída e qualidade;
 - consulta operacional sem nome, telefone ou e-mail do titular;
-- atualização automática ao substituir o arquivo Excel no repositório.
+- atualização automática ao substituir o arquivo CSV no repositório;
+- identidade visual com marcas COPEL e Essenz Soluções em todas as páginas.
+
+As marcas exibidas no cabeçalho foram obtidas nos sites oficiais da
+[COPEL](https://www.copel.com/site/) e da
+[Essenz Soluções](https://www.essenzsolucoes.com/).
 
 ## Executar localmente
 
