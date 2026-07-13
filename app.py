@@ -300,6 +300,15 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
     control_with_wallbox = int((control_mask & frame["STATUS_WALLBOX"].eq("S")).sum())
     active_with_portable = int((active_mask & frame["STATUS_PORTATIL"].eq("S")).sum())
     control_with_portable = int((control_mask & frame["STATUS_PORTATIL"].eq("S")).sum())
+    purpose = frame["FINALIDADE"].map(clean_label)
+    active_personal = int((active_mask & purpose.eq("Pessoal")).sum())
+    active_work = int((active_mask & purpose.eq("Trabalho")).sum())
+    active_purpose_missing = int((active_mask & purpose.eq("Não informado")).sum())
+    control_personal = int((control_mask & purpose.eq("Pessoal")).sum())
+    control_work = int((control_mask & purpose.eq("Trabalho")).sum())
+    control_purpose_missing = int(
+        (control_mask & purpose.eq("Não informado")).sum()
+    )
     gd_started_before_project = (
         frame["GD_BENE_INIC"].lt(PROJECT_START_DATE)
         | frame["DATA_INICIO_GD"].lt(PROJECT_START_DATE)
@@ -374,6 +383,33 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
         f"{control_filtered_gd:,}".replace(",", "."),
         f"{control_filtered_gd_percentage:.1%}".replace(".", ","),
         delta_color="normal",
+    )
+    st.caption("Finalidade por situação atual")
+    active_purpose_row = st.columns(3)
+    active_purpose_row[0].metric(
+        "Finalidade pessoal — ativas",
+        f"{active_personal:,}".replace(",", "."),
+    )
+    active_purpose_row[1].metric(
+        "Finalidade trabalho — ativas",
+        f"{active_work:,}".replace(",", "."),
+    )
+    active_purpose_row[2].metric(
+        "Finalidade não informada — ativas",
+        f"{active_purpose_missing:,}".replace(",", "."),
+    )
+    control_purpose_row = st.columns(3)
+    control_purpose_row[0].metric(
+        "Finalidade pessoal — controle",
+        f"{control_personal:,}".replace(",", "."),
+    )
+    control_purpose_row[1].metric(
+        "Finalidade trabalho — controle",
+        f"{control_work:,}".replace(",", "."),
+    )
+    control_purpose_row[2].metric(
+        "Finalidade não informada — controle",
+        f"{control_purpose_missing:,}".replace(",", "."),
     )
     st.caption("Dados de Veículos e Carregadores com filtros ativos")
     active_equipment_row = st.columns(3)
