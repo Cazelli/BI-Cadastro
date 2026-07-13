@@ -790,8 +790,7 @@ def vehicle_page(frame: pd.DataFrame) -> None:
     vehicles = frame[frame["FABRI_VEIC"].notna()].copy()
     if vehicles.empty:
         empty_state(); return
-    left, right = st.columns([1.25, 1])
-    with left:
+    with st.container():
         manufacturer_vehicles = vehicles[
             vehicles["SITUACAO_ATUAL"].isin(["Ativo", "Controle"])
         ]
@@ -832,14 +831,48 @@ def vehicle_page(frame: pd.DataFrame) -> None:
                 width="stretch",
                 config={"displayModeBar": False},
             )
-    with right:
-        vehicles["Motor"] = vehicles["MOTOR_VEIC"].map(clean_label)
-        comparison = vehicles.groupby(["FINALIDADE", "MOTOR_VEIC"], dropna=False).size().reset_index(name="UCs")
-        comparison["Finalidade"] = comparison["FINALIDADE"].map(clean_label)
-        comparison["Motor"] = comparison["MOTOR_VEIC"].map(clean_label)
-        fig = px.bar(comparison, x="Finalidade", y="UCs", color="Motor", barmode="group", text_auto=True, color_discrete_sequence=COLORS)
-        fig.update_layout(title="Motor por finalidade")
-        st.plotly_chart(chart_style(fig, 440), width="stretch", config={"displayModeBar": False})
+    with st.container():
+        motor_vehicles = vehicles[
+            vehicles["SITUACAO_ATUAL"].isin(["Ativo", "Controle"])
+        ].copy()
+        if motor_vehicles.empty:
+            st.info("Nenhuma motorização ativa ou controle para exibir.")
+        else:
+            comparison = (
+                motor_vehicles.groupby(
+                    ["FINALIDADE", "MOTOR_VEIC", "SITUACAO_ATUAL"],
+                    dropna=False,
+                )
+                .size()
+                .reset_index(name="UCs")
+            )
+            comparison["Finalidade"] = comparison["FINALIDADE"].map(clean_label)
+            comparison["Motor"] = comparison["MOTOR_VEIC"].map(clean_label)
+            comparison["Situação"] = comparison["SITUACAO_ATUAL"].replace(
+                {"Ativo": "Ativas", "Controle": "Controle"}
+            )
+            fig = px.bar(
+                comparison,
+                x="Finalidade",
+                y="UCs",
+                color="Situação",
+                pattern_shape="Motor",
+                pattern_shape_sequence=["", "/", "x"],
+                barmode="group",
+                text="UCs",
+                color_discrete_map={
+                    "Ativas": "#F5821E",
+                    "Controle": "#69727D",
+                },
+                category_orders={"Situação": ["Ativas", "Controle"]},
+            )
+            fig.update_traces(textangle=0)
+            fig.update_layout(title="Motorização por finalidade")
+            st.plotly_chart(
+                chart_style(fig, 440),
+                width="stretch",
+                config={"displayModeBar": False},
+            )
 
 
 def charging_page(frame: pd.DataFrame) -> None:
