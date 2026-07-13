@@ -695,33 +695,10 @@ def uc_page(frame: pd.DataFrame) -> None:
         empty_state()
         return
 
-    city_totals = (
-        city_status.groupby("Município")["UCs"]
-        .sum()
-        .sort_values(ascending=False)
-    )
-    municipalities_per_page = 15
-    page_count = max(
-        1, (len(city_totals) + municipalities_per_page - 1) // municipalities_per_page
-    )
-    page_number = st.selectbox(
-        "Página de municípios",
-        options=list(range(page_count)),
-        format_func=lambda page: f"Página {page + 1} de {page_count}",
-    )
-    page_start = page_number * municipalities_per_page
-    page_end = min(page_start + municipalities_per_page, len(city_totals))
-    visible_municipalities = city_totals.index[page_start:page_end]
-    visible_city_status = city_status[
-        city_status["Município"].isin(visible_municipalities)
-    ]
-    chart_height = 115 + 30 * len(visible_municipalities)
-    st.caption(
-        f"Exibindo municípios {page_start + 1} a {page_end} "
-        f"de {len(city_totals)}, ordenados do maior para o menor."
-    )
+    city_totals = city_status.groupby("Município")["UCs"].sum()
+    chart_height = max(620, 115 + 30 * len(city_totals))
     fig = px.bar(
-        visible_city_status,
+        city_status,
         x="UCs",
         y="Município",
         color="Situação",
@@ -739,11 +716,12 @@ def uc_page(frame: pd.DataFrame) -> None:
         legend=dict(orientation="h", yanchor="bottom", y=1.01, x=0),
         yaxis=dict(title="", categoryorder="total ascending"),
     )
-    st.plotly_chart(
-        chart_style(fig, chart_height),
-        width="stretch",
-        config={"displayModeBar": False},
-    )
+    with st.container(height=600, border=False):
+        st.plotly_chart(
+            chart_style(fig, chart_height),
+            width="stretch",
+            config={"displayModeBar": False},
+        )
 
     st.markdown("#### Mapas por situação")
     municipality_coordinates, parana_boundary = load_map_assets()
