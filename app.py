@@ -15,6 +15,7 @@ import streamlit as st
 APP_TITLE = "BI Cadastro | Copel"
 DATA_FILE = Path(__file__).with_name("base_consolidada_copel.csv")
 ASSET_DIR = Path(__file__).with_name("assets")
+MUNICIPALITY_COORDINATES_FILE = ASSET_DIR / "municipios_coordenadas.csv"
 LOGIN_USER = "Copel"
 PASSWORD_SALT = b"copel-bi-cadastro-v1"
 PASSWORD_HASH = bytes.fromhex(
@@ -571,6 +572,73 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
                 width="stretch",
                 config={"displayModeBar": False},
             )
+
+    st.markdown("#### Distribuição municipal de UCs ativas e controle")
+    map_population = frame[
+        (active_mask | control_mask) & frame["LOCAL"].notna()
+    ].copy()
+    map_population["Situação"] = map_population["SITUACAO_ATUAL"].replace(
+        {"Ativo": "Ativas"}
+    )
+    map_data = (
+        map_population.groupby(["LOCAL", "Situação"])
+        .size()
+        .reset_index(name="UCs")
+    )
+    municipality_coordinates = pd.read_csv(
+        MUNICIPALITY_COORDINATES_FILE, encoding="utf-8"
+    )
+    map_data = map_data.merge(municipality_coordinates, on="LOCAL", how="inner")
+
+    if map_data.empty:
+        st.info("Nenhum município com UCs ativas ou controle para exibir no mapa.")
+    else:
+        # Slightly separate both statuses around the municipal centroid so that
+        # overlapping bubbles remain visible and selectable.
+        longitude_offset = {"Ativas": -0.025, "Controle": 0.025}
+        map_data["map_longitude"] = (
+            map_data["longitude"] + map_data["Situação"].map(longitude_offset)
+        )
+        fig = px.scatter_map(
+            map_data,
+            lat="latitude",
+            lon="map_longitude",
+            size="UCs",
+            color="Situação",
+            hover_name="LOCAL",
+            hover_data={
+                "UCs": True,
+                "latitude": False,
+                "map_longitude": False,
+            },
+            color_discrete_map={
+                "Ativas": "#F5821E",
+                "Controle": "#69727D",
+            },
+            category_orders={"Situação": ["Controle", "Ativas"]},
+            size_max=42,
+            zoom=5.7,
+            center={"lat": -25.35, "lon": -52.15},
+            map_style="carto-positron",
+        )
+        fig.update_traces(marker_opacity=0.76)
+        fig = chart_style(fig, 620)
+        fig.update_layout(
+            margin=dict(l=10, r=10, t=15, b=10),
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.01,
+                xanchor="left",
+                x=0,
+            ),
+        )
+        st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
+        st.caption(
+            "O tamanho das bolhas representa a quantidade de UCs. Os pontos "
+            "são levemente separados ao redor do centro municipal para manter "
+            "Ativas e Controle visíveis."
+        )
 
 
 def uc_page(frame: pd.DataFrame) -> None:
