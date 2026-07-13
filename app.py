@@ -34,6 +34,9 @@ def inject_css() -> None:
         .stApp { background: linear-gradient(145deg, #f8f9fa 0%, #eef0f2 100%); }
         [data-testid="stSidebar"] { background: #151C21; border-right: 3px solid #F5821E; }
         [data-testid="stSidebar"] * { color: #f7f8f8; }
+        [data-testid="stSidebar"] [data-testid="stMetric"] * {
+            color: #151C21 !important;
+        }
         [data-testid="stSidebar"] hr { border-color: rgba(255,255,255,.14); }
         [data-testid="stMetric"] {
             background: rgba(255,255,255,.96); border: 1px solid #e1e3e5;
