@@ -361,6 +361,16 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
         }
     )
     status_total = int(status["UCs"].sum())
+    removed_total = int(
+        status.loc[status["Situação"].str.startswith("Removido"), "UCs"].sum()
+    )
+    active_control_total = status_total - removed_total
+    removed_midpoint = (
+        360 * (active_control_total + removed_total / 2) / status_total
+        if status_total
+        else 0
+    )
+    donut_rotation = (180 - removed_midpoint) % 360
     with left:
         fig = px.pie(
             status,
@@ -376,7 +386,13 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
             },
             category_orders={"Situação": status_order},
         )
-        fig.update_traces(textposition="outside", textinfo="label+value")
+        fig.update_traces(
+            textposition="outside",
+            textinfo="label+value",
+            sort=False,
+            direction="clockwise",
+            rotation=donut_rotation,
+        )
         fig.update_layout(title=f"Situação em {gd_reference_date:%d/%m/%Y}")
         fig.add_annotation(text=f"<b>{status_total}</b><br>UCs", showarrow=False, font_size=18)
         st.plotly_chart(chart_style(fig), width="stretch", config={"displayModeBar": False})
