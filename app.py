@@ -323,6 +323,16 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
     control_purpose_missing = int(
         (control_mask & purpose.eq("Não informado")).sum()
     )
+    active_personal_percentage = active_personal / active if active else 0
+    active_work_percentage = active_work / active if active else 0
+    active_purpose_missing_percentage = (
+        active_purpose_missing / active if active else 0
+    )
+    control_personal_percentage = control_personal / control if control else 0
+    control_work_percentage = control_work / control if control else 0
+    control_purpose_missing_percentage = (
+        control_purpose_missing / control if control else 0
+    )
     gd_started_before_project = (
         frame["GD_BENE_INIC"].lt(PROJECT_START_DATE)
         | frame["DATA_INICIO_GD"].lt(PROJECT_START_DATE)
@@ -401,27 +411,39 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
     active_purpose_row[0].metric(
         "Finalidade pessoal — ativas",
         f"{active_personal:,}".replace(",", "."),
+        f"{active_personal_percentage:.1%}".replace(".", ","),
+        delta_color="normal",
     )
     active_purpose_row[1].metric(
         "Finalidade trabalho — ativas",
         f"{active_work:,}".replace(",", "."),
+        f"{active_work_percentage:.1%}".replace(".", ","),
+        delta_color="normal",
     )
     active_purpose_row[2].metric(
         "Finalidade não informada — ativas",
         f"{active_purpose_missing:,}".replace(",", "."),
+        f"{active_purpose_missing_percentage:.1%}".replace(".", ","),
+        delta_color="normal",
     )
     control_purpose_row = st.columns(3)
     control_purpose_row[0].metric(
         "Finalidade pessoal — controle",
         f"{control_personal:,}".replace(",", "."),
+        f"{control_personal_percentage:.1%}".replace(".", ","),
+        delta_color="normal",
     )
     control_purpose_row[1].metric(
         "Finalidade trabalho — controle",
         f"{control_work:,}".replace(",", "."),
+        f"{control_work_percentage:.1%}".replace(".", ","),
+        delta_color="normal",
     )
     control_purpose_row[2].metric(
         "Finalidade não informada — controle",
         f"{control_purpose_missing:,}".replace(",", "."),
+        f"{control_purpose_missing_percentage:.1%}".replace(".", ","),
+        delta_color="normal",
     )
     st.caption("Dados de Veículos e Carregadores com filtros ativos")
     active_equipment_row = st.columns(3)
