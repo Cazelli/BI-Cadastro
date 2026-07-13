@@ -21,6 +21,7 @@ PASSWORD_HASH = bytes.fromhex(
     "09e79419c0d0ef10fb06c88f9a68195b02c4954873140d6b0974f22e3f9fae10"
 )
 COLORS = ["#F5821E", "#FDB422", "#E65D24", "#3F444B", "#69727D", "#8D3F8F"]
+PROJECT_START_DATE = pd.Timestamp("2026-03-01")
 
 st.set_page_config(page_title=APP_TITLE, page_icon="⚡", layout="wide")
 
@@ -178,7 +179,7 @@ def options_for(frame: pd.DataFrame, column: str) -> list[str]:
     return sorted(frame[column].dropna().astype(str).unique().tolist())
 
 
-def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str]:
+def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestamp]:
     st.sidebar.markdown("## BI Cadastro")
     page = st.sidebar.radio(
         "Navegação",
@@ -216,6 +217,17 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str]:
         ),
     }
 
+    gd_reference_date = PROJECT_START_DATE
+    if page == "Resumo executivo":
+        st.sidebar.markdown("### Referência da GD inicial")
+        gd_reference_date = pd.Timestamp(
+            st.sidebar.date_input(
+                "Data de referência",
+                value=PROJECT_START_DATE.date(),
+                help="São consideradas as datas de início de GD anteriores à data selecionada.",
+            )
+        )
+
     filtered = frame.copy()
     for column, chosen in filters.items():
         if chosen:
@@ -226,7 +238,7 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str]:
     if st.sidebar.button("Sair", width="stretch"):
         st.session_state.authenticated = False
         st.rerun()
-    return filtered, page
+    return filtered, page, gd_reference_date
 
 
 def title(kicker: str, heading: str, subtitle: str) -> None:
@@ -260,7 +272,7 @@ def count_table(frame: pd.DataFrame, column: str, name: str) -> pd.DataFrame:
     return values
 
 
-def executive_page(frame: pd.DataFrame) -> None:
+def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None:
     title(
         "Visão consolidada",
         "Grandes números",
@@ -274,28 +286,58 @@ def executive_page(frame: pd.DataFrame) -> None:
     reserve = int(frame["SITUACAO_ATUAL"].eq("Reserva").sum())
     with_vehicle = int(frame["FABRI_VEIC"].notna().sum())
     with_wallbox = int(frame["STATUS_WALLBOX"].eq("S").sum())
-    with_gd = int(frame["TIPO_GD_GERA"].notna().sum())
+    gd_started_before_project = (
+        frame["GD_BENE_INIC"].lt(gd_reference_date)
+        | frame["DATA_INICIO_GD"].lt(gd_reference_date)
+    )
+    same_benefit_start_and_end = (
+        frame["GD_BENE_INIC"].notna()
+        & frame["GD_BENE_FIM"].notna()
+        & frame["GD_BENE_INIC"].eq(frame["GD_BENE_FIM"])
+    )
+    valid_initial_gd = gd_started_before_project & ~same_benefit_start_and_end
+    active_initial_gd = int(
+        (frame["SITUACAO_INICIAL"].eq("Ativo") & valid_initial_gd).sum()
+    )
+    control_initial_gd = int(
+        (frame["SITUACAO_INICIAL"].eq("Controle") & valid_initial_gd).sum()
+    )
+    active_initial_gd_percentage = (
+        active_initial_gd / active_initial if active_initial else 0
+    )
+    control_initial_gd_percentage = (
+        control_initial_gd / control_initial if control_initial else 0
+    )
     cities = int(frame["LOCAL"].nunique())
     removed = int(frame["SITUACAO_ATUAL"].eq("Removido").sum())
 
     row1 = st.columns(5)
     row1[0].metric("UCs ativas inicial", f"{active_initial:,}".replace(",", "."))
-    row1[1].metric("UCs ativas", f"{active:,}".replace(",", "."), f"{active / total:.1%}" if total else "0%")
+    row1[1].metric("UCs ativas", f"{active:,}".replace(",", "."))
     row1[2].metric("UCs controle inicial", f"{control_initial:,}".replace(",", "."))
-    row1[3].metric("UCs controle", f"{control:,}".replace(",", "."), f"{control / total:.1%}" if total else "0%")
+    row1[3].metric("UCs controle", f"{control:,}".replace(",", "."))
     row1[4].metric("UCs reserva", f"{reserve:,}".replace(",", "."))
-    row2 = st.columns(5)
-    row2[0].metric("Com veículo", f"{with_vehicle:,}".replace(",", "."), f"{with_vehicle / total:.1%}" if total else "0%")
-    row2[1].metric("Com wallbox", f"{with_wallbox:,}".replace(",", "."), f"{with_wallbox / total:.1%}" if total else "0%")
-    row2[2].metric("Com geração distribuída", f"{with_gd:,}".replace(",", "."), f"{with_gd / total:.1%}" if total else "0%")
-    row2[3].metric("Municípios atendidos", f"{cities:,}".replace(",", "."))
-    row2[4].metric("UCs removidas", f"{removed:,}".replace(",", "."), f"{removed / total:.1%}" if total else "0%", delta_color="inverse")
+    st.caption(f"GD inicial na data de referência: {gd_reference_date:%d/%m/%Y}")
+    gd_row = st.columns(2)
+    gd_row[0].metric(
+        "GD inicial — ativo",
+        f"{active_initial_gd_percentage:.1%}".replace(".", ","),
+    )
+    gd_row[1].metric(
+        "GD inicial — controle",
+        f"{control_initial_gd_percentage:.1%}".replace(".", ","),
+    )
+    row2 = st.columns(4)
+    row2[0].metric("Com veículo", f"{with_vehicle:,}".replace(",", "."))
+    row2[1].metric("Com wallbox", f"{with_wallbox:,}".replace(",", "."))
+    row2[2].metric("Municípios atendidos", f"{cities:,}".replace(",", "."))
+    row2[3].metric("UCs removidas", f"{removed:,}".replace(",", "."))
     st.markdown("#### Comparativos consolidados")
     left, right = st.columns([1, 1.25])
     status = count_table(frame, "SITUACAO_ATUAL", "Situação")
     with left:
         fig = px.pie(status, names="Situação", values="UCs", hole=.64, color_discrete_sequence=COLORS)
-        fig.update_traces(textposition="outside", textinfo="percent+label")
+        fig.update_traces(textposition="outside", textinfo="label+value")
         fig.add_annotation(text=f"<b>{total}</b><br>UCs", showarrow=False, font_size=18)
         st.plotly_chart(chart_style(fig), width="stretch", config={"displayModeBar": False})
     with right:
@@ -426,13 +468,13 @@ if not DATA_FILE.exists():
     st.stop()
 
 data = load_data(DATA_FILE.stat().st_mtime)
-filtered_data, selected_page = sidebar_filters(data)
+filtered_data, selected_page, gd_reference_date = sidebar_filters(data)
 
 if filtered_data.empty:
     title("Filtros", selected_page, "A combinação atual não retornou registros.")
     empty_state()
 elif selected_page == "Resumo executivo":
-    executive_page(filtered_data)
+    executive_page(filtered_data, gd_reference_date)
 elif selected_page == "UCs e localização":
     uc_page(filtered_data)
 elif selected_page == "Perfil dos veículos":
