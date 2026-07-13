@@ -558,35 +558,24 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
         if vehicle_population.empty:
             st.info("Nenhum fabricante encontrado para os filtros selecionados.")
         else:
-            manufacturers = (
-                vehicle_population.groupby(["FABRI_VEIC", "SITUACAO_ATUAL"])
-                .size()
-                .reset_index(name="UCs")
-                .rename(columns={"FABRI_VEIC": "Fabricante"})
-            )
-            manufacturers["Situação"] = manufacturers["SITUACAO_ATUAL"].replace(
-                {"Ativo": "Ativas", "Controle": "Controle"}
-            )
+            manufacturers = count_table(
+                vehicle_population, "FABRI_VEIC", "Fabricante"
+            ).sort_values("UCs")
             fig = px.bar(
                 manufacturers,
                 x="UCs",
                 y="Fabricante",
                 orientation="h",
                 text="UCs",
-                color="Situação",
-                barmode="stack",
-                color_discrete_map={
-                    "Ativas": "#F5821E",
-                    "Controle": "#69727D",
-                },
-                category_orders={"Situação": ["Ativas", "Controle"]},
+                color="UCs",
+                color_continuous_scale=["#FBE8D8", "#F5821E"],
             )
             fig.update_layout(
                 title="Fabricantes — UCs ativas e controle",
-                yaxis=dict(title="", categoryorder="total ascending"),
-                legend=dict(orientation="h", yanchor="bottom", y=1.01, x=0),
+                coloraxis_showscale=False,
+                yaxis_title="",
             )
-            fig.update_traces(textposition="inside", textangle=0)
+            fig.update_traces(textposition="outside")
             st.plotly_chart(
                 chart_style(fig, 520),
                 width="stretch",
@@ -803,11 +792,48 @@ def vehicle_page(frame: pd.DataFrame) -> None:
         empty_state(); return
     left, right = st.columns([1.25, 1])
     with left:
-        vehicles["Motor"] = vehicles["MOTOR_VEIC"].map(clean_label)
-        fig = px.treemap(vehicles, path=["Motor", "FABRI_VEIC"], color="Motor", color_discrete_sequence=COLORS)
-        fig.update_layout(title="Fabricantes por tipo de motor")
-        st.plotly_chart(chart_style(fig, 440), width="stretch", config={"displayModeBar": False})
+        manufacturer_vehicles = vehicles[
+            vehicles["SITUACAO_ATUAL"].isin(["Ativo", "Controle"])
+        ]
+        if manufacturer_vehicles.empty:
+            st.info("Nenhum fabricante ativo ou controle para exibir.")
+        else:
+            manufacturers = (
+                manufacturer_vehicles.groupby(["FABRI_VEIC", "SITUACAO_ATUAL"])
+                .size()
+                .reset_index(name="UCs")
+                .rename(columns={"FABRI_VEIC": "Fabricante"})
+            )
+            manufacturers["Situação"] = manufacturers["SITUACAO_ATUAL"].replace(
+                {"Ativo": "Ativas", "Controle": "Controle"}
+            )
+            fig = px.bar(
+                manufacturers,
+                x="UCs",
+                y="Fabricante",
+                color="Situação",
+                orientation="h",
+                barmode="stack",
+                text="UCs",
+                color_discrete_map={
+                    "Ativas": "#F5821E",
+                    "Controle": "#69727D",
+                },
+                category_orders={"Situação": ["Ativas", "Controle"]},
+            )
+            fig.update_traces(textposition="inside", textangle=0)
+            fig.update_layout(
+                title="Fabricantes — UCs ativas e controle",
+                yaxis=dict(title="", categoryorder="total ascending"),
+                legend=dict(orientation="h", yanchor="bottom", y=1.01, x=0),
+            )
+            st.plotly_chart(
+                chart_style(fig, 440),
+                width="stretch",
+                config={"displayModeBar": False},
+            )
     with right:
+        vehicles["Motor"] = vehicles["MOTOR_VEIC"].map(clean_label)
         comparison = vehicles.groupby(["FINALIDADE", "MOTOR_VEIC"], dropna=False).size().reset_index(name="UCs")
         comparison["Finalidade"] = comparison["FINALIDADE"].map(clean_label)
         comparison["Motor"] = comparison["MOTOR_VEIC"].map(clean_label)
