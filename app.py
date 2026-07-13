@@ -621,7 +621,7 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
             size_max=42,
             zoom=5.7,
             center={"lat": -25.35, "lon": -52.15},
-            map_style="carto-positron-nolabels",
+            map_style="carto-positron",
         )
         fig.update_traces(marker_opacity=0.76)
         parana_boundary = json.loads(
