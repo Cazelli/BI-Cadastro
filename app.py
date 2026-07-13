@@ -874,6 +874,56 @@ def vehicle_page(frame: pd.DataFrame) -> None:
                 config={"displayModeBar": False},
             )
 
+    for motor_value, motor_label in [
+        ("Eletrico", "elétricos"),
+        ("Hibrido", "híbridos"),
+    ]:
+        with st.container():
+            model_vehicles = vehicles[
+                vehicles["SITUACAO_ATUAL"].isin(["Ativo", "Controle"])
+                & vehicles["MOTOR_VEIC"].eq(motor_value)
+                & vehicles["MODELO_VEIC"].notna()
+                & vehicles["MODELO_VEIC"].astype(str).str.strip().ne("")
+            ]
+            if model_vehicles.empty:
+                st.info(f"Nenhum modelo {motor_label} para exibir.")
+                continue
+            models = (
+                model_vehicles.groupby(["MODELO_VEIC", "SITUACAO_ATUAL"])
+                .size()
+                .reset_index(name="UCs")
+                .rename(columns={"MODELO_VEIC": "Modelo"})
+            )
+            models["Situação"] = models["SITUACAO_ATUAL"].replace(
+                {"Ativo": "Ativas", "Controle": "Controle"}
+            )
+            model_chart_height = max(480, 110 + 24 * models["Modelo"].nunique())
+            fig = px.bar(
+                models,
+                x="UCs",
+                y="Modelo",
+                color="Situação",
+                orientation="h",
+                barmode="stack",
+                text="UCs",
+                color_discrete_map={
+                    "Ativas": "#F5821E",
+                    "Controle": "#69727D",
+                },
+                category_orders={"Situação": ["Ativas", "Controle"]},
+            )
+            fig.update_traces(textposition="inside", textangle=0)
+            fig.update_layout(
+                title=f"Modelos {motor_label} — UCs ativas e controle",
+                yaxis=dict(title="", categoryorder="total ascending"),
+                legend=dict(orientation="h", yanchor="bottom", y=1.01, x=0),
+            )
+            st.plotly_chart(
+                chart_style(fig, model_chart_height),
+                width="stretch",
+                config={"displayModeBar": False},
+            )
+
 
 def charging_page(frame: pd.DataFrame) -> None:
     title("Equipamentos", "Infraestrutura de recarga", "Compare a presença de wallbox e carregador portátil por perfil de veículo.")
