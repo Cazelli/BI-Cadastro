@@ -436,5 +436,3 @@ elif selected_page == "Geração distribuída":
     gd_page(filtered_data)
 else:
     quality_page(filtered_data)
-
-
