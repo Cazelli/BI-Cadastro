@@ -293,6 +293,10 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
     with_vehicle = int(frame["FABRI_VEIC"].notna().sum())
     with_wallbox = int(frame["STATUS_WALLBOX"].eq("S").sum())
     gd_started_before_project = (
+        frame["GD_BENE_INIC"].lt(PROJECT_START_DATE)
+        | frame["DATA_INICIO_GD"].lt(PROJECT_START_DATE)
+    )
+    gd_started_before_reference = (
         frame["GD_BENE_INIC"].lt(gd_reference_date)
         | frame["DATA_INICIO_GD"].lt(gd_reference_date)
     )
@@ -302,17 +306,30 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
         & frame["GD_BENE_INIC"].eq(frame["GD_BENE_FIM"])
     )
     valid_initial_gd = gd_started_before_project & ~same_benefit_start_and_end
+    valid_filtered_gd = gd_started_before_reference & ~same_benefit_start_and_end
     active_initial_gd = int(
         (frame["SITUACAO_INICIAL"].eq("Ativo") & valid_initial_gd).sum()
     )
     control_initial_gd = int(
         (frame["SITUACAO_INICIAL"].eq("Controle") & valid_initial_gd).sum()
     )
+    active_filtered_gd = int(
+        (frame["SITUACAO_INICIAL"].eq("Ativo") & valid_filtered_gd).sum()
+    )
+    control_filtered_gd = int(
+        (frame["SITUACAO_INICIAL"].eq("Controle") & valid_filtered_gd).sum()
+    )
     active_initial_gd_percentage = (
         active_initial_gd / active_initial if active_initial else 0
     )
     control_initial_gd_percentage = (
         control_initial_gd / control_initial if control_initial else 0
+    )
+    active_filtered_gd_percentage = (
+        active_filtered_gd / active_initial if active_initial else 0
+    )
+    control_filtered_gd_percentage = (
+        control_filtered_gd / control_initial if control_initial else 0
     )
     cities = int(frame["LOCAL"].nunique())
     removed = int(frame["SITUACAO_ATUAL"].eq("Removido").sum())
@@ -323,15 +340,34 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
     row1[2].metric("UCs controle inicial", f"{control_initial:,}".replace(",", "."))
     row1[3].metric("UCs controle", f"{control:,}".replace(",", "."))
     row1[4].metric("UCs reserva", f"{reserve:,}".replace(",", "."))
-    st.caption(f"GD inicial na data de referência: {gd_reference_date:%d/%m/%Y}")
-    gd_row = st.columns(2)
+    st.caption(
+        f"GD inicial em {PROJECT_START_DATE:%d/%m/%Y} · "
+        f"GD filtrada em {gd_reference_date:%d/%m/%Y}"
+    )
+    gd_row = st.columns(4)
     gd_row[0].metric(
         "GD inicial — ativo",
+        f"{active_initial_gd:,}".replace(",", "."),
         f"{active_initial_gd_percentage:.1%}".replace(".", ","),
+        delta_color="normal",
     )
     gd_row[1].metric(
         "GD inicial — controle",
+        f"{control_initial_gd:,}".replace(",", "."),
         f"{control_initial_gd_percentage:.1%}".replace(".", ","),
+        delta_color="normal",
+    )
+    gd_row[2].metric(
+        "GD filtrada — ativo",
+        f"{active_filtered_gd:,}".replace(",", "."),
+        f"{active_filtered_gd_percentage:.1%}".replace(".", ","),
+        delta_color="normal",
+    )
+    gd_row[3].metric(
+        "GD filtrada — controle",
+        f"{control_filtered_gd:,}".replace(",", "."),
+        f"{control_filtered_gd_percentage:.1%}".replace(".", ","),
+        delta_color="normal",
     )
     row2 = st.columns(4)
     row2[0].metric("Com veículo", f"{with_vehicle:,}".replace(",", "."))
