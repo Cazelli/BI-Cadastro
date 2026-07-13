@@ -219,12 +219,15 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
 
     gd_reference_date = PROJECT_START_DATE
     if page == "Resumo executivo":
-        st.sidebar.markdown("### Referência da GD inicial")
+        st.sidebar.markdown("### Data de referência")
         gd_reference_date = pd.Timestamp(
             st.sidebar.date_input(
                 "Data de referência",
                 value=PROJECT_START_DATE.date(),
-                help="São consideradas as datas de início de GD anteriores à data selecionada.",
+                help=(
+                    "Recalcula a GD inicial e a situação das UCs na data "
+                    "selecionada."
+                ),
             )
         )
 
@@ -278,7 +281,6 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
         "Grandes números",
         "Indicadores principais das unidades consumidoras conforme os filtros ativos.",
     )
-    total = len(frame)
     active_initial = int(frame["SITUACAO_INICIAL"].eq("Ativo").sum())
     active = int(frame["SITUACAO_ATUAL"].eq("Ativo").sum())
     control_initial = int(frame["SITUACAO_INICIAL"].eq("Controle").sum())
@@ -334,11 +336,49 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
     row2[3].metric("UCs removidas", f"{removed:,}".replace(",", "."))
     st.markdown("#### Comparativos consolidados")
     left, right = st.columns([1, 1.25])
-    status = count_table(frame, "SITUACAO_ATUAL", "Situação")
+    status_population = frame[
+        frame["SITUACAO_INICIAL"].isin(["Ativo", "Controle"])
+    ].copy()
+    removed_by_reference_date = (
+        status_population["DT_DISTRATO"].notna()
+        & status_population["DT_DISTRATO"].le(gd_reference_date)
+    )
+    status_population["Situação na referência"] = status_population[
+        "SITUACAO_INICIAL"
+    ]
+    status_population.loc[
+        removed_by_reference_date, "Situação na referência"
+    ] = (
+        "Removido "
+        + status_population.loc[removed_by_reference_date, "SITUACAO_INICIAL"]
+    )
+    status_order = ["Ativo", "Controle", "Removido Ativo", "Removido Controle"]
+    status_counts = status_population["Situação na referência"].value_counts()
+    status = pd.DataFrame(
+        {
+            "Situação": status_order,
+            "UCs": [int(status_counts.get(label, 0)) for label in status_order],
+        }
+    )
+    status_total = int(status["UCs"].sum())
     with left:
-        fig = px.pie(status, names="Situação", values="UCs", hole=.64, color_discrete_sequence=COLORS)
+        fig = px.pie(
+            status,
+            names="Situação",
+            values="UCs",
+            hole=.64,
+            color="Situação",
+            color_discrete_map={
+                "Ativo": "#F5821E",
+                "Controle": "#FDB422",
+                "Removido Ativo": "#3F444B",
+                "Removido Controle": "#69727D",
+            },
+            category_orders={"Situação": status_order},
+        )
         fig.update_traces(textposition="outside", textinfo="label+value")
-        fig.add_annotation(text=f"<b>{total}</b><br>UCs", showarrow=False, font_size=18)
+        fig.update_layout(title=f"Situação em {gd_reference_date:%d/%m/%Y}")
+        fig.add_annotation(text=f"<b>{status_total}</b><br>UCs", showarrow=False, font_size=18)
         st.plotly_chart(chart_style(fig), width="stretch", config={"displayModeBar": False})
     with right:
         cities_df = count_table(frame, "LOCAL", "Município").head(10).sort_values("UCs")
