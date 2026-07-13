@@ -558,24 +558,35 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
         if vehicle_population.empty:
             st.info("Nenhum fabricante encontrado para os filtros selecionados.")
         else:
-            manufacturers = count_table(
-                vehicle_population, "FABRI_VEIC", "Fabricante"
-            ).sort_values("UCs")
+            manufacturers = (
+                vehicle_population.groupby(["FABRI_VEIC", "SITUACAO_ATUAL"])
+                .size()
+                .reset_index(name="UCs")
+                .rename(columns={"FABRI_VEIC": "Fabricante"})
+            )
+            manufacturers["Situação"] = manufacturers["SITUACAO_ATUAL"].replace(
+                {"Ativo": "Ativas", "Controle": "Controle"}
+            )
             fig = px.bar(
                 manufacturers,
                 x="UCs",
                 y="Fabricante",
                 orientation="h",
                 text="UCs",
-                color="UCs",
-                color_continuous_scale=["#FBE8D8", "#F5821E"],
+                color="Situação",
+                barmode="stack",
+                color_discrete_map={
+                    "Ativas": "#F5821E",
+                    "Controle": "#69727D",
+                },
+                category_orders={"Situação": ["Ativas", "Controle"]},
             )
             fig.update_layout(
                 title="Fabricantes — UCs ativas e controle",
-                coloraxis_showscale=False,
-                yaxis_title="",
+                yaxis=dict(title="", categoryorder="total ascending"),
+                legend=dict(orientation="h", yanchor="bottom", y=1.01, x=0),
             )
-            fig.update_traces(textposition="outside")
+            fig.update_traces(textposition="inside", textangle=0)
             st.plotly_chart(
                 chart_style(fig, 520),
                 width="stretch",
