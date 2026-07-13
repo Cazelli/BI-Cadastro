@@ -437,4 +437,4 @@ elif selected_page == "Geração distribuída":
 else:
     quality_page(filtered_data)
 
-st.caption(f"Fonte: {DATA_FILE.name} · Atualização automática após substituição do arquivo")
+
