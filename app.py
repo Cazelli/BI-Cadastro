@@ -695,13 +695,8 @@ def uc_page(frame: pd.DataFrame) -> None:
         empty_state()
         return
 
-    city_totals = (
-        city_status.groupby("Município")["UCs"]
-        .sum()
-        .sort_values()
-    )
-    municipality_order = city_totals.index.tolist()
-    chart_height = max(620, 115 + 22 * len(municipality_order))
+    city_totals = city_status.groupby("Município")["UCs"].sum()
+    chart_height = max(620, 115 + 30 * len(city_totals))
     fig = px.bar(
         city_status,
         x="UCs",
@@ -712,21 +707,21 @@ def uc_page(frame: pd.DataFrame) -> None:
         text="UCs",
         color_discrete_map=status_colors,
         category_orders={
-            "Município": municipality_order,
             "Situação": ["Ativas", "Controle", "Reserva"],
         },
     )
-    fig.update_traces(textposition="inside")
+    fig.update_traces(textposition="inside", textangle=0)
     fig.update_layout(
         title="Todos os municípios por situação",
         legend=dict(orientation="h", yanchor="bottom", y=1.01, x=0),
-        yaxis_title="",
+        yaxis=dict(title="", categoryorder="total ascending"),
     )
-    st.plotly_chart(
-        chart_style(fig, chart_height),
-        width="stretch",
-        config={"displayModeBar": False},
-    )
+    with st.container(height=600, border=False):
+        st.plotly_chart(
+            chart_style(fig, chart_height),
+            width="stretch",
+            config={"displayModeBar": False},
+        )
 
     st.markdown("#### Mapas por situação")
     municipality_coordinates, parana_boundary = load_map_assets()
@@ -738,7 +733,9 @@ def uc_page(frame: pd.DataFrame) -> None:
     )
     maximum_city_count = int(mapped_status["UCs"].max()) if not mapped_status.empty else 1
     common_size_reference = 2 * maximum_city_count / (38 ** 2)
-    map_columns = st.columns(3)
+    first_map_row = st.columns(2)
+    second_map_row = st.columns([1, 2, 1])
+    map_columns = [first_map_row[0], first_map_row[1], second_map_row[1]]
 
     for column, situation in zip(
         map_columns, ["Ativas", "Controle", "Reserva"]
