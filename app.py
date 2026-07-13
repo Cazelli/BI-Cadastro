@@ -227,10 +227,6 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
             "Situação atual", options_for(frame, "SITUACAO_ATUAL")
         ),
         "LOCAL": st.sidebar.multiselect("Município", options_for(frame, "LOCAL")),
-        "TIPO_FASE": st.sidebar.multiselect(
-            "Tipo de fase", options_for(frame, "TIPO_FASE")
-        ),
-        "ETAPA": st.sidebar.multiselect("Etapa", options_for(frame, "ETAPA")),
         "FINALIDADE": st.sidebar.multiselect(
             "Finalidade", options_for(frame, "FINALIDADE")
         ),
