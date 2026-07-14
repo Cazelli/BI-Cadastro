@@ -422,8 +422,8 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
     )
     row1 = st.columns(5)
     row1[0].metric("UCs — tratamento", f"{active:,}".replace(",", "."))
-    row1[1].metric("UCs controle", f"{control:,}".replace(",", "."))
-    row1[2].metric("UCs reserva", f"{reserve:,}".replace(",", "."))
+    row1[1].metric("UCs — controle", f"{control:,}".replace(",", "."))
+    row1[2].metric("UCs — reserva", f"{reserve:,}".replace(",", "."))
     row1[3].metric(
         "UCs removidas — controle",
         f"{removed_control:,}".replace(",", "."),
