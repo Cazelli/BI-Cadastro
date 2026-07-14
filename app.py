@@ -67,6 +67,11 @@ def inject_css() -> None:
         .brand-mark { font-size:2.2rem; font-weight:850; color:#151C21; }
         .brand-mark span { color:#F5821E; }
         .filter-caption { color:#C8CDD0 !important; font-size:.8rem; }
+        .data-disclaimer {
+            margin:-10px 0 24px 0; padding:10px 14px;
+            border-left:4px solid #FDB422; border-radius:8px;
+            background:#FFF7E6; color:#4A3B20; font-size:.86rem;
+        }
         div[data-testid="stPlotlyChart"] { background:#fff; border:1px solid #E1E3E5;
             border-radius:14px; padding:8px; box-shadow:0 8px 24px rgba(21,28,33,.06); }
         .brand-banner {
@@ -135,6 +140,43 @@ def render_brand_banner() -> None:
             </div>
         </div>
         """,
+        unsafe_allow_html=True,
+    )
+
+
+def latest_report_date() -> pd.Timestamp | None:
+    report_dates = []
+    data_directory = Path(__file__).with_name("data")
+    for path in data_directory.glob("mdm-sandbox_clientes_novo-*.csv"):
+        date_text = path.stem.rsplit("-", maxsplit=1)[-1]
+        parsed = pd.to_datetime(date_text, format="%Y%m%d", errors="coerce")
+        if pd.notna(parsed):
+            report_dates.append(parsed)
+    if report_dates:
+        return max(report_dates)
+    if UPDATE_SUMMARY_FILE.exists():
+        try:
+            summary = json.loads(UPDATE_SUMMARY_FILE.read_text(encoding="utf-8"))
+            parsed = pd.to_datetime(
+                summary.get("periodo_fim"), format="%Y%m%d", errors="coerce"
+            )
+            if pd.notna(parsed):
+                return parsed
+        except (OSError, json.JSONDecodeError):
+            pass
+    return None
+
+
+def render_data_disclaimer() -> None:
+    report_date = latest_report_date()
+    formatted_date = (
+        f"{report_date:%d-%m-%Y}" if report_date is not None else "não identificada"
+    )
+    st.markdown(
+        '<div class="data-disclaimer">'
+        f"Dados atualizados à partir do relatório feito em {formatted_date}, "
+        "e no arquivo Amostra Final - Tarifa Mobiflex -02.07.2026"
+        "</div>",
         unsafe_allow_html=True,
     )
 
@@ -1526,6 +1568,8 @@ render_brand_banner()
 if not st.session_state.get("authenticated", False):
     login_screen()
     st.stop()
+
+render_data_disclaimer()
 
 if not DATA_FILE.exists():
     st.error(f"Arquivo de dados não encontrado: {DATA_FILE.name}")
