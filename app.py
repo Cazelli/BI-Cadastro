@@ -1158,12 +1158,15 @@ def charging_page(frame: pd.DataFrame) -> None:
                 barmode="group",
                 text="UCs",
                 color_discrete_map=status_colors,
-                category_orders={"Situação": status_order},
+                # Plotly positions the first horizontal grouped trace below the
+                # second one, so Controle comes first to keep Tratamento on top.
+                category_orders={"Situação": ["Controle", "Tratamento"]},
             )
             fig.update_traces(textposition="outside")
             fig.update_layout(
                 title=f"Principais marcas — {equipment_label}",
                 yaxis=dict(title="", categoryorder="total ascending"),
+                legend=dict(traceorder="reversed"),
             )
             st.plotly_chart(
                 chart_style(fig, 500),
