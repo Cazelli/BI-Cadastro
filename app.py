@@ -1157,6 +1157,14 @@ def charging_page(frame: pd.DataFrame) -> None:
     st.caption("Os gráficos de marcas exibem as dez mais frequentes em cada equipamento.")
 
     st.markdown("#### Potência declarada dos equipamentos")
+    power_order = [
+        "menor que 4 kW",
+        "entre 4 e 8 kW",
+        "entre 8 e 12 kW",
+        "entre 12 e 16 kW",
+        "maior que 16 kW",
+        "Não sei",
+    ]
     power_records = []
     for source_column, equipment_label in [
         ("POT_WALLB", "Wallbox"),
@@ -1188,7 +1196,11 @@ def charging_page(frame: pd.DataFrame) -> None:
             barmode="group",
             text="UCs",
             color_discrete_map=status_colors,
-            category_orders={"Situação": status_order},
+            category_orders={
+                "Potência": power_order,
+                "Situação": status_order,
+                "Equipamento": ["Wallbox", "Portátil"],
+            },
         )
         fig.update_traces(textposition="outside")
         fig.for_each_annotation(
