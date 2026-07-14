@@ -204,6 +204,17 @@ def clean_label(value: object) -> str:
     return "Não informado" if pd.isna(value) or str(value).strip() == "" else str(value)
 
 
+def status_display_label(value: object) -> str:
+    return {
+        "Ativo": "Tratamento",
+        "Ativos": "Tratamento",
+        "Ativa": "Tratamento",
+        "Ativas": "Tratamento",
+        "Removido Ativo": "Removido Tratamento",
+        "Removida Ativa": "Removida Tratamento",
+    }.get(str(value), str(value))
+
+
 def options_for(frame: pd.DataFrame, column: str) -> list[str]:
     return sorted(frame[column].dropna().astype(str).unique().tolist())
 
@@ -254,6 +265,7 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
         "SITUACAO_ATUAL": st.sidebar.multiselect(
             "Situação atual",
             options_for(reference_frame, "SITUACAO_ATUAL"),
+            format_func=status_display_label,
             help="Situação calculada conforme a data de referência e o DT_DISTRATO.",
         ),
         "LOCAL": st.sidebar.multiselect(
@@ -316,7 +328,7 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
     title(
         "Visão consolidada",
         "",
-        "Indicadores principais das unidades consumidoras conforme os filtros ativos.",
+        "Indicadores principais das unidades consumidoras conforme os filtros selecionados.",
     )
     active_initial = int(frame["SITUACAO_INICIAL"].eq("Ativo").sum())
     active = int(frame["SITUACAO_ATUAL"].eq("Ativo").sum())
@@ -463,7 +475,7 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
         f"{control_purpose_missing_percentage:.1%}".replace(".", ","),
         delta_color="normal",
     )
-    st.caption("Dados de Veículos e Carregadores com filtros ativos")
+    st.caption("Dados de Veículos e Carregadores com filtros selecionados")
     active_equipment_row = st.columns(3)
     active_equipment_row[0].metric(
         "UCs com veículo — tratamento",
@@ -1010,6 +1022,7 @@ def quality_page(frame: pd.DataFrame) -> None:
     st.markdown("#### Consulta operacional (sem dados pessoais)")
     public_columns = ["NUM_UC", "NUM_UC_ANEEL", "SITUACAO_ATUAL", "SITUACAO_UC", "LOCAL", "CLASSE", "TIPO_FASE", "ETAPA", "DT_ATIVACAO", "FINALIDADE", "FABRI_VEIC", "MODELO_VEIC", "MOTOR_VEIC", "STATUS_WALLBOX", "STATUS_PORTATIL", "TIPO_GD_GERA"]
     view = frame[public_columns].copy()
+    view["SITUACAO_ATUAL"] = view["SITUACAO_ATUAL"].map(status_display_label)
     for column in ["NUM_UC", "NUM_UC_ANEEL"]:
         view[column] = view[column].apply(lambda value: "" if pd.isna(value) else str(int(value)))
     st.dataframe(view, width="stretch", hide_index=True, height=410)
