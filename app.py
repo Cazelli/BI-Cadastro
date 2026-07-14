@@ -464,38 +464,38 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
     st.caption("Finalidade por situação atual")
     active_purpose_row = st.columns(3)
     active_purpose_row[0].metric(
-        "Finalidade pessoal — tratamento",
+        "Uso Pessoal — tratamento",
         f"{active_personal:,}".replace(",", "."),
         f"{active_personal_percentage:.1%}".replace(".", ","),
         delta_color="normal",
     )
     active_purpose_row[1].metric(
-        "Finalidade trabalho — tratamento",
+        "Trabalho — tratamento",
         f"{active_work:,}".replace(",", "."),
         f"{active_work_percentage:.1%}".replace(".", ","),
         delta_color="normal",
     )
     active_purpose_row[2].metric(
-        "Finalidade não informada — tratamento",
+        "Não informada — tratamento",
         f"{active_purpose_missing:,}".replace(",", "."),
         f"{active_purpose_missing_percentage:.1%}".replace(".", ","),
         delta_color="normal",
     )
     control_purpose_row = st.columns(3)
     control_purpose_row[0].metric(
-        "Finalidade pessoal — controle",
+        "Uso Pessoal — controle",
         f"{control_personal:,}".replace(",", "."),
         f"{control_personal_percentage:.1%}".replace(".", ","),
         delta_color="normal",
     )
     control_purpose_row[1].metric(
-        "Finalidade trabalho — controle",
+        "Trabalho — controle",
         f"{control_work:,}".replace(",", "."),
         f"{control_work_percentage:.1%}".replace(".", ","),
         delta_color="normal",
     )
     control_purpose_row[2].metric(
-        "Finalidade não informada — controle",
+        "Não informada — controle",
         f"{control_purpose_missing:,}".replace(",", "."),
         f"{control_purpose_missing_percentage:.1%}".replace(".", ","),
         delta_color="normal",
