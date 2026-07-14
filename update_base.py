@@ -132,7 +132,9 @@ FIELD_MAP: dict[str, tuple[str, Normalizer]] = {
     "municipio": ("LOCAL", upper),
     "inicio_beneficiaria": ("GD_BENE_INIC", iso_date),
     "fim_benificiaria": ("GD_BENE_FIM", iso_date),
-    "modalidade_geracao": ("TIPO_GD_BENE", upper),
+    # TIPO_GD_BENE is not modalidade_geracao. This optional source column will
+    # only be used once it is delivered explicitly in a future report.
+    "tipo_gd_bene": ("TIPO_GD_BENE", upper),
     "data_inicio_gd": ("DATA_INICIO_GD", iso_date),
     "data_fim_gd": ("DATA_FIM_GD", iso_date),
     "tipo_gd": ("TIPO_GD_GERA", upper),
@@ -140,6 +142,7 @@ FIELD_MAP: dict[str, tuple[str, Normalizer]] = {
     "tarifa_branca": ("TARIFA_BRANCA", yes_no),
     "baixa_renda": ("TARIFA_SOCIAL", social_tariff),
 }
+OPTIONAL_SOURCE_COLUMNS = {"tipo_gd_bene"}
 TARGET_NORMALIZERS: dict[str, Normalizer] = {
     target: (
         upper
@@ -261,7 +264,8 @@ def process_report(report: Path, force: bool = False) -> dict:
     incoming.columns = [text(column).lower() for column in incoming.columns]
 
     validate_columns(base, {"NUM_UC", "SITUACAO_INICIAL", *TARGET_NORMALIZERS}, "base")
-    validate_columns(incoming, {"uc", *FIELD_MAP}, report.name)
+    required_sources = set(FIELD_MAP).difference(OPTIONAL_SOURCE_COLUMNS)
+    validate_columns(incoming, {"uc", *required_sources}, report.name)
 
     base["NUM_UC"] = base["NUM_UC"].map(identifier)
     incoming["uc"] = incoming["uc"].map(identifier)
@@ -290,12 +294,15 @@ def process_report(report: Path, force: bool = False) -> dict:
         converted = {
             target: normalizer(source_row[source])
             for source, (target, normalizer) in FIELD_MAP.items()
+            if source in incoming.columns
         }
         matched_ucs += 1
         matched_uc_ids.add(uc)
         index = base_index[uc]
         group = group_label(base.at[index, "SITUACAO_INICIAL"])
         for field in MONITORED_COLUMNS:
+            if field not in converted:
+                continue
             normalizer = TARGET_NORMALIZERS[field]
             previous = normalizer(base.at[index, field])
             new = converted[field]
