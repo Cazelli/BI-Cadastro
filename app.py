@@ -421,15 +421,15 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
         control_filtered_gd / control_initial if control_initial else 0
     )
     row1 = st.columns(5)
-    row1[0].metric("UCs — tratamento", f"{active:,}".replace(",", "."))
-    row1[1].metric("UCs — controle", f"{control:,}".replace(",", "."))
-    row1[2].metric("UCs — reserva", f"{reserve:,}".replace(",", "."))
+    row1[0].metric("UCs — Tratamento", f"{active:,}".replace(",", "."))
+    row1[1].metric("UCs — Controle", f"{control:,}".replace(",", "."))
+    row1[2].metric("UCs — Reserva", f"{reserve:,}".replace(",", "."))
     row1[3].metric(
-        "UCs removidas — controle",
+        "UCs removidas — Controle",
         f"{removed_control:,}".replace(",", "."),
     )
     row1[4].metric(
-        "UCs removidas — tratamento",
+        "UCs removidas — Tratamento",
         f"{removed_treatment:,}".replace(",", "."),
     )
     st.caption(
@@ -464,38 +464,38 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
     st.caption("Finalidade por situação atual")
     active_purpose_row = st.columns(3)
     active_purpose_row[0].metric(
-        "Uso Pessoal — tratamento",
+        "Uso Pessoal — Tratamento",
         f"{active_personal:,}".replace(",", "."),
         f"{active_personal_percentage:.1%}".replace(".", ","),
         delta_color="normal",
     )
     active_purpose_row[1].metric(
-        "Trabalho — tratamento",
+        "Trabalho — Tratamento",
         f"{active_work:,}".replace(",", "."),
         f"{active_work_percentage:.1%}".replace(".", ","),
         delta_color="normal",
     )
     active_purpose_row[2].metric(
-        "Não informada — tratamento",
+        "Não informada — Tratamento",
         f"{active_purpose_missing:,}".replace(",", "."),
         f"{active_purpose_missing_percentage:.1%}".replace(".", ","),
         delta_color="normal",
     )
     control_purpose_row = st.columns(3)
     control_purpose_row[0].metric(
-        "Uso Pessoal — controle",
+        "Uso Pessoal — Controle",
         f"{control_personal:,}".replace(",", "."),
         f"{control_personal_percentage:.1%}".replace(".", ","),
         delta_color="normal",
     )
     control_purpose_row[1].metric(
-        "Trabalho — controle",
+        "Trabalho — Controle",
         f"{control_work:,}".replace(",", "."),
         f"{control_work_percentage:.1%}".replace(".", ","),
         delta_color="normal",
     )
     control_purpose_row[2].metric(
-        "Não informada — controle",
+        "Não informada — Controle",
         f"{control_purpose_missing:,}".replace(",", "."),
         f"{control_purpose_missing_percentage:.1%}".replace(".", ","),
         delta_color="normal",
@@ -503,28 +503,28 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
     st.caption("Dados de Veículos e Carregadores com filtros selecionados")
     active_equipment_row = st.columns(3)
     active_equipment_row[0].metric(
-        "UCs com veículo — tratamento",
+        "UCs com veículo — Tratamento",
         f"{active_with_vehicle:,}".replace(",", "."),
     )
     active_equipment_row[1].metric(
-        "UCs com wallbox — tratamento",
+        "UCs com wallbox — Tratamento",
         f"{active_with_wallbox:,}".replace(",", "."),
     )
     active_equipment_row[2].metric(
-        "UCs com portátil — tratamento",
+        "UCs com portátil — Tratamento",
         f"{active_with_portable:,}".replace(",", "."),
     )
     control_equipment_row = st.columns(3)
     control_equipment_row[0].metric(
-        "UCs com veículo — controle",
+        "UCs com veículo — Controle",
         f"{control_with_vehicle:,}".replace(",", "."),
     )
     control_equipment_row[1].metric(
-        "UCs com wallbox — controle",
+        "UCs com wallbox — Controle",
         f"{control_with_wallbox:,}".replace(",", "."),
     )
     control_equipment_row[2].metric(
-        "UCs com portátil — controle",
+        "UCs com portátil — Controle",
         f"{control_with_portable:,}".replace(",", "."),
     )
     st.markdown("#### Comparativos consolidados")
