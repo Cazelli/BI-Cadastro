@@ -1037,6 +1037,18 @@ def charging_page(frame: pd.DataFrame) -> None:
                         "UCs": int(count),
                     }
                 )
+        records.append(
+            {
+                "Equipamento": "Ambos",
+                "Disponibilidade": "Sim",
+                "UCs": int(
+                    (
+                        situation_frame["STATUS_WALLBOX"].eq("S")
+                        & situation_frame["STATUS_PORTATIL"].eq("S")
+                    ).sum()
+                ),
+            }
+        )
         with chart_column:
             if not records:
                 st.info(f"Nenhuma UC em {situation.lower()} para exibir.")
