@@ -224,7 +224,7 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
     page = st.sidebar.radio(
         "Navegação",
         [
-            "Resumo executivo",
+            "Geral",
             "UCs e localização",
             "Perfil dos veículos",
             "Infraestrutura de recarga",
