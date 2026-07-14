@@ -261,11 +261,14 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
     )
     reference_frame.loc[removed_by_reference_date, "SITUACAO_ATUAL"] = "Removido"
 
+    status_options = options_for(reference_frame, "SITUACAO_ATUAL")
+    if "Ativo" in status_options:
+        status_options.insert(0, "Tratamento")
+
     filters = {
         "SITUACAO_ATUAL": st.sidebar.multiselect(
             "Situação atual",
-            options_for(reference_frame, "SITUACAO_ATUAL"),
-            format_func=status_display_label,
+            status_options,
             help="Situação calculada conforme a data de referência e o DT_DISTRATO.",
         ),
         "LOCAL": st.sidebar.multiselect(
@@ -282,7 +285,13 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
     filtered = reference_frame.copy()
     for column, chosen in filters.items():
         if chosen:
-            filtered = filtered[filtered[column].astype(str).isin(chosen)]
+            source_values = chosen
+            if column == "SITUACAO_ATUAL":
+                source_values = [
+                    "Ativo" if value == "Tratamento" else value
+                    for value in chosen
+                ]
+            filtered = filtered[filtered[column].astype(str).isin(source_values)]
 
     st.sidebar.divider()
     st.sidebar.metric("UCs na seleção", f"{len(filtered):,}".replace(",", "."))
