@@ -1324,24 +1324,114 @@ def charging_page(frame: pd.DataFrame) -> None:
 
 
 def gd_page(frame: pd.DataFrame) -> None:
-    title("Energia", "Geração distribuída", "Compare os tipos de GD e a evolução do início dos benefícios na base cadastrada.")
-    gd = frame[frame["TIPO_GD_GERA"].notna()].copy()
-    if gd.empty:
-        empty_state(); return
-    left, right = st.columns([1, 1.3])
-    with left:
-        types = count_table(gd, "TIPO_GD_GERA", "Tipo de GD")
-        fig = px.pie(types, names="Tipo de GD", values="UCs", color_discrete_sequence=["#F5821E", "#FDB422"], hole=.42)
-        fig.update_traces(textinfo="label+value+percent")
-        fig.update_layout(title="Composição por tipo de GD")
-        st.plotly_chart(chart_style(fig, 430), width="stretch", config={"displayModeBar": False})
-    with right:
-        dated = gd.dropna(subset=["DATA_INICIO_GD"]).copy()
-        dated["Ano"] = dated["DATA_INICIO_GD"].dt.year
-        evolution = dated.groupby(["Ano", "TIPO_GD_GERA"]).size().reset_index(name="Novas UCs")
-        fig = px.area(evolution, x="Ano", y="Novas UCs", color="TIPO_GD_GERA", markers=True, color_discrete_sequence=["#F5821E", "#FDB422"])
-        fig.update_layout(title="Evolução anual do início da GD", xaxis=dict(dtick=1))
-        st.plotly_chart(chart_style(fig, 430), width="stretch", config={"displayModeBar": False})
+    title(
+        "Energia",
+        "Geração distribuída",
+        "Compare a composição e os vínculos de GD entre Tratamento e Controle.",
+    )
+    status_labels = {"Ativo": "Tratamento", "Controle": "Controle"}
+    population = frame[frame["SITUACAO_ATUAL"].isin(status_labels)].copy()
+    if population.empty:
+        st.info("Nenhuma UC em tratamento ou controle para comparar.")
+        return
+    population["Situação"] = population["SITUACAO_ATUAL"].replace(status_labels)
+    status_order = ["Tratamento", "Controle"]
+
+    st.markdown("#### Composição por tipo de GD")
+    composition_columns = st.columns(2)
+    for chart_column, situation in zip(composition_columns, status_order):
+        situation_frame = population[population["Situação"].eq(situation)]
+        typed_gd = situation_frame[
+            situation_frame["TIPO_GD_GERA"].notna()
+            & situation_frame["TIPO_GD_GERA"].astype(str).str.strip().ne("")
+        ]
+        types = count_table(typed_gd, "TIPO_GD_GERA", "Tipo de GD")
+        with chart_column:
+            if types.empty:
+                st.info(f"Nenhum tipo de GD informado em {situation.lower()}.")
+                continue
+            fig = px.pie(
+                types,
+                names="Tipo de GD",
+                values="UCs",
+                hole=.45,
+                color="Tipo de GD",
+                color_discrete_map={"GDI": "#F5821E", "GDII": "#FDB422"},
+                category_orders={"Tipo de GD": ["GDI", "GDII"]},
+            )
+            fig.update_traces(textinfo="label+value+percent")
+            fig.update_layout(title=f"Composição de GD — {situation}")
+            st.plotly_chart(
+                chart_style(fig, 430),
+                width="stretch",
+                config={"displayModeBar": False},
+            )
+
+    beneficiary = (
+        population["GD_BENE_INIC"].notna()
+        | population["GD_BENE_FIM"].notna()
+        | population["TIPO_GD_BENE"].notna()
+    )
+    generator = (
+        population["DATA_INICIO_GD"].notna()
+        | population["DATA_FIM_GD"].notna()
+        | population["TIPO_GD_GERA"].notna()
+        | population["POSSUI_GD_CLIENTE"].eq("S")
+    )
+    population["Possui GD beneficiária"] = beneficiary
+    population["Possui GD geradora"] = generator
+
+    st.markdown("#### Relação da UC com a GD")
+    profile_columns = st.columns(2)
+    profile_order = [
+        "Somente GD beneficiária",
+        "Somente GD geradora",
+        "Ambas",
+    ]
+    profile_colors = {
+        "Somente GD beneficiária": "#F5821E",
+        "Somente GD geradora": "#69727D",
+        "Ambas": "#FDB422",
+    }
+    for chart_column, situation in zip(profile_columns, status_order):
+        situation_frame = population[population["Situação"].eq(situation)]
+        has_beneficiary = situation_frame["Possui GD beneficiária"]
+        has_generator = situation_frame["Possui GD geradora"]
+        profile_data = pd.DataFrame(
+            {
+                "Perfil": profile_order,
+                "UCs": [
+                    int((has_beneficiary & ~has_generator).sum()),
+                    int((~has_beneficiary & has_generator).sum()),
+                    int((has_beneficiary & has_generator).sum()),
+                ],
+            }
+        )
+        with chart_column:
+            if situation_frame.empty:
+                st.info(f"Nenhuma UC em {situation.lower()} para exibir.")
+                continue
+            fig = px.bar(
+                profile_data,
+                x="Perfil",
+                y="UCs",
+                color="Perfil",
+                text="UCs",
+                color_discrete_map=profile_colors,
+                category_orders={"Perfil": profile_order},
+            )
+            fig.update_traces(textposition="outside", showlegend=False)
+            fig.update_layout(title=f"Vínculo com GD — {situation}")
+            st.plotly_chart(
+                chart_style(fig, 430),
+                width="stretch",
+                config={"displayModeBar": False},
+            )
+    st.caption(
+        "GD beneficiária considera GD_BENE_INIC, GD_BENE_FIM ou TIPO_GD_BENE. "
+        "GD geradora considera DATA_INICIO_GD, DATA_FIM_GD, TIPO_GD_GERA ou "
+        "POSSUI_GD_CLIENTE = S."
+    )
 
 
 def update_report_page(frame: pd.DataFrame) -> None:
