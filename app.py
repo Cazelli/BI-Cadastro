@@ -997,32 +997,256 @@ def vehicle_page(frame: pd.DataFrame) -> None:
 
 
 def charging_page(frame: pd.DataFrame) -> None:
-    title("Equipamentos", "Infraestrutura de recarga", "Compare a presença de wallbox e carregador portátil por perfil de veículo.")
-    labels = {"S": "Sim", "N": "Não"}
-    equipment = pd.DataFrame(
-        {
-            "Equipamento": ["Wallbox", "Wallbox", "Portátil", "Portátil"],
-            "Disponibilidade": ["Sim", "Não", "Sim", "Não"],
-            "UCs": [
-                frame["STATUS_WALLBOX"].eq("S").sum(), frame["STATUS_WALLBOX"].eq("N").sum(),
-                frame["STATUS_PORTATIL"].eq("S").sum(), frame["STATUS_PORTATIL"].eq("N").sum(),
-            ],
-        }
+    title(
+        "Equipamentos",
+        "Infraestrutura de recarga",
+        "Compare disponibilidade, motorização, marcas, potência e locais de recarga entre Tratamento e Controle.",
     )
-    left, right = st.columns([1, 1.25])
-    with left:
-        fig = px.funnel(equipment, y="Equipamento", x="UCs", color="Disponibilidade", color_discrete_map={"Sim": "#F5821E", "Não": "#C8CDD0"})
-        fig.update_layout(title="Disponibilidade dos equipamentos")
-        st.plotly_chart(chart_style(fig, 430), width="stretch", config={"displayModeBar": False})
-    with right:
+    status_labels = {"Ativo": "Tratamento", "Controle": "Controle"}
+    status_colors = {"Tratamento": "#F5821E", "Controle": "#69727D"}
+    equipment_colors = {"Wallbox": "#F5821E", "Portátil": "#FDB422"}
+    population = frame[frame["SITUACAO_ATUAL"].isin(status_labels)].copy()
+    if population.empty:
+        st.info("Nenhuma UC em tratamento ou controle para comparar.")
+        return
+    population["Situação"] = population["SITUACAO_ATUAL"].replace(status_labels)
+
+    equipment_fields = [
+        ("STATUS_WALLBOX", "Wallbox"),
+        ("STATUS_PORTATIL", "Portátil"),
+    ]
+    status_order = ["Tratamento", "Controle"]
+
+    st.markdown("#### Disponibilidade dos equipamentos")
+    availability_columns = st.columns(2)
+    availability_labels = {"S": "Sim", "N": "Não"}
+    for chart_column, situation in zip(availability_columns, status_order):
+        situation_frame = population[population["Situação"].eq(situation)]
         records = []
-        for motor, group in frame.groupby(frame["MOTOR_VEIC"].map(clean_label)):
-            for column, label in [("STATUS_WALLBOX", "Wallbox"), ("STATUS_PORTATIL", "Portátil")]:
-                records.append({"Motor": motor, "Equipamento": label, "UCs com equipamento": int(group[column].eq("S").sum())})
-        compare = pd.DataFrame(records)
-        fig = px.bar(compare, x="Motor", y="UCs com equipamento", color="Equipamento", barmode="group", text_auto=True, color_discrete_sequence=["#F5821E", "#FDB422"])
-        fig.update_layout(title="Equipamentos por tipo de motor")
-        st.plotly_chart(chart_style(fig, 430), width="stretch", config={"displayModeBar": False})
+        for source_column, equipment_label in equipment_fields:
+            availability = situation_frame[source_column].map(
+                lambda value: availability_labels.get(
+                    str(value), "Não informado"
+                )
+            )
+            for label, count in availability.value_counts().items():
+                records.append(
+                    {
+                        "Equipamento": equipment_label,
+                        "Disponibilidade": label,
+                        "UCs": int(count),
+                    }
+                )
+        with chart_column:
+            if not records:
+                st.info(f"Nenhuma UC em {situation.lower()} para exibir.")
+                continue
+            availability_data = pd.DataFrame(records)
+            fig = px.bar(
+                availability_data,
+                x="Equipamento",
+                y="UCs",
+                color="Disponibilidade",
+                barmode="group",
+                text="UCs",
+                color_discrete_map={
+                    "Sim": "#F5821E",
+                    "Não": "#69727D",
+                    "Não informado": "#C8CDD0",
+                },
+                category_orders={
+                    "Disponibilidade": ["Sim", "Não", "Não informado"]
+                },
+            )
+            fig.update_traces(textposition="outside")
+            fig.update_layout(title=f"Disponibilidade — {situation}")
+            st.plotly_chart(
+                chart_style(fig, 420),
+                width="stretch",
+                config={"displayModeBar": False},
+            )
+
+    st.markdown("#### Equipamentos por motorização")
+    motor_columns = st.columns(2)
+    for chart_column, situation in zip(motor_columns, status_order):
+        situation_frame = population[population["Situação"].eq(situation)]
+        records = []
+        for motor, group in situation_frame.groupby(
+            situation_frame["MOTOR_VEIC"].map(clean_label)
+        ):
+            for source_column, equipment_label in equipment_fields:
+                records.append(
+                    {
+                        "Motorização": motor,
+                        "Equipamento": equipment_label,
+                        "UCs com equipamento": int(group[source_column].eq("S").sum()),
+                    }
+                )
+        with chart_column:
+            if not records:
+                st.info(f"Nenhuma motorização em {situation.lower()} para exibir.")
+                continue
+            motor_data = pd.DataFrame(records)
+            fig = px.bar(
+                motor_data,
+                x="Motorização",
+                y="UCs com equipamento",
+                color="Equipamento",
+                barmode="group",
+                text="UCs com equipamento",
+                color_discrete_map=equipment_colors,
+            )
+            fig.update_traces(textposition="outside")
+            fig.update_layout(title=f"Equipamentos por motorização — {situation}")
+            st.plotly_chart(
+                chart_style(fig, 420),
+                width="stretch",
+                config={"displayModeBar": False},
+            )
+
+    st.markdown("#### Marcas dos equipamentos")
+    brand_columns = st.columns(2)
+    brand_fields = [
+        ("MARCA_WALLB", "Wallbox"),
+        ("MARCA_PORTATIL", "Portátil"),
+    ]
+    for chart_column, (source_column, equipment_label) in zip(
+        brand_columns, brand_fields
+    ):
+        brand_population = population[
+            population[source_column].notna()
+            & population[source_column].astype(str).str.strip().ne("")
+        ].copy()
+        brand_population["Marca"] = (
+            brand_population[source_column].astype(str).str.strip().str.upper()
+        )
+        brands = (
+            brand_population.groupby(["Marca", "Situação"])
+            .size()
+            .reset_index(name="UCs")
+        )
+        top_brands = (
+            brands.groupby("Marca")["UCs"].sum().nlargest(10).index.tolist()
+        )
+        brands = brands[brands["Marca"].isin(top_brands)]
+        with chart_column:
+            if brands.empty:
+                st.info(f"Nenhuma marca de {equipment_label.lower()} informada.")
+                continue
+            fig = px.bar(
+                brands,
+                x="UCs",
+                y="Marca",
+                color="Situação",
+                orientation="h",
+                barmode="group",
+                text="UCs",
+                color_discrete_map=status_colors,
+                category_orders={"Situação": status_order},
+            )
+            fig.update_traces(textposition="outside")
+            fig.update_layout(
+                title=f"Principais marcas — {equipment_label}",
+                yaxis=dict(title="", categoryorder="total ascending"),
+            )
+            st.plotly_chart(
+                chart_style(fig, 500),
+                width="stretch",
+                config={"displayModeBar": False},
+            )
+    st.caption("Os gráficos de marcas exibem as dez mais frequentes em cada equipamento.")
+
+    st.markdown("#### Potência declarada dos equipamentos")
+    power_records = []
+    for source_column, equipment_label in [
+        ("POT_WALLB", "Wallbox"),
+        ("POT_PORTATIL", "Portátil"),
+    ]:
+        available = population[
+            population[source_column].notna()
+            & population[source_column].astype(str).str.strip().ne("")
+        ]
+        for (power, situation), group in available.groupby(
+            [source_column, "Situação"]
+        ):
+            power_records.append(
+                {
+                    "Equipamento": equipment_label,
+                    "Potência": str(power).strip(),
+                    "Situação": situation,
+                    "UCs": int(len(group)),
+                }
+            )
+    if power_records:
+        power_data = pd.DataFrame(power_records)
+        fig = px.bar(
+            power_data,
+            x="Potência",
+            y="UCs",
+            color="Situação",
+            facet_col="Equipamento",
+            barmode="group",
+            text="UCs",
+            color_discrete_map=status_colors,
+            category_orders={"Situação": status_order},
+        )
+        fig.update_traces(textposition="outside")
+        fig.for_each_annotation(
+            lambda annotation: annotation.update(
+                text=annotation.text.replace("Equipamento=", "")
+            )
+        )
+        fig.update_layout(title="Faixas de potência por equipamento")
+        st.plotly_chart(
+            chart_style(fig, 470),
+            width="stretch",
+            config={"displayModeBar": False},
+        )
+    else:
+        st.info("Nenhuma potência de equipamento informada.")
+
+    st.markdown("#### Locais de recarga utilizados")
+    location_records = []
+    for _, row in population[["LOCAL_RECARGA", "Situação"]].dropna().iterrows():
+        locations = {
+            item.strip()
+            for item in str(row["LOCAL_RECARGA"]).split(";")
+            if item.strip()
+        }
+        for location in locations:
+            location_records.append(
+                {"Local de recarga": location, "Situação": row["Situação"]}
+            )
+    if location_records:
+        locations = (
+            pd.DataFrame(location_records)
+            .groupby(["Local de recarga", "Situação"])
+            .size()
+            .reset_index(name="UCs")
+        )
+        fig = px.bar(
+            locations,
+            x="UCs",
+            y="Local de recarga",
+            color="Situação",
+            orientation="h",
+            barmode="group",
+            text="UCs",
+            color_discrete_map=status_colors,
+            category_orders={"Situação": status_order},
+        )
+        fig.update_traces(textposition="outside")
+        fig.update_layout(
+            title="Locais declarados por grupo",
+            yaxis=dict(title="", categoryorder="total ascending"),
+        )
+        st.plotly_chart(
+            chart_style(fig, 430),
+            width="stretch",
+            config={"displayModeBar": False},
+        )
+    else:
+        st.info("Nenhum local de recarga informado.")
 
 
 def gd_page(frame: pd.DataFrame) -> None:
