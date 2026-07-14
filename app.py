@@ -347,7 +347,13 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
     control_initial = int(frame["SITUACAO_INICIAL"].eq("Controle").sum())
     control = int(frame["SITUACAO_ATUAL"].eq("Controle").sum())
     reserve = int(frame["SITUACAO_ATUAL"].eq("Reserva").sum())
-    removed = int(frame["SITUACAO_ATUAL"].eq("Removido").sum())
+    removed_mask = frame["SITUACAO_ATUAL"].eq("Removido")
+    removed_control = int(
+        (removed_mask & frame["SITUACAO_INICIAL"].eq("Controle")).sum()
+    )
+    removed_treatment = int(
+        (removed_mask & frame["SITUACAO_INICIAL"].eq("Ativo")).sum()
+    )
     active_mask = frame["SITUACAO_ATUAL"].eq("Ativo")
     control_mask = frame["SITUACAO_ATUAL"].eq("Controle")
     active_with_vehicle = int((active_mask & frame["FABRI_VEIC"].notna()).sum())
@@ -414,11 +420,18 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
     control_filtered_gd_percentage = (
         control_filtered_gd / control_initial if control_initial else 0
     )
-    row1 = st.columns(4)
+    row1 = st.columns(5)
     row1[0].metric("UCs — tratamento", f"{active:,}".replace(",", "."))
     row1[1].metric("UCs controle", f"{control:,}".replace(",", "."))
     row1[2].metric("UCs reserva", f"{reserve:,}".replace(",", "."))
-    row1[3].metric("UCs removidas", f"{removed:,}".replace(",", "."))
+    row1[3].metric(
+        "UCs removidas — controle",
+        f"{removed_control:,}".replace(",", "."),
+    )
+    row1[4].metric(
+        "UCs removidas — tratamento",
+        f"{removed_treatment:,}".replace(",", "."),
+    )
     st.caption(
         f"GD inicial em {PROJECT_START_DATE:%d/%m/%Y} · "
         f"GD filtrada em {gd_reference_date:%d/%m/%Y}"
