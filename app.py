@@ -1264,12 +1264,13 @@ def charging_page(frame: pd.DataFrame) -> None:
             barmode="group",
             text="UCs",
             color_discrete_map=status_colors,
-            category_orders={"Situação": status_order},
+            category_orders={"Situação": ["Controle", "Tratamento"]},
         )
         fig.update_traces(textposition="outside")
         fig.update_layout(
             title="Locais declarados por grupo",
             yaxis=dict(title="", categoryorder="total ascending"),
+            legend=dict(traceorder="reversed"),
         )
         st.plotly_chart(
             chart_style(fig, 430),
