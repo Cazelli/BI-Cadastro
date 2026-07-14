@@ -1211,8 +1211,54 @@ def quality_page(frame: pd.DataFrame) -> None:
     fig.update_layout(title="Completude dos principais campos", xaxis=dict(tickformat=".0%", range=[0, 1.08]), yaxis=dict(autorange="reversed"))
     st.plotly_chart(chart_style(fig, 520), width="stretch", config={"displayModeBar": False})
     st.markdown("#### Consulta operacional (sem dados pessoais)")
-    public_columns = ["NUM_UC", "NUM_UC_ANEEL", "SITUACAO_ATUAL", "SITUACAO_UC", "LOCAL", "CLASSE", "TIPO_FASE", "ETAPA", "DT_ATIVACAO", "FINALIDADE", "FABRI_VEIC", "MODELO_VEIC", "MOTOR_VEIC", "STATUS_WALLBOX", "STATUS_PORTATIL", "TIPO_GD_GERA"]
+    public_columns = [
+        "NUM_UC",
+        "NUM_UC_ANEEL",
+        "SITUACAO_INICIAL",
+        "SITUACAO_ATUAL",
+        "SITUACAO_UC",
+        "LOCAL",
+        "CLASSE",
+        "GRUPO",
+        "TIPO_FASE",
+        "ETAPA",
+        "DT_ATIVACAO",
+        "DT_DISTRATO",
+        "MOTIV_DIST",
+        "IND_SOLICITACAO",
+        "FINALIDADE",
+        "FABRI_VEIC",
+        "MODELO_VEIC",
+        "ANO_VEIC",
+        "TIPO_VEIC",
+        "MOTOR_VEIC",
+        "STATUS_VEIC",
+        "CAPACIDADE_VEIC",
+        "QTE_VEIC",
+        "PERCURSO_SEMANAL",
+        "FREQ_CARGA_RESIDENCIA",
+        "FREQ_CARGA_SEMANAL",
+        "FREQ_CARGA_MADRUGADA",
+        "LOCAL_RECARGA",
+        "ELETROPOSTO_COPEL",
+        "STATUS_WALLBOX",
+        "MARCA_WALLB",
+        "POT_WALLB",
+        "STATUS_PORTATIL",
+        "MARCA_PORTATIL",
+        "POT_PORTATIL",
+        "TARIFA_SOCIAL",
+        "TARIFA_BRANCA",
+        "GD_BENE_INIC",
+        "GD_BENE_FIM",
+        "TIPO_GD_BENE",
+        "DATA_INICIO_GD",
+        "DATA_FIM_GD",
+        "TIPO_GD_GERA",
+        "POSSUI_GD_CLIENTE",
+    ]
     view = frame[public_columns].copy()
+    view["SITUACAO_INICIAL"] = view["SITUACAO_INICIAL"].map(status_display_label)
     view["SITUACAO_ATUAL"] = view["SITUACAO_ATUAL"].map(status_display_label)
     for column in ["NUM_UC", "NUM_UC_ANEEL"]:
         view[column] = view[column].apply(lambda value: "" if pd.isna(value) else str(int(value)))
