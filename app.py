@@ -261,9 +261,12 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
     )
     reference_frame.loc[removed_by_reference_date, "SITUACAO_ATUAL"] = "Removido"
 
-    status_options = options_for(reference_frame, "SITUACAO_ATUAL")
-    if "Ativo" in status_options:
-        status_options.insert(0, "Tratamento")
+    status_options = list(
+        dict.fromkeys(
+            status_display_label(value)
+            for value in options_for(reference_frame, "SITUACAO_ATUAL")
+        )
+    )
 
     filters = {
         "SITUACAO_ATUAL": st.sidebar.multiselect(
