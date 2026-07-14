@@ -391,7 +391,7 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
         control_filtered_gd / control_initial if control_initial else 0
     )
     row1 = st.columns(4)
-    row1[0].metric("UCs ativas", f"{active:,}".replace(",", "."))
+    row1[0].metric("UCs — tratamento", f"{active:,}".replace(",", "."))
     row1[1].metric("UCs controle", f"{control:,}".replace(",", "."))
     row1[2].metric("UCs reserva", f"{reserve:,}".replace(",", "."))
     row1[3].metric("UCs removidas", f"{removed:,}".replace(",", "."))
@@ -401,7 +401,7 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
     )
     gd_row = st.columns(4)
     gd_row[0].metric(
-        "GD Ativos — inicial",
+        "GD Tratamento — inicial",
         f"{active_initial_gd:,}".replace(",", "."),
         f"{active_initial_gd_percentage:.1%}".replace(".", ","),
         delta_color="normal",
@@ -413,7 +413,7 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
         delta_color="normal",
     )
     gd_row[2].metric(
-        "GD Ativos — filtrada",
+        "GD Tratamento — filtrada",
         f"{active_filtered_gd:,}".replace(",", "."),
         f"{active_filtered_gd_percentage:.1%}".replace(".", ","),
         delta_color="normal",
@@ -427,19 +427,19 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
     st.caption("Finalidade por situação atual")
     active_purpose_row = st.columns(3)
     active_purpose_row[0].metric(
-        "Finalidade pessoal — ativas",
+        "Finalidade pessoal — tratamento",
         f"{active_personal:,}".replace(",", "."),
         f"{active_personal_percentage:.1%}".replace(".", ","),
         delta_color="normal",
     )
     active_purpose_row[1].metric(
-        "Finalidade trabalho — ativas",
+        "Finalidade trabalho — tratamento",
         f"{active_work:,}".replace(",", "."),
         f"{active_work_percentage:.1%}".replace(".", ","),
         delta_color="normal",
     )
     active_purpose_row[2].metric(
-        "Finalidade não informada — ativas",
+        "Finalidade não informada — tratamento",
         f"{active_purpose_missing:,}".replace(",", "."),
         f"{active_purpose_missing_percentage:.1%}".replace(".", ","),
         delta_color="normal",
@@ -466,15 +466,15 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
     st.caption("Dados de Veículos e Carregadores com filtros ativos")
     active_equipment_row = st.columns(3)
     active_equipment_row[0].metric(
-        "UCs com veículo — ativas",
+        "UCs com veículo — tratamento",
         f"{active_with_vehicle:,}".replace(",", "."),
     )
     active_equipment_row[1].metric(
-        "UCs com wallbox — ativas",
+        "UCs com wallbox — tratamento",
         f"{active_with_wallbox:,}".replace(",", "."),
     )
     active_equipment_row[2].metric(
-        "UCs com portátil — ativas",
+        "UCs com portátil — tratamento",
         f"{active_with_portable:,}".replace(",", "."),
     )
     control_equipment_row = st.columns(3)
@@ -508,12 +508,20 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
         "Removido "
         + status_population.loc[removed_by_reference_date, "SITUACAO_INICIAL"]
     )
-    status_order = ["Ativo", "Controle", "Removido Ativo", "Removido Controle"]
+    status_pairs = [
+        ("Ativo", "Tratamento"),
+        ("Controle", "Controle"),
+        ("Removido Ativo", "Removido Tratamento"),
+        ("Removido Controle", "Removido Controle"),
+    ]
+    status_order = [display for _, display in status_pairs]
     status_counts = status_population["Situação na referência"].value_counts()
     status = pd.DataFrame(
         {
             "Situação": status_order,
-            "UCs": [int(status_counts.get(label, 0)) for label in status_order],
+            "UCs": [
+                int(status_counts.get(source, 0)) for source, _ in status_pairs
+            ],
         }
     )
     status_total = int(status["UCs"].sum())
@@ -535,9 +543,9 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
             hole=.64,
             color="Situação",
             color_discrete_map={
-                "Ativo": "#F5821E",
+                "Tratamento": "#F5821E",
                 "Controle": "#FDB422",
-                "Removido Ativo": "#3F444B",
+                "Removido Tratamento": "#3F444B",
                 "Removido Controle": "#69727D",
             },
             category_orders={"Situação": status_order},
@@ -579,7 +587,7 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
                 color_continuous_scale=["#FBE8D8", "#F5821E"],
             )
             fig.update_layout(
-                title="Fabricantes — UCs ativas e controle",
+                title="Fabricantes — UCs em tratamento e controle",
                 coloraxis_showscale=False,
                 yaxis_title="",
             )
@@ -590,12 +598,12 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
                 config={"displayModeBar": False},
             )
 
-    st.markdown("#### Distribuição municipal de UCs ativas e controle")
+    st.markdown("#### Distribuição municipal de UCs em tratamento e controle")
     map_population = frame[
         (active_mask | control_mask) & frame["LOCAL"].notna()
     ].copy()
     map_population["Situação"] = map_population["SITUACAO_ATUAL"].replace(
-        {"Ativo": "Ativas"}
+        {"Ativo": "Tratamento"}
     )
     map_data = (
         map_population.groupby(["LOCAL", "Situação"])
@@ -606,11 +614,11 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
     map_data = map_data.merge(municipality_coordinates, on="LOCAL", how="inner")
 
     if map_data.empty:
-        st.info("Nenhum município com UCs ativas ou controle para exibir no mapa.")
+        st.info("Nenhum município com UCs em tratamento ou controle para exibir no mapa.")
     else:
         # Slightly separate both statuses around the municipal centroid so that
         # overlapping bubbles remain visible and selectable.
-        longitude_offset = {"Ativas": -0.025, "Controle": 0.025}
+        longitude_offset = {"Tratamento": -0.025, "Controle": 0.025}
         map_data["map_longitude"] = (
             map_data["longitude"] + map_data["Situação"].map(longitude_offset)
         )
@@ -627,10 +635,10 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
                 "map_longitude": False,
             },
             color_discrete_map={
-                "Ativas": "#F5821E",
+                "Tratamento": "#F5821E",
                 "Controle": "#69727D",
             },
-            category_orders={"Situação": ["Controle", "Ativas"]},
+            category_orders={"Situação": ["Controle", "Tratamento"]},
             size_max=42,
             zoom=5.7,
             center={"lat": -25.35, "lon": -52.15},
@@ -664,7 +672,7 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
         st.caption(
             "O tamanho das bolhas representa a quantidade de UCs. Os pontos "
             "são levemente separados ao redor do centro municipal para manter "
-            "Ativas e Controle visíveis."
+            "Tratamento e Controle visíveis."
         )
 
 
@@ -672,15 +680,15 @@ def uc_page(frame: pd.DataFrame) -> None:
     title(
         "Distribuição operacional",
         "UCs e localização",
-        "Compare a distribuição municipal das UCs ativas, controle e reserva.",
+        "Compare a distribuição municipal das UCs em tratamento, controle e reserva.",
     )
     status_labels = {
-        "Ativo": "Ativas",
+        "Ativo": "Tratamento",
         "Controle": "Controle",
         "Reserva": "Reserva",
     }
     status_colors = {
-        "Ativas": "#F5821E",
+        "Tratamento": "#F5821E",
         "Controle": "#69727D",
         "Reserva": "#6EBAE8",
     }
@@ -715,7 +723,7 @@ def uc_page(frame: pd.DataFrame) -> None:
         text="UCs",
         color_discrete_map=status_colors,
         category_orders={
-            "Situação": ["Ativas", "Controle", "Reserva"],
+            "Situação": ["Tratamento", "Controle", "Reserva"],
         },
     )
     fig.update_traces(textposition="inside", textangle=0)
@@ -746,7 +754,7 @@ def uc_page(frame: pd.DataFrame) -> None:
     map_columns = [first_map_row[0], first_map_row[1], second_map_row[1]]
 
     for column, situation in zip(
-        map_columns, ["Ativas", "Controle", "Reserva"]
+        map_columns, ["Tratamento", "Controle", "Reserva"]
     ):
         situation_map = mapped_status[mapped_status["Situação"].eq(situation)]
         with column:
@@ -803,7 +811,7 @@ def vehicle_page(frame: pd.DataFrame) -> None:
             vehicles["SITUACAO_ATUAL"].isin(["Ativo", "Controle"])
         ]
         if manufacturer_vehicles.empty:
-            st.info("Nenhum fabricante ativo ou controle para exibir.")
+            st.info("Nenhum fabricante em tratamento ou controle para exibir.")
         else:
             manufacturers = (
                 manufacturer_vehicles.groupby(["FABRI_VEIC", "SITUACAO_ATUAL"])
@@ -812,7 +820,7 @@ def vehicle_page(frame: pd.DataFrame) -> None:
                 .rename(columns={"FABRI_VEIC": "Fabricante"})
             )
             manufacturers["Situação"] = manufacturers["SITUACAO_ATUAL"].replace(
-                {"Ativo": "Ativas", "Controle": "Controle"}
+                {"Ativo": "Tratamento", "Controle": "Controle"}
             )
             fig = px.bar(
                 manufacturers,
@@ -823,14 +831,14 @@ def vehicle_page(frame: pd.DataFrame) -> None:
                 barmode="stack",
                 text="UCs",
                 color_discrete_map={
-                    "Ativas": "#F5821E",
+                    "Tratamento": "#F5821E",
                     "Controle": "#69727D",
                 },
-                category_orders={"Situação": ["Ativas", "Controle"]},
+                category_orders={"Situação": ["Tratamento", "Controle"]},
             )
             fig.update_traces(textposition="inside", textangle=0)
             fig.update_layout(
-                title="Fabricantes — UCs ativas e controle",
+                title="Fabricantes — UCs em tratamento e controle",
                 yaxis=dict(title="", categoryorder="total ascending"),
                 legend=dict(orientation="h", yanchor="bottom", y=1.01, x=0),
             )
@@ -844,7 +852,7 @@ def vehicle_page(frame: pd.DataFrame) -> None:
             vehicles["SITUACAO_ATUAL"].isin(["Ativo", "Controle"])
         ].copy()
         if motor_vehicles.empty:
-            st.info("Nenhuma motorização ativa ou controle para exibir.")
+            st.info("Nenhuma motorização em tratamento ou controle para exibir.")
         else:
             comparison = (
                 motor_vehicles.groupby(
@@ -857,7 +865,7 @@ def vehicle_page(frame: pd.DataFrame) -> None:
             comparison["Finalidade"] = comparison["FINALIDADE"].map(clean_label)
             comparison["Motor"] = comparison["MOTOR_VEIC"].map(clean_label)
             comparison["Situação"] = comparison["SITUACAO_ATUAL"].replace(
-                {"Ativo": "Ativas", "Controle": "Controle"}
+                {"Ativo": "Tratamento", "Controle": "Controle"}
             )
             fig = px.bar(
                 comparison,
@@ -869,10 +877,10 @@ def vehicle_page(frame: pd.DataFrame) -> None:
                 barmode="group",
                 text="UCs",
                 color_discrete_map={
-                    "Ativas": "#F5821E",
+                    "Tratamento": "#F5821E",
                     "Controle": "#69727D",
                 },
-                category_orders={"Situação": ["Ativas", "Controle"]},
+                category_orders={"Situação": ["Tratamento", "Controle"]},
             )
             fig.update_traces(textangle=0, textfont_color="#151C21")
             fig.update_layout(title="Motorização por finalidade")
@@ -903,7 +911,7 @@ def vehicle_page(frame: pd.DataFrame) -> None:
                 .rename(columns={"MODELO_VEIC": "Modelo"})
             )
             models["Situação"] = models["SITUACAO_ATUAL"].replace(
-                {"Ativo": "Ativas", "Controle": "Controle"}
+                {"Ativo": "Tratamento", "Controle": "Controle"}
             )
             model_chart_height = max(480, 110 + 24 * models["Modelo"].nunique())
             fig = px.bar(
@@ -915,14 +923,14 @@ def vehicle_page(frame: pd.DataFrame) -> None:
                 barmode="stack",
                 text="UCs",
                 color_discrete_map={
-                    "Ativas": "#F5821E",
+                    "Tratamento": "#F5821E",
                     "Controle": "#69727D",
                 },
-                category_orders={"Situação": ["Ativas", "Controle"]},
+                category_orders={"Situação": ["Tratamento", "Controle"]},
             )
             fig.update_traces(textposition="inside", textangle=0)
             fig.update_layout(
-                title=f"Modelos {motor_label} — UCs ativas e controle",
+                title=f"Modelos {motor_label} — UCs em tratamento e controle",
                 yaxis=dict(title="", categoryorder="total ascending"),
                 legend=dict(orientation="h", yanchor="bottom", y=1.01, x=0),
             )
