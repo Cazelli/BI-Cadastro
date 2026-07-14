@@ -1451,6 +1451,13 @@ def update_report_page(frame: pd.DataFrame) -> None:
         UPDATE_ALERT_FILE.stat().st_mtime,
         UPDATE_SUMMARY_FILE.stat().st_mtime,
     )
+    alerts["TIPO_ALERTA"] = alerts["TIPO_ALERTA"].replace(
+        {
+            "Desconexão": "Desligamento",
+            "Fora do padrão": "Mudança de Classe",
+            "Tarifa ativada": "Tarifa Especial Ativada",
+        }
+    )
 
     def normalized_uc(value: object) -> str:
         if pd.isna(value) or str(value).strip() == "":
@@ -1479,14 +1486,16 @@ def update_report_page(frame: pd.DataFrame) -> None:
     )
 
     alert_ucs = int(alerts["NUM_UC"].nunique()) if not alerts.empty else 0
-    disconnected = int(
-        alerts.loc[alerts["TIPO_ALERTA"].eq("Desconexão"), "NUM_UC"].nunique()
+    switched_off = int(
+        alerts.loc[alerts["TIPO_ALERTA"].eq("Desligamento"), "NUM_UC"].nunique()
     )
-    outside_standard = int(
-        alerts.loc[alerts["TIPO_ALERTA"].eq("Fora do padrão"), "NUM_UC"].nunique()
+    class_changes = int(
+        alerts.loc[alerts["TIPO_ALERTA"].eq("Mudança de Classe"), "NUM_UC"].nunique()
     )
-    tariff_activated = int(
-        alerts.loc[alerts["TIPO_ALERTA"].eq("Tarifa ativada"), "NUM_UC"].nunique()
+    special_tariffs = int(
+        alerts.loc[
+            alerts["TIPO_ALERTA"].eq("Tarifa Especial Ativada"), "NUM_UC"
+        ].nunique()
     )
     gd_changes = int(
         alerts.loc[alerts["TIPO_ALERTA"].eq("Alteração GD"), "NUM_UC"].nunique()
@@ -1497,9 +1506,12 @@ def update_report_page(frame: pd.DataFrame) -> None:
     metrics = st.columns(6)
     metrics[0].metric("UCs com alertas", f"{alert_ucs:,}".replace(",", "."))
     metrics[1].metric("Sem atualização", f"{without_update:,}".replace(",", "."))
-    metrics[2].metric("Desconexões", f"{disconnected:,}".replace(",", "."))
-    metrics[3].metric("Fora do padrão", f"{outside_standard:,}".replace(",", "."))
-    metrics[4].metric("Tarifas ativadas", f"{tariff_activated:,}".replace(",", "."))
+    metrics[2].metric("Desligamentos", f"{switched_off:,}".replace(",", "."))
+    metrics[3].metric("Mudança de Classe", f"{class_changes:,}".replace(",", "."))
+    metrics[4].metric(
+        "Tarifas Especiais Ativadas",
+        f"{special_tariffs:,}".replace(",", "."),
+    )
     metrics[5].metric("Alterações GD", f"{gd_changes:,}".replace(",", "."))
 
     if alerts.empty:

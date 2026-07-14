@@ -222,17 +222,17 @@ def add_alert(
 
 def change_detail(field: str, new: str) -> tuple[str, str]:
     if field == "SITUACAO_UC" and new == "DS":
-        return "Desconexão", "A situação da UC mudou para desconectada (DS)."
+        return "Desligamento", "A situação da UC mudou para desligada (DS)."
     if field == "CLASSE":
         if new != "B1":
-            return "Fora do padrão", "A classe esperada é B1."
+            return "Mudança de Classe", "A classe esperada é B1."
         return "Alteração cadastral", "A classe da UC foi alterada."
     if field == "GRUPO":
         if new != "1":
-            return "Fora do padrão", "O grupo esperado é 1."
+            return "Mudança de Classe", "O grupo esperado é 1."
         return "Alteração cadastral", "O grupo da UC foi alterado."
     if field in {"TARIFA_SOCIAL", "TARIFA_BRANCA"} and new == "S":
-        return "Tarifa ativada", f"{field} passou a ser S."
+        return "Tarifa Especial Ativada", f"{field} passou a ser S."
     if field.startswith("GD_") or field in {
         "TIPO_GD_BENE",
         "DATA_INICIO_GD",
@@ -342,7 +342,7 @@ def process_report(report: Path, force: bool = False) -> dict:
                     alerts,
                     uc,
                     group,
-                    "Fora do padrão",
+                    "Mudança de Classe",
                     field,
                     current,
                     current,
