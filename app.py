@@ -1069,7 +1069,7 @@ filtered_data, selected_page, gd_reference_date = sidebar_filters(data)
 if filtered_data.empty:
     title("Filtros", selected_page, "A combinação atual não retornou registros.")
     empty_state()
-elif selected_page == "Resumo executivo":
+elif selected_page == "Geral":
     executive_page(filtered_data, gd_reference_date)
 elif selected_page == "UCs e localização":
     uc_page(filtered_data)
