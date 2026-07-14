@@ -1082,9 +1082,13 @@ def charging_page(frame: pd.DataFrame) -> None:
     motor_columns = st.columns(2)
     for chart_column, situation in zip(motor_columns, status_order):
         situation_frame = population[population["Situação"].eq(situation)]
+        motor_frame = situation_frame[
+            situation_frame["MOTOR_VEIC"].notna()
+            & situation_frame["MOTOR_VEIC"].astype(str).str.strip().ne("")
+        ]
         records = []
-        for motor, group in situation_frame.groupby(
-            situation_frame["MOTOR_VEIC"].map(clean_label)
+        for motor, group in motor_frame.groupby(
+            motor_frame["MOTOR_VEIC"].map(clean_label)
         ):
             for source_column, equipment_label in equipment_fields:
                 records.append(
