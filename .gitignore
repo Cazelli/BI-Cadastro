@@ -6,3 +6,5 @@ venv/
 .streamlit/secrets.toml
 .DS_Store
 logs-*.txt
+data/mdm-sandbox_clientes_novo-*.csv
+data/backups/

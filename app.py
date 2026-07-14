@@ -18,6 +18,8 @@ DATA_FILE = Path(__file__).with_name("base_consolidada_copel.csv")
 ASSET_DIR = Path(__file__).with_name("assets")
 MUNICIPALITY_COORDINATES_FILE = ASSET_DIR / "municipios_coordenadas.csv"
 PARANA_BOUNDARY_FILE = ASSET_DIR / "parana_contorno.geojson"
+UPDATE_ALERT_FILE = Path(__file__).with_name("data") / "ultima_atualizacao_alertas.csv"
+UPDATE_SUMMARY_FILE = Path(__file__).with_name("data") / "ultima_atualizacao_resumo.json"
 LOGIN_USER = "Copel"
 PASSWORD_SALT = b"copel-bi-cadastro-v1"
 PASSWORD_HASH = bytes.fromhex(
@@ -200,6 +202,21 @@ def load_map_assets() -> tuple[pd.DataFrame, dict]:
     return coordinates, boundary
 
 
+@st.cache_data
+def load_update_report(
+    alerts_mtime: float, summary_mtime: float
+) -> tuple[pd.DataFrame, dict]:
+    del alerts_mtime, summary_mtime
+    alerts = pd.read_csv(
+        UPDATE_ALERT_FILE,
+        dtype=str,
+        keep_default_na=False,
+        encoding="utf-8-sig",
+    )
+    summary = json.loads(UPDATE_SUMMARY_FILE.read_text(encoding="utf-8"))
+    return alerts, summary
+
+
 def clean_label(value: object) -> str:
     return "Não informado" if pd.isna(value) or str(value).strip() == "" else str(value)
 
@@ -229,6 +246,7 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
             "Perfil dos veículos",
             "Infraestrutura de recarga",
             "Geração distribuída",
+            "Atualizações e alertas",
             "Qualidade dos dados",
         ],
         label_visibility="collapsed",
@@ -1028,6 +1046,154 @@ def gd_page(frame: pd.DataFrame) -> None:
         st.plotly_chart(chart_style(fig, 430), width="stretch", config={"displayModeBar": False})
 
 
+def update_report_page(frame: pd.DataFrame) -> None:
+    title(
+        "Monitoramento cadastral",
+        "Atualizações e alertas",
+        "Alterações identificadas no último relatório para UCs já existentes na base consolidada.",
+    )
+    if not UPDATE_ALERT_FILE.exists() or not UPDATE_SUMMARY_FILE.exists():
+        st.info(
+            "Nenhuma atualização foi processada. Execute `py update_base.py` após "
+            "adicionar um relatório válido à pasta data."
+        )
+        return
+
+    alerts, summary = load_update_report(
+        UPDATE_ALERT_FILE.stat().st_mtime,
+        UPDATE_SUMMARY_FILE.stat().st_mtime,
+    )
+
+    def normalized_uc(value: object) -> str:
+        if pd.isna(value) or str(value).strip() == "":
+            return ""
+        try:
+            return str(int(float(str(value))))
+        except ValueError:
+            return str(value).strip()
+
+    allowed_ucs = {normalized_uc(value) for value in frame["NUM_UC"]}
+    alerts = alerts[alerts["NUM_UC"].map(normalized_uc).isin(allowed_ucs)].copy()
+
+    start = pd.to_datetime(summary.get("periodo_inicio"), format="%Y%m%d", errors="coerce")
+    end = pd.to_datetime(summary.get("periodo_fim"), format="%Y%m%d", errors="coerce")
+    if pd.notna(start) and pd.notna(end):
+        period = (
+            f"{start:%d/%m/%Y}"
+            if start == end
+            else f"{start:%d/%m/%Y} a {end:%d/%m/%Y}"
+        )
+    else:
+        period = "não informado"
+    st.caption(
+        f"Relatório: {summary.get('arquivo_origem', 'não informado')} · "
+        f"Período: {period} · Apenas UCs da base consolidada"
+    )
+
+    alert_ucs = int(alerts["NUM_UC"].nunique()) if not alerts.empty else 0
+    disconnected = int(
+        alerts.loc[alerts["TIPO_ALERTA"].eq("Desconexão"), "NUM_UC"].nunique()
+    )
+    outside_standard = int(
+        alerts.loc[alerts["TIPO_ALERTA"].eq("Fora do padrão"), "NUM_UC"].nunique()
+    )
+    tariff_activated = int(
+        alerts.loc[alerts["TIPO_ALERTA"].eq("Tarifa ativada"), "NUM_UC"].nunique()
+    )
+    gd_changes = int(
+        alerts.loc[alerts["TIPO_ALERTA"].eq("Alteração GD"), "NUM_UC"].nunique()
+    )
+    without_update = int(
+        alerts.loc[alerts["TIPO_ALERTA"].eq("Sem atualização"), "NUM_UC"].nunique()
+    )
+    metrics = st.columns(6)
+    metrics[0].metric("UCs com alertas", f"{alert_ucs:,}".replace(",", "."))
+    metrics[1].metric("Sem atualização", f"{without_update:,}".replace(",", "."))
+    metrics[2].metric("Desconexões", f"{disconnected:,}".replace(",", "."))
+    metrics[3].metric("Fora do padrão", f"{outside_standard:,}".replace(",", "."))
+    metrics[4].metric("Tarifas ativadas", f"{tariff_activated:,}".replace(",", "."))
+    metrics[5].metric("Alterações GD", f"{gd_changes:,}".replace(",", "."))
+
+    if alerts.empty:
+        st.success("Nenhum alerta foi encontrado para a seleção atual.")
+        return
+
+    alert_types = sorted(alerts["TIPO_ALERTA"].unique().tolist())
+    selected_types = st.multiselect(
+        "Tipos de alerta",
+        alert_types,
+        placeholder="Todos os tipos",
+    )
+    view = alerts[
+        alerts["TIPO_ALERTA"].isin(selected_types)
+    ].copy() if selected_types else alerts.copy()
+
+    left, right = st.columns([1.25, 1])
+    by_group = (
+        view.groupby(["GRUPO_UC", "TIPO_ALERTA"])
+        .size()
+        .reset_index(name="Alertas")
+    )
+    with left:
+        fig = px.bar(
+            by_group,
+            x="GRUPO_UC",
+            y="Alertas",
+            color="TIPO_ALERTA",
+            barmode="group",
+            text="Alertas",
+            labels={"GRUPO_UC": "Grupo da UC", "TIPO_ALERTA": "Tipo"},
+            color_discrete_sequence=COLORS,
+        )
+        fig.update_traces(textposition="outside")
+        fig.update_layout(title="Alertas por grupo da UC")
+        st.plotly_chart(
+            chart_style(fig, 430), width="stretch", config={"displayModeBar": False}
+        )
+    with right:
+        by_field = view.groupby("CAMPO").size().reset_index(name="Alertas")
+        fig = px.pie(
+            by_field,
+            names="CAMPO",
+            values="Alertas",
+            hole=.42,
+            color_discrete_sequence=COLORS,
+        )
+        fig.update_traces(textinfo="label+value")
+        fig.update_layout(title="Distribuição por campo alterado")
+        st.plotly_chart(
+            chart_style(fig, 430), width="stretch", config={"displayModeBar": False}
+        )
+
+    st.markdown("#### Detalhamento do último relatório")
+    detail = view[
+        [
+            "NUM_UC",
+            "GRUPO_UC",
+            "TIPO_ALERTA",
+            "CAMPO",
+            "VALOR_ANTERIOR",
+            "VALOR_NOVO",
+            "DETALHE",
+        ]
+    ].rename(
+        columns={
+            "GRUPO_UC": "Grupo da UC",
+            "TIPO_ALERTA": "Tipo de alerta",
+            "CAMPO": "Campo",
+            "VALOR_ANTERIOR": "Valor anterior",
+            "VALOR_NOVO": "Valor novo",
+            "DETALHE": "Detalhe",
+        }
+    )
+    st.dataframe(
+        detail.sort_values(["Tipo de alerta", "NUM_UC", "Campo"]),
+        width="stretch",
+        hide_index=True,
+        height=500,
+    )
+
+
 def quality_page(frame: pd.DataFrame) -> None:
     title("Governança", "Qualidade dos dados", "Compare o preenchimento dos campos analíticos e consulte UCs sem expor dados pessoais.")
     key_columns = ["NUM_UC", "SITUACAO_ATUAL", "LOCAL", "TIPO_FASE", "ETAPA", "DT_ATIVACAO", "FINALIDADE", "FABRI_VEIC", "MOTOR_VEIC", "STATUS_WALLBOX", "STATUS_PORTATIL", "TIPO_GD_GERA"]
@@ -1079,5 +1245,7 @@ elif selected_page == "Infraestrutura de recarga":
     charging_page(filtered_data)
 elif selected_page == "Geração distribuída":
     gd_page(filtered_data)
+elif selected_page == "Atualizações e alertas":
+    update_report_page(filtered_data)
 else:
     quality_page(filtered_data)
