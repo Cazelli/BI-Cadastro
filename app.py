@@ -931,9 +931,7 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
         )
         fig = chart_style(
             fig,
-            620,
-            "Conta as UCs por LOCAL e situação atual. O tamanho de cada bolha "
-            "representa a quantidade de UCs no município e no grupo indicado.",
+            620,            
         )
         fig.update_layout(
             margin=dict(l=10, r=10, t=15, b=10),
