@@ -7,7 +7,7 @@ Dashboard Streamlit para análise consolidada das unidades consumidoras do arqui
 
 - login protegido por hash de senha;
 - KPIs consolidados na página inicial;
-- ajuda contextual nos cards e gráficos, com a regra usada em cada cálculo;
+- ajuda contextual nos cards, com a regra usada em cada cálculo;
 - filtros globais de situação, município, fase, etapa, finalidade e fabricante;
 - páginas comparativas de UCs, veículos, recarga, geração distribuída e qualidade;
 - histórico acumulado de alertas desde 01/03/2026, com valores anteriores e novos por UC;

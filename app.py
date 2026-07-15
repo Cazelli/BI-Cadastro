@@ -433,58 +433,6 @@ def empty_state() -> None:
     st.warning("Nenhuma UC corresponde aos filtros selecionados.")
 
 
-def chart_calculation_help(title_text: object) -> str:
-    title = str(title_text or "").lower()
-    rules = [
-        ("situação em", "Conta as UCs inicialmente em Tratamento ou Controle e considera removida toda UC com DT_DISTRATO até a data de referência selecionada."),
-        ("fabricantes", "Conta uma UC por linha com FABRI_VEIC preenchido, limitada às situações atuais Tratamento e Controle, e agrupa pelo fabricante."),
-        ("todos os municípios", "Conta as linhas da base por LOCAL e SITUACAO_ATUAL, convertendo Ativo em Tratamento e mantendo Controle e Reserva separados."),
-        ("motorização por finalidade", "Conta as UCs por FINALIDADE, MOTOR_VEIC e situação atual. Valores vazios são agrupados como Não informado."),
-        ("modelos", "Conta as UCs com MODELO_VEIC preenchido, da motorização indicada, agrupadas por modelo e situação atual."),
-        ("disponibilidade", "Para cada grupo, conta STATUS_WALLBOX e STATUS_PORTATIL como Sim, Não ou Não informado. Ambos exige os dois status iguais a S na mesma UC."),
-        ("equipamentos por motorização", "Conta, em cada MOTOR_VEIC, as UCs cujo STATUS_WALLBOX ou STATUS_PORTATIL é igual a S."),
-        ("principais marcas", "Conta as UCs por marca preenchida e situação atual e exibe as dez marcas com maior total para o equipamento."),
-        ("faixas de potência", "Conta as UCs por faixa declarada em POT_WALLB ou POT_PORTATIL, separadas por equipamento e situação atual."),
-        ("locais declarados", "Separa os valores de LOCAL_RECARGA pelo ponto e vírgula, conta cada local uma vez por UC e agrupa por situação atual."),
-        ("composição de gd", "Conta as UCs com TIPO_GD_GERA preenchido e agrupa por tipo de geração distribuída dentro do grupo indicado."),
-        ("vínculo com gd", "GD beneficiária exige GD_BENE_INIC, GD_BENE_FIM ou TIPO_GD_BENE; GD geradora exige DATA_INICIO_GD, DATA_FIM_GD, TIPO_GD_GERA ou POSSUI_GD_CLIENTE = S."),
-        ("alertas por grupo", "Conta as linhas de alerta e agrupa por GRUPO_UC e TIPO_ALERTA. Uma mesma UC pode contribuir com mais de um alerta."),
-        ("distribuição por campo", "Conta as linhas de alerta por CAMPO alterado. Uma mesma UC pode aparecer em mais de um campo."),
-        ("completude", "Para cada campo, divide a quantidade de valores preenchidos pelo total de UCs resultante dos filtros ativos."),
-        ("tratamento", "Conta as UCs por município cuja situação atual corresponde a Tratamento; o tamanho da bolha representa essa contagem."),
-        ("controle", "Conta as UCs por município cuja situação atual corresponde a Controle; o tamanho da bolha representa essa contagem."),
-        ("reserva", "Conta as UCs por município cuja situação atual corresponde a Reserva; o tamanho da bolha representa essa contagem."),
-    ]
-    for marker, explanation in rules:
-        if marker in title:
-            return explanation
-    return (
-        "Os valores são calculados a partir das UCs resultantes dos filtros ativos "
-        "e agrupados pelas categorias apresentadas nos eixos ou na legenda."
-    )
-
-
-def add_chart_help(fig: go.Figure, help_text: str | None = None) -> go.Figure:
-    title_text = fig.layout.title.text if fig.layout.title else ""
-    explanation = help_text or chart_calculation_help(title_text)
-    fig.add_annotation(
-        x=.995,
-        y=.995,
-        xref="paper",
-        yref="paper",
-        text="<b>ⓘ</b>",
-        showarrow=False,
-        xanchor="right",
-        yanchor="top",
-        font=dict(size=16, color="#69727D"),
-        bgcolor="rgba(255,255,255,0.9)",
-        borderpad=3,
-        hovertext=explanation,
-        hoverlabel=dict(bgcolor="#FFFFFF", bordercolor="#C8CDD0", font_size=12),
-    )
-    return fig
-
-
 def metric_calculation_help(label: str) -> str:
     rules = {
         "UCs na seleção": "Número de linhas da base que permanecem após todos os filtros ativos da barra lateral.",
@@ -518,11 +466,11 @@ def metric_calculation_help(label: str) -> str:
             f"essa contagem pelo total atual de UCs em {group}."
         )
     if "com veículo" in label:
-        return "Conta UCs do grupo indicado com FABRI_VEIC preenchido."
+        return "Conta UCs do grupo indicado com FABRI_VEIC preenchido; o percentual divide a contagem pelo total atual do grupo."
     if "com wallbox" in label:
-        return "Conta UCs do grupo indicado cujo STATUS_WALLBOX é igual a S."
+        return "Conta UCs do grupo indicado cujo STATUS_WALLBOX é igual a S; o percentual divide a contagem pelo total atual do grupo."
     if "com portátil" in label:
-        return "Conta UCs do grupo indicado cujo STATUS_PORTATIL é igual a S."
+        return "Conta UCs do grupo indicado cujo STATUS_PORTATIL é igual a S; o percentual divide a contagem pelo total atual do grupo."
     return "Valor calculado sobre as UCs resultantes dos filtros ativos da barra lateral."
 
 
@@ -531,9 +479,7 @@ def show_metric(container, label: str, value: object, *args, **kwargs) -> None:
     container.metric(label, value, *args, **kwargs)
 
 
-def chart_style(
-    fig: go.Figure, height: int = 390, help_text: str | None = None
-) -> go.Figure:
+def chart_style(fig: go.Figure, height: int = 390) -> go.Figure:
     fig.update_layout(
         height=height,
         margin=dict(l=20, r=20, t=55, b=20),
@@ -543,7 +489,7 @@ def chart_style(
         colorway=COLORS,
         legend_title_text="",
     )
-    return add_chart_help(fig, help_text)
+    return fig
 
 
 def count_table(frame: pd.DataFrame, column: str, name: str) -> pd.DataFrame:
@@ -577,6 +523,12 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
     control_with_wallbox = int((control_mask & frame["STATUS_WALLBOX"].eq("S")).sum())
     active_with_portable = int((active_mask & frame["STATUS_PORTATIL"].eq("S")).sum())
     control_with_portable = int((control_mask & frame["STATUS_PORTATIL"].eq("S")).sum())
+    active_vehicle_percentage = active_with_vehicle / active if active else 0
+    control_vehicle_percentage = control_with_vehicle / control if control else 0
+    active_wallbox_percentage = active_with_wallbox / active if active else 0
+    control_wallbox_percentage = control_with_wallbox / control if control else 0
+    active_portable_percentage = active_with_portable / active if active else 0
+    control_portable_percentage = control_with_portable / control if control else 0
     purpose = frame["FINALIDADE"].map(clean_label)
     active_personal = int((active_mask & purpose.eq("Pessoal")).sum())
     active_work = int((active_mask & purpose.eq("Trabalho")).sum())
@@ -641,13 +593,13 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
     show_metric(row1[2], "UCs — Reserva", f"{reserve:,}".replace(",", "."))
     show_metric(
         row1[3],
-        "UCs removidas — Controle",
-        f"{removed_control:,}".replace(",", "."),
+        "UCs removidas — Tratamento",
+        f"{removed_treatment:,}".replace(",", "."),
     )
     show_metric(
         row1[4],
-        "UCs removidas — Tratamento",
-        f"{removed_treatment:,}".replace(",", "."),
+        "UCs removidas — Controle",
+        f"{removed_control:,}".replace(",", "."),
     )
     st.caption(
         f"GD inicial em {PROJECT_START_DATE:%d/%m/%Y} · "
@@ -733,32 +685,44 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
         active_equipment_row[0],
         "UCs com veículo — Tratamento",
         f"{active_with_vehicle:,}".replace(",", "."),
+        f"{active_vehicle_percentage:.1%}".replace(".", ","),
+        delta_color="normal",
     )
     show_metric(
         active_equipment_row[1],
         "UCs com wallbox — Tratamento",
         f"{active_with_wallbox:,}".replace(",", "."),
+        f"{active_wallbox_percentage:.1%}".replace(".", ","),
+        delta_color="normal",
     )
     show_metric(
         active_equipment_row[2],
         "UCs com portátil — Tratamento",
         f"{active_with_portable:,}".replace(",", "."),
+        f"{active_portable_percentage:.1%}".replace(".", ","),
+        delta_color="normal",
     )
     control_equipment_row = st.columns(3)
     show_metric(
         control_equipment_row[0],
         "UCs com veículo — Controle",
         f"{control_with_vehicle:,}".replace(",", "."),
+        f"{control_vehicle_percentage:.1%}".replace(".", ","),
+        delta_color="normal",
     )
     show_metric(
         control_equipment_row[1],
         "UCs com wallbox — Controle",
         f"{control_with_wallbox:,}".replace(",", "."),
+        f"{control_wallbox_percentage:.1%}".replace(".", ","),
+        delta_color="normal",
     )
     show_metric(
         control_equipment_row[2],
         "UCs com portátil — Controle",
         f"{control_with_portable:,}".replace(",", "."),
+        f"{control_portable_percentage:.1%}".replace(".", ","),
+        delta_color="normal",
     )
     st.markdown("#### Comparativos consolidados")
     donut_column, manufacturer_column = st.columns([1.35, 1])
@@ -929,12 +893,7 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
                 )
             ]
         )
-        fig = chart_style(
-            fig,
-            620,
-            "Conta as UCs por LOCAL e situação atual. O tamanho de cada bolha "
-            "representa a quantidade de UCs no município e no grupo indicado.",
-        )
+        fig = chart_style(fig, 620)
         fig.update_layout(
             margin=dict(l=10, r=10, t=15, b=10),
             legend=dict(
