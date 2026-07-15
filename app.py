@@ -138,7 +138,7 @@ def render_brand_banner() -> None:
         <div class="brand-banner">
             <div>
                 <div class="banner-kicker">Tarifa Mobiflex</div>
-                <div class="banner-title">BI Cadastro de UCs</div>
+                <div class="banner-title">BI Cadastral</div>
                 <div class="banner-copy">Indicadores consolidados</div>
             </div>
             <div class="brand-logos">
@@ -206,7 +206,7 @@ def login_screen() -> None:
     left, center, right = st.columns([1, 1.15, 1])
     with center:
         st.markdown(
-            '<div class="brand-mark">BI <span>Cadastro</span></div>'
+            '<div class="brand-mark">BI <span>Cadastral</span></div>'
             '<p style="color:#69727D">Painel consolidado de unidades consumidoras</p>',
             unsafe_allow_html=True,
         )
