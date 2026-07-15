@@ -1610,7 +1610,7 @@ def update_report_page(frame: pd.DataFrame) -> None:
             else alerts.copy()
         )
 
-        left, right = st.columns([1.25, 1])
+        left, right = st.columns([0.8, 1.4])
         by_group = (
             view.groupby(["GRUPO_UC", "TIPO_ALERTA"])
             .size()
@@ -1631,9 +1631,25 @@ def update_report_page(frame: pd.DataFrame) -> None:
                 color_discrete_sequence=COLORS,
             )
             fig.update_traces(textposition="outside")
-            fig.update_layout(title="Alertas por grupo da UC")
+            fig.update_layout(
+                title="Alertas por grupo da UC",
+                legend=dict(
+                    orientation="h",
+                    yanchor="top",
+                    y=-0.22,
+                    xanchor="left",
+                    x=0,
+                ),
+                legend_title_text="Tipo de alerta",
+                margin=dict(b=105),
+            )
+            styled_group_fig = chart_style(fig, 430)
+            styled_group_fig.update_layout(
+                margin=dict(l=20, r=20, t=55, b=105),
+                legend_title_text="Tipo de alerta",
+            )
             st.plotly_chart(
-                chart_style(fig, 430),
+                styled_group_fig,
                 width="stretch",
                 config={"displayModeBar": False},
                 key=f"alerts_group_{section_key}",
@@ -1652,13 +1668,15 @@ def update_report_page(frame: pd.DataFrame) -> None:
                 hole=.42,
                 color_discrete_sequence=COLORS,
             )
-            fig.update_traces(textinfo="label+value")
+            fig.update_traces(textinfo="value", textposition="inside")
             fig.update_layout(
                 title="Distribuição por campo alterado",
                 legend_title_text="Tipo de alteração",
             )
+            styled_field_fig = chart_style(fig, 430)
+            styled_field_fig.update_layout(legend_title_text="Tipo de alteração")
             st.plotly_chart(
-                chart_style(fig, 430),
+                styled_field_fig,
                 width="stretch",
                 config={"displayModeBar": False},
                 key=f"alerts_field_{section_key}",
