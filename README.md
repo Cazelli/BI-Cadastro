@@ -68,9 +68,8 @@ duplicar os já registrados. O histórico contém somente mudanças com data igu
 ou posterior a 01/03/2026, incluindo mudança de titularidade, desligamento,
 mudança de classe, ativação de tarifa especial e alterações de geração
 distribuída. Na página **Atualizações e alertas**, os seletores de período aceitam
-uma ou várias opções. **Inicial** corresponde exclusivamente a 01/03/2026 e
-**Março** corresponde ao restante do mês, evitando contar o mesmo evento duas
-vezes quando ambas as opções forem selecionadas. A página apresenta primeiro os
+uma ou várias opções. **Inicial** considera registros até 28/02/2026 e **Março**
+considera o mês inteiro, de 01/03 a 31/03. A página apresenta primeiro os
 indicadores, gráficos e a tabela exclusivos do relatório mais recente. Em seguida,
 apresenta uma segunda visão com os totais históricos e seus próprios filtros,
 gráficos e tabela.

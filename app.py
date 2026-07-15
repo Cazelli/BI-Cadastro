@@ -304,7 +304,7 @@ def alert_period_label(value: object) -> str:
     date = pd.to_datetime(value, errors="coerce")
     if pd.isna(date):
         return "Sem data"
-    if date.normalize() == EXPERIMENT_START_DATE:
+    if date.normalize() < EXPERIMENT_START_DATE:
         return "Inicial"
     month = MONTH_NAMES[date.month]
     return month if date.year == EXPERIMENT_START_DATE.year else f"{month}/{date.year}"
@@ -1552,7 +1552,7 @@ def update_report_page(frame: pd.DataFrame) -> None:
         period = "não informado"
     st.caption(
         f"Último relatório: {summary.get('arquivo_origem', 'não informado')} · "
-        f"Período do relatório: {period} · Histórico desde 01/03/2026"
+        f"Período do relatório: {period}"
     )
 
     def render_metrics(alerts: pd.DataFrame) -> None:
@@ -1631,6 +1631,7 @@ def update_report_page(frame: pd.DataFrame) -> None:
                 color_discrete_sequence=COLORS,
             )
             fig.update_traces(textposition="outside")
+            fig.update_xaxes(title_text=None)
             fig.update_layout(
                 title="Alertas por grupo da UC",
                 legend=dict(
@@ -1742,8 +1743,8 @@ def update_report_page(frame: pd.DataFrame) -> None:
         period_options,
         selection_mode="multi",
         help=(
-            "Inicial corresponde a 01/03/2026 e Março ao período de 02/03 a "
-            "31/03. Os demais meses são completos; seleções múltiplas são combinadas."
+            "Inicial considera registros até 28/02/2026. Março considera de 01/03 "
+            "a 31/03. Os demais meses são completos; seleções múltiplas são combinadas."
         ),
     )
     if selected_periods:
