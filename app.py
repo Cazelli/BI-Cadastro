@@ -50,6 +50,19 @@ def inject_css() -> None:
         [data-testid="stSidebar"] [data-testid="stDateInput"] input {
             color: #151C21 !important;
         }
+        [data-testid="stSidebar"] [data-testid="stButtonGroup"] button,
+        [data-testid="stSidebar"] [data-testid="stButtonGroup"] button * {
+            color:#151C21 !important; font-weight:700 !important;
+        }
+        [data-testid="stSidebar"] [data-testid="stButtonGroup"] button {
+            background:#F7F8F8 !important; border:1px solid #C8CDD0 !important;
+            min-height:36px; padding:6px 13px !important; white-space:nowrap;
+        }
+        [data-testid="stSidebar"] [data-testid="stButtonGroup"] button[data-variant="pills"][data-selected],
+        [data-testid="stSidebar"] [data-testid="stButtonGroup"] button[data-variant="pills"][data-selected] * {
+            background:#F5821E !important; border-color:#F5821E !important;
+            color:#FFFFFF !important;
+        }
         [data-testid="stSidebar"] hr { border-color: rgba(255,255,255,.14); }
         [data-testid="stMetric"] {
             background: rgba(255,255,255,.96); border: 1px solid #e1e3e5;
@@ -376,9 +389,7 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
     )
 
     latest_date = latest_report_date() or PROJECT_START_DATE
-    period_dates = {
-        "Situação inicial": PROJECT_START_DATE - pd.Timedelta(days=1)
-    }
+    period_dates = {"Inicial": PROJECT_START_DATE - pd.Timedelta(days=1)}
     for month_start in pd.date_range(
         PROJECT_START_DATE.replace(day=1),
         latest_date.replace(day=1),
@@ -396,7 +407,7 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
         on_change=apply_reference_period,
         args=(period_dates,),
         help=(
-            "Situação inicial usa 28/02/2026. Cada mês usa o respectivo "
+            "Inicial usa 28/02/2026. Cada mês usa o respectivo "
             "último dia como data de referência."
         ),
     )
