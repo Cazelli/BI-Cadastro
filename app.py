@@ -488,18 +488,18 @@ def add_chart_help(fig: go.Figure, help_text: str | None = None) -> go.Figure:
 def metric_calculation_help(label: str) -> str:
     rules = {
         "UCs na seleção": "Número de linhas da base que permanecem após todos os filtros ativos da barra lateral.",
-        "UCs — Tratamento": "Conta as UCs com SITUACAO_ATUAL igual a Ativo, exibido no painel como Tratamento.",
-        "UCs — Controle": "Conta as UCs com SITUACAO_ATUAL igual a Controle.",
-        "UCs — Reserva": "Conta as UCs com SITUACAO_ATUAL igual a Reserva.",
-        "UCs removidas — Controle": "Conta as UCs com SITUACAO_ATUAL igual a Removido e SITUACAO_INICIAL igual a Controle.",
-        "UCs removidas — Tratamento": "Conta as UCs com SITUACAO_ATUAL igual a Removido e SITUACAO_INICIAL igual a Ativo.",
-        "UCs com alertas": "Quantidade distinta de NUM_UC com pelo menos uma linha de alerta na seção e nos filtros selecionados.",
-        "Sem atualização": "Quantidade distinta de NUM_UC da base que não apareceu no relatório MDM correspondente.",
-        "Desligamentos": "Quantidade distinta de NUM_UC com alerta SITUACAO_UC alterada para DS.",
-        "Mudanças de Titularidade": "Quantidade distinta de NUM_UC com nova DT_MUD_TIT igual ou posterior a 01/03/2026.",
-        "Mudança de Classe": "Quantidade distinta de NUM_UC cuja CLASSE difere de B1 ou cujo GRUPO difere de 1.",
-        "Tarifas Especiais Ativadas": "Quantidade distinta de NUM_UC em que TARIFA_SOCIAL ou TARIFA_BRANCA passou para S.",
-        "Alterações GD": "Quantidade distinta de NUM_UC com alteração em um dos campos monitorados de geração distribuída.",
+        "UCs — Tratamento": "Conta as UCs do grupo Tratamento de acordo com os filtros ativos.",
+        "UCs — Controle": "Conta as UCs do grupo Controle de acordo com os filtros ativos.",
+        "UCs — Reserva": "Conta as UCs do grupo Reserva de acordo com os filtros ativos.",
+        "UCs removidas — Controle": "Conta as UCs removidas do grupo Controle de acordo com os filtros ativos.",
+        "UCs removidas — Tratamento": "Conta as UCs removidas do grupo Tratamento de acordo com os filtros ativos.",
+        "UCs com alertas": "Quantidade de UCs com pelo menos uma linha de alerta na seção e nos filtros selecionados.",
+        "Sem atualização": "Quantidade distinta de UCs da base que não aparecem no relatório.",
+        "Desligamentos": "Quantidade distinta de UCs com alerta de desligamento ou corte.",
+        "Mudanças de Titularidade": "Quantidade distinta de UCs com mudança de titularidade.",
+        "Mudança de Classe": "Quantidade distinta de UCs com mudança de Classe e/ou Subgrupo.",
+        "Tarifas Especiais Ativadas": "Quantidade distinta de UCs que passaram a ter tarifa social ou tarifa branca.",
+        "Alterações GD": "Quantidade distinta de UCs que viraram beneficiárias ou geradoras de geração distribuída.",
     }
     if label in rules:
         return rules[label]
