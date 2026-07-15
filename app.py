@@ -408,7 +408,11 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
             filtered = filtered[filtered[column].astype(str).isin(source_values)]
 
     st.sidebar.divider()
-    st.sidebar.metric("UCs na seleção", f"{len(filtered):,}".replace(",", "."))
+    show_metric(
+        st.sidebar,
+        "UCs na seleção",
+        f"{len(filtered):,}".replace(",", "."),
+    )
     if st.sidebar.button("Sair", width="stretch"):
         st.session_state.authenticated = False
         st.rerun()
@@ -429,7 +433,107 @@ def empty_state() -> None:
     st.warning("Nenhuma UC corresponde aos filtros selecionados.")
 
 
-def chart_style(fig: go.Figure, height: int = 390) -> go.Figure:
+def chart_calculation_help(title_text: object) -> str:
+    title = str(title_text or "").lower()
+    rules = [
+        ("situação em", "Conta as UCs inicialmente em Tratamento ou Controle e considera removida toda UC com DT_DISTRATO até a data de referência selecionada."),
+        ("fabricantes", "Conta uma UC por linha com FABRI_VEIC preenchido, limitada às situações atuais Tratamento e Controle, e agrupa pelo fabricante."),
+        ("todos os municípios", "Conta as linhas da base por LOCAL e SITUACAO_ATUAL, convertendo Ativo em Tratamento e mantendo Controle e Reserva separados."),
+        ("motorização por finalidade", "Conta as UCs por FINALIDADE, MOTOR_VEIC e situação atual. Valores vazios são agrupados como Não informado."),
+        ("modelos", "Conta as UCs com MODELO_VEIC preenchido, da motorização indicada, agrupadas por modelo e situação atual."),
+        ("disponibilidade", "Para cada grupo, conta STATUS_WALLBOX e STATUS_PORTATIL como Sim, Não ou Não informado. Ambos exige os dois status iguais a S na mesma UC."),
+        ("equipamentos por motorização", "Conta, em cada MOTOR_VEIC, as UCs cujo STATUS_WALLBOX ou STATUS_PORTATIL é igual a S."),
+        ("principais marcas", "Conta as UCs por marca preenchida e situação atual e exibe as dez marcas com maior total para o equipamento."),
+        ("faixas de potência", "Conta as UCs por faixa declarada em POT_WALLB ou POT_PORTATIL, separadas por equipamento e situação atual."),
+        ("locais declarados", "Separa os valores de LOCAL_RECARGA pelo ponto e vírgula, conta cada local uma vez por UC e agrupa por situação atual."),
+        ("composição de gd", "Conta as UCs com TIPO_GD_GERA preenchido e agrupa por tipo de geração distribuída dentro do grupo indicado."),
+        ("vínculo com gd", "GD beneficiária exige GD_BENE_INIC, GD_BENE_FIM ou TIPO_GD_BENE; GD geradora exige DATA_INICIO_GD, DATA_FIM_GD, TIPO_GD_GERA ou POSSUI_GD_CLIENTE = S."),
+        ("alertas por grupo", "Conta as linhas de alerta e agrupa por GRUPO_UC e TIPO_ALERTA. Uma mesma UC pode contribuir com mais de um alerta."),
+        ("distribuição por campo", "Conta as linhas de alerta por CAMPO alterado. Uma mesma UC pode aparecer em mais de um campo."),
+        ("completude", "Para cada campo, divide a quantidade de valores preenchidos pelo total de UCs resultante dos filtros ativos."),
+        ("tratamento", "Conta as UCs por município cuja situação atual corresponde a Tratamento; o tamanho da bolha representa essa contagem."),
+        ("controle", "Conta as UCs por município cuja situação atual corresponde a Controle; o tamanho da bolha representa essa contagem."),
+        ("reserva", "Conta as UCs por município cuja situação atual corresponde a Reserva; o tamanho da bolha representa essa contagem."),
+    ]
+    for marker, explanation in rules:
+        if marker in title:
+            return explanation
+    return (
+        "Os valores são calculados a partir das UCs resultantes dos filtros ativos "
+        "e agrupados pelas categorias apresentadas nos eixos ou na legenda."
+    )
+
+
+def add_chart_help(fig: go.Figure, help_text: str | None = None) -> go.Figure:
+    title_text = fig.layout.title.text if fig.layout.title else ""
+    explanation = help_text or chart_calculation_help(title_text)
+    fig.add_annotation(
+        x=.995,
+        y=.995,
+        xref="paper",
+        yref="paper",
+        text="<b>ⓘ</b>",
+        showarrow=False,
+        xanchor="right",
+        yanchor="top",
+        font=dict(size=16, color="#69727D"),
+        bgcolor="rgba(255,255,255,0.9)",
+        borderpad=3,
+        hovertext=explanation,
+        hoverlabel=dict(bgcolor="#FFFFFF", bordercolor="#C8CDD0", font_size=12),
+    )
+    return fig
+
+
+def metric_calculation_help(label: str) -> str:
+    rules = {
+        "UCs na seleção": "Número de linhas da base que permanecem após todos os filtros ativos da barra lateral.",
+        "UCs — Tratamento": "Conta as UCs com SITUACAO_ATUAL igual a Ativo, exibido no painel como Tratamento.",
+        "UCs — Controle": "Conta as UCs com SITUACAO_ATUAL igual a Controle.",
+        "UCs — Reserva": "Conta as UCs com SITUACAO_ATUAL igual a Reserva.",
+        "UCs removidas — Controle": "Conta as UCs com SITUACAO_ATUAL igual a Removido e SITUACAO_INICIAL igual a Controle.",
+        "UCs removidas — Tratamento": "Conta as UCs com SITUACAO_ATUAL igual a Removido e SITUACAO_INICIAL igual a Ativo.",
+        "UCs com alertas": "Quantidade distinta de NUM_UC com pelo menos uma linha de alerta na seção e nos filtros selecionados.",
+        "Sem atualização": "Quantidade distinta de NUM_UC da base que não apareceu no relatório MDM correspondente.",
+        "Desligamentos": "Quantidade distinta de NUM_UC com alerta SITUACAO_UC alterada para DS.",
+        "Mudanças de Titularidade": "Quantidade distinta de NUM_UC com nova DT_MUD_TIT igual ou posterior a 01/03/2026.",
+        "Mudança de Classe": "Quantidade distinta de NUM_UC cuja CLASSE difere de B1 ou cujo GRUPO difere de 1.",
+        "Tarifas Especiais Ativadas": "Quantidade distinta de NUM_UC em que TARIFA_SOCIAL ou TARIFA_BRANCA passou para S.",
+        "Alterações GD": "Quantidade distinta de NUM_UC com alteração em um dos campos monitorados de geração distribuída.",
+    }
+    if label in rules:
+        return rules[label]
+    if label.startswith("GD "):
+        reference = "01/03/2026" if label.endswith("inicial") else "a data de referência"
+        group = "Tratamento" if "Tratamento" in label else "Controle"
+        return (
+            f"Conta UCs inicialmente em {group} com data de início de GD anterior a {reference}. "
+            "Casos com início e fim da GD beneficiária no mesmo dia são excluídos; o percentual usa o total inicial do grupo."
+        )
+    if "Uso Pessoal" in label or "Trabalho" in label or "Não informada" in label:
+        group = "Tratamento" if "Tratamento" in label else "Controle"
+        category = label.split(" — ")[0]
+        return (
+            f"Conta UCs em {group} cuja FINALIDADE é {category}; o percentual divide "
+            f"essa contagem pelo total atual de UCs em {group}."
+        )
+    if "com veículo" in label:
+        return "Conta UCs do grupo indicado com FABRI_VEIC preenchido."
+    if "com wallbox" in label:
+        return "Conta UCs do grupo indicado cujo STATUS_WALLBOX é igual a S."
+    if "com portátil" in label:
+        return "Conta UCs do grupo indicado cujo STATUS_PORTATIL é igual a S."
+    return "Valor calculado sobre as UCs resultantes dos filtros ativos da barra lateral."
+
+
+def show_metric(container, label: str, value: object, *args, **kwargs) -> None:
+    kwargs.setdefault("help", metric_calculation_help(label))
+    container.metric(label, value, *args, **kwargs)
+
+
+def chart_style(
+    fig: go.Figure, height: int = 390, help_text: str | None = None
+) -> go.Figure:
     fig.update_layout(
         height=height,
         margin=dict(l=20, r=20, t=55, b=20),
@@ -439,7 +543,7 @@ def chart_style(fig: go.Figure, height: int = 390) -> go.Figure:
         colorway=COLORS,
         legend_title_text="",
     )
-    return fig
+    return add_chart_help(fig, help_text)
 
 
 def count_table(frame: pd.DataFrame, column: str, name: str) -> pd.DataFrame:
@@ -532,14 +636,16 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
         control_filtered_gd / control_initial if control_initial else 0
     )
     row1 = st.columns(5)
-    row1[0].metric("UCs — Tratamento", f"{active:,}".replace(",", "."))
-    row1[1].metric("UCs — Controle", f"{control:,}".replace(",", "."))
-    row1[2].metric("UCs — Reserva", f"{reserve:,}".replace(",", "."))
-    row1[3].metric(
+    show_metric(row1[0], "UCs — Tratamento", f"{active:,}".replace(",", "."))
+    show_metric(row1[1], "UCs — Controle", f"{control:,}".replace(",", "."))
+    show_metric(row1[2], "UCs — Reserva", f"{reserve:,}".replace(",", "."))
+    show_metric(
+        row1[3],
         "UCs removidas — Controle",
         f"{removed_control:,}".replace(",", "."),
     )
-    row1[4].metric(
+    show_metric(
+        row1[4],
         "UCs removidas — Tratamento",
         f"{removed_treatment:,}".replace(",", "."),
     )
@@ -548,25 +654,29 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
         f"GD filtrada em {gd_reference_date:%d/%m/%Y}"
     )
     gd_row = st.columns(4)
-    gd_row[0].metric(
+    show_metric(
+        gd_row[0],
         "GD Tratamento — inicial",
         f"{active_initial_gd:,}".replace(",", "."),
         f"{active_initial_gd_percentage:.1%}".replace(".", ","),
         delta_color="normal",
     )
-    gd_row[1].metric(
+    show_metric(
+        gd_row[1],
         "GD Controle — inicial",
         f"{control_initial_gd:,}".replace(",", "."),
         f"{control_initial_gd_percentage:.1%}".replace(".", ","),
         delta_color="normal",
     )
-    gd_row[2].metric(
+    show_metric(
+        gd_row[2],
         "GD Tratamento — filtrada",
         f"{active_filtered_gd:,}".replace(",", "."),
         f"{active_filtered_gd_percentage:.1%}".replace(".", ","),
         delta_color="normal",
     )
-    gd_row[3].metric(
+    show_metric(
+        gd_row[3],
         "GD Controle — filtrada",
         f"{control_filtered_gd:,}".replace(",", "."),
         f"{control_filtered_gd_percentage:.1%}".replace(".", ","),
@@ -574,38 +684,44 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
     )
     st.caption("Finalidade por situação atual")
     active_purpose_row = st.columns(3)
-    active_purpose_row[0].metric(
+    show_metric(
+        active_purpose_row[0],
         "Uso Pessoal — Tratamento",
         f"{active_personal:,}".replace(",", "."),
         f"{active_personal_percentage:.1%}".replace(".", ","),
         delta_color="normal",
     )
-    active_purpose_row[1].metric(
+    show_metric(
+        active_purpose_row[1],
         "Trabalho — Tratamento",
         f"{active_work:,}".replace(",", "."),
         f"{active_work_percentage:.1%}".replace(".", ","),
         delta_color="normal",
     )
-    active_purpose_row[2].metric(
+    show_metric(
+        active_purpose_row[2],
         "Não informada — Tratamento",
         f"{active_purpose_missing:,}".replace(",", "."),
         f"{active_purpose_missing_percentage:.1%}".replace(".", ","),
         delta_color="normal",
     )
     control_purpose_row = st.columns(3)
-    control_purpose_row[0].metric(
+    show_metric(
+        control_purpose_row[0],
         "Uso Pessoal — Controle",
         f"{control_personal:,}".replace(",", "."),
         f"{control_personal_percentage:.1%}".replace(".", ","),
         delta_color="normal",
     )
-    control_purpose_row[1].metric(
+    show_metric(
+        control_purpose_row[1],
         "Trabalho — Controle",
         f"{control_work:,}".replace(",", "."),
         f"{control_work_percentage:.1%}".replace(".", ","),
         delta_color="normal",
     )
-    control_purpose_row[2].metric(
+    show_metric(
+        control_purpose_row[2],
         "Não informada — Controle",
         f"{control_purpose_missing:,}".replace(",", "."),
         f"{control_purpose_missing_percentage:.1%}".replace(".", ","),
@@ -613,28 +729,34 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
     )
     st.caption("Dados de Veículos e Carregadores com filtros selecionados")
     active_equipment_row = st.columns(3)
-    active_equipment_row[0].metric(
+    show_metric(
+        active_equipment_row[0],
         "UCs com veículo — Tratamento",
         f"{active_with_vehicle:,}".replace(",", "."),
     )
-    active_equipment_row[1].metric(
+    show_metric(
+        active_equipment_row[1],
         "UCs com wallbox — Tratamento",
         f"{active_with_wallbox:,}".replace(",", "."),
     )
-    active_equipment_row[2].metric(
+    show_metric(
+        active_equipment_row[2],
         "UCs com portátil — Tratamento",
         f"{active_with_portable:,}".replace(",", "."),
     )
     control_equipment_row = st.columns(3)
-    control_equipment_row[0].metric(
+    show_metric(
+        control_equipment_row[0],
         "UCs com veículo — Controle",
         f"{control_with_vehicle:,}".replace(",", "."),
     )
-    control_equipment_row[1].metric(
+    show_metric(
+        control_equipment_row[1],
         "UCs com wallbox — Controle",
         f"{control_with_wallbox:,}".replace(",", "."),
     )
-    control_equipment_row[2].metric(
+    show_metric(
+        control_equipment_row[2],
         "UCs com portátil — Controle",
         f"{control_with_portable:,}".replace(",", "."),
     )
@@ -707,10 +829,12 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
             direction="clockwise",
             rotation=donut_rotation,
         )
-        fig = chart_style(fig, 520)
         fig.update_layout(
             title=f"Situação em {gd_reference_date:%d/%m/%Y}",
             showlegend=False,
+        )
+        fig = chart_style(fig, 520)
+        fig.update_layout(
             margin=dict(l=95, r=95, t=75, b=115),
         )
         fig.add_annotation(text=f"<b>{status_total}</b><br>UCs", showarrow=False, font_size=18)
@@ -805,7 +929,12 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
                 )
             ]
         )
-        fig = chart_style(fig, 620)
+        fig = chart_style(
+            fig,
+            620,
+            "Conta as UCs por LOCAL e situação atual. O tamanho de cada bolha "
+            "representa a quantidade de UCs no município e no grupo indicado.",
+        )
         fig.update_layout(
             margin=dict(l=10, r=10, t=15, b=10),
             legend=dict(
@@ -1563,30 +1692,37 @@ def update_report_page(frame: pd.DataFrame) -> None:
 
         alert_ucs = int(alerts["NUM_UC"].nunique()) if not alerts.empty else 0
         first_metrics = st.columns(4)
-        first_metrics[0].metric(
+        show_metric(
+            first_metrics[0],
             "UCs com alertas", f"{alert_ucs:,}".replace(",", ".")
         )
-        first_metrics[1].metric(
+        show_metric(
+            first_metrics[1],
             "Sem atualização",
             f"{unique_ucs('Sem atualização'):,}".replace(",", "."),
         )
-        first_metrics[2].metric(
+        show_metric(
+            first_metrics[2],
             "Desligamentos", f"{unique_ucs('Desligamento'):,}".replace(",", ".")
         )
-        first_metrics[3].metric(
+        show_metric(
+            first_metrics[3],
             "Mudanças de Titularidade",
             f"{unique_ucs('Mudança de Titularidade'):,}".replace(",", "."),
         )
         second_metrics = st.columns(3)
-        second_metrics[0].metric(
+        show_metric(
+            second_metrics[0],
             "Mudança de Classe",
             f"{unique_ucs('Mudança de Classe'):,}".replace(",", "."),
         )
-        second_metrics[1].metric(
+        show_metric(
+            second_metrics[1],
             "Tarifas Especiais Ativadas",
             f"{unique_ucs('Tarifa Especial Ativada'):,}".replace(",", "."),
         )
-        second_metrics[2].metric(
+        show_metric(
+            second_metrics[2],
             "Alterações GD", f"{unique_ucs('Alteração GD'):,}".replace(",", ".")
         )
 
