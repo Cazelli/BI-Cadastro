@@ -1,2 +1,2 @@
-﻿NUM_UC,GRUPO_UC,TIPO_ALERTA,CAMPO,VALOR_ANTERIOR,VALOR_NOVO,DETALHE,ARQUIVO_ORIGEM
-105667226,Reserva,Sem atualização,PRESENCA_NO_RELATORIO,Presente na base,Ausente no relatório,A UC não recebeu dados no último relatório processado.,mdm-sandbox_clientes_novo-20260706-20260706.csv
+﻿DATA_ALERTA,NUM_UC,GRUPO_UC,TIPO_ALERTA,CAMPO,VALOR_ANTERIOR,VALOR_NOVO,DETALHE,ARQUIVO_ORIGEM
+2026-07-06,105667226,Reserva,Sem atualização,PRESENCA_NO_RELATORIO,Presente na base,Ausente no relatório,A UC não recebeu dados no último relatório processado.,mdm-sandbox_clientes_novo-20260706-20260706.csv

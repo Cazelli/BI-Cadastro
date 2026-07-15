@@ -2,12 +2,13 @@
   "arquivo_origem": "mdm-sandbox_clientes_novo-20260706-20260706.csv",
   "periodo_inicio": "20260706",
   "periodo_fim": "20260706",
-  "processado_em": "2026-07-14T14:03:37-03:00",
+  "processado_em": "2026-07-14T21:23:16-03:00",
   "ucs_no_relatorio": 253,
   "ucs_correspondentes": 237,
   "ucs_extras_ignoradas": 16,
   "ucs_sem_atualizacao": 1,
   "ucs_alteradas": 0,
   "alertas": 1,
+  "eventos_historicos": 52,
   "total_base": 238
 }

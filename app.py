@@ -19,6 +19,7 @@ ASSET_DIR = Path(__file__).with_name("assets")
 MUNICIPALITY_COORDINATES_FILE = ASSET_DIR / "municipios_coordenadas.csv"
 PARANA_BOUNDARY_FILE = ASSET_DIR / "parana_contorno.geojson"
 UPDATE_ALERT_FILE = Path(__file__).with_name("data") / "ultima_atualizacao_alertas.csv"
+UPDATE_HISTORY_FILE = Path(__file__).with_name("data") / "historico_alertas.csv"
 UPDATE_SUMMARY_FILE = Path(__file__).with_name("data") / "ultima_atualizacao_resumo.json"
 LOGIN_USER = "Copel"
 PASSWORD_SALT = b"copel-bi-cadastro-v1"
@@ -248,17 +249,44 @@ def load_map_assets() -> tuple[pd.DataFrame, dict]:
 
 @st.cache_data
 def load_update_report(
-    alerts_mtime: float, summary_mtime: float
+    history_mtime: float, summary_mtime: float
 ) -> tuple[pd.DataFrame, dict]:
-    del alerts_mtime, summary_mtime
+    del history_mtime, summary_mtime
     alerts = pd.read_csv(
-        UPDATE_ALERT_FILE,
+        UPDATE_HISTORY_FILE,
         dtype=str,
         keep_default_na=False,
         encoding="utf-8-sig",
     )
     summary = json.loads(UPDATE_SUMMARY_FILE.read_text(encoding="utf-8"))
     return alerts, summary
+
+
+MONTH_NAMES = {
+    1: "Janeiro",
+    2: "Fevereiro",
+    3: "Março",
+    4: "Abril",
+    5: "Maio",
+    6: "Junho",
+    7: "Julho",
+    8: "Agosto",
+    9: "Setembro",
+    10: "Outubro",
+    11: "Novembro",
+    12: "Dezembro",
+}
+EXPERIMENT_START_DATE = pd.Timestamp("2026-03-01")
+
+
+def alert_period_label(value: object) -> str:
+    date = pd.to_datetime(value, errors="coerce")
+    if pd.isna(date):
+        return "Sem data"
+    if date.normalize() == EXPERIMENT_START_DATE:
+        return "Inicial"
+    month = MONTH_NAMES[date.month]
+    return month if date.year == EXPERIMENT_START_DATE.year else f"{month}/{date.year}"
 
 
 def clean_label(value: object) -> str:
@@ -1440,17 +1468,17 @@ def update_report_page(frame: pd.DataFrame) -> None:
     title(
         "Monitoramento cadastral",
         "Atualizações e alertas",
-        "Alterações identificadas no último relatório para UCs já existentes na base consolidada.",
+        "Histórico de alterações desde o início do experimento para UCs da base consolidada.",
     )
-    if not UPDATE_ALERT_FILE.exists() or not UPDATE_SUMMARY_FILE.exists():
+    if not UPDATE_HISTORY_FILE.exists() or not UPDATE_SUMMARY_FILE.exists():
         st.info(
-            "Nenhuma atualização foi processada. Execute `py update_base.py` após "
-            "adicionar um relatório válido à pasta data."
+            "Nenhum histórico foi gerado. Execute `py update_base.py --force` uma "
+            "vez para construir o histórico inicial."
         )
         return
 
     alerts, summary = load_update_report(
-        UPDATE_ALERT_FILE.stat().st_mtime,
+        UPDATE_HISTORY_FILE.stat().st_mtime,
         UPDATE_SUMMARY_FILE.stat().st_mtime,
     )
     alerts["TIPO_ALERTA"] = alerts["TIPO_ALERTA"].replace(
@@ -1471,6 +1499,9 @@ def update_report_page(frame: pd.DataFrame) -> None:
 
     allowed_ucs = {normalized_uc(value) for value in frame["NUM_UC"]}
     alerts = alerts[alerts["NUM_UC"].map(normalized_uc).isin(allowed_ucs)].copy()
+    alerts["DATA_ALERTA"] = pd.to_datetime(alerts["DATA_ALERTA"], errors="coerce")
+    alerts = alerts[alerts["DATA_ALERTA"].notna()].copy()
+    alerts["PERIODO"] = alerts["DATA_ALERTA"].map(alert_period_label)
 
     start = pd.to_datetime(summary.get("periodo_inicio"), format="%Y%m%d", errors="coerce")
     end = pd.to_datetime(summary.get("periodo_fim"), format="%Y%m%d", errors="coerce")
@@ -1483,9 +1514,37 @@ def update_report_page(frame: pd.DataFrame) -> None:
     else:
         period = "não informado"
     st.caption(
-        f"Relatório: {summary.get('arquivo_origem', 'não informado')} · "
-        f"Período: {period} · Apenas UCs da base consolidada"
+        f"Último relatório: {summary.get('arquivo_origem', 'não informado')} · "
+        f"Período do relatório: {period} · Histórico desde 01/03/2026"
     )
+
+    history_end_candidates = [EXPERIMENT_START_DATE]
+    if pd.notna(end):
+        history_end_candidates.append(end)
+    if not alerts.empty:
+        history_end_candidates.append(alerts["DATA_ALERTA"].max())
+    history_end = max(history_end_candidates)
+    month_starts = pd.date_range(
+        EXPERIMENT_START_DATE.replace(day=1),
+        history_end.replace(day=1),
+        freq="MS",
+    )
+    period_options = ["Inicial"]
+    for month_start in month_starts:
+        label = alert_period_label(month_start + pd.Timedelta(days=1))
+        if label not in period_options:
+            period_options.append(label)
+    selected_periods = st.pills(
+        "Períodos do histórico",
+        period_options,
+        selection_mode="multi",
+        help=(
+            "Inicial corresponde a 01/03/2026 e Março ao período de 02/03 a "
+            "31/03. Os demais meses são completos; seleções múltiplas são combinadas."
+        ),
+    )
+    if selected_periods:
+        alerts = alerts[alerts["PERIODO"].isin(selected_periods)].copy()
 
     alert_ucs = int(alerts["NUM_UC"].nunique()) if not alerts.empty else 0
     switched_off = int(
@@ -1505,16 +1564,33 @@ def update_report_page(frame: pd.DataFrame) -> None:
     without_update = int(
         alerts.loc[alerts["TIPO_ALERTA"].eq("Sem atualização"), "NUM_UC"].nunique()
     )
-    metrics = st.columns(6)
-    metrics[0].metric("UCs com alertas", f"{alert_ucs:,}".replace(",", "."))
-    metrics[1].metric("Sem atualização", f"{without_update:,}".replace(",", "."))
-    metrics[2].metric("Desligamentos", f"{switched_off:,}".replace(",", "."))
-    metrics[3].metric("Mudança de Classe", f"{class_changes:,}".replace(",", "."))
-    metrics[4].metric(
+    title_changes = int(
+        alerts.loc[
+            alerts["TIPO_ALERTA"].eq("Mudança de Titularidade"), "NUM_UC"
+        ].nunique()
+    )
+    first_metrics = st.columns(4)
+    first_metrics[0].metric("UCs com alertas", f"{alert_ucs:,}".replace(",", "."))
+    first_metrics[1].metric(
+        "Sem atualização", f"{without_update:,}".replace(",", ".")
+    )
+    first_metrics[2].metric(
+        "Desligamentos", f"{switched_off:,}".replace(",", ".")
+    )
+    first_metrics[3].metric(
+        "Mudanças de Titularidade", f"{title_changes:,}".replace(",", ".")
+    )
+    second_metrics = st.columns(3)
+    second_metrics[0].metric(
+        "Mudança de Classe", f"{class_changes:,}".replace(",", ".")
+    )
+    second_metrics[1].metric(
         "Tarifas Especiais Ativadas",
         f"{special_tariffs:,}".replace(",", "."),
     )
-    metrics[5].metric("Alterações GD", f"{gd_changes:,}".replace(",", "."))
+    second_metrics[2].metric(
+        "Alterações GD", f"{gd_changes:,}".replace(",", ".")
+    )
 
     if alerts.empty:
         st.success("Nenhum alerta foi encontrado para a seleção atual.")
@@ -1567,9 +1643,14 @@ def update_report_page(frame: pd.DataFrame) -> None:
             chart_style(fig, 430), width="stretch", config={"displayModeBar": False}
         )
 
-    st.markdown("#### Detalhamento do último relatório")
-    detail = view[
+    st.markdown("#### Histórico detalhado de alertas")
+    detail = view.sort_values(
+        ["DATA_ALERTA", "TIPO_ALERTA", "NUM_UC", "CAMPO"],
+        ascending=[False, True, True, True],
+    )[
         [
+            "DATA_ALERTA",
+            "PERIODO",
             "NUM_UC",
             "GRUPO_UC",
             "TIPO_ALERTA",
@@ -1580,6 +1661,8 @@ def update_report_page(frame: pd.DataFrame) -> None:
         ]
     ].rename(
         columns={
+            "DATA_ALERTA": "Data do alerta",
+            "PERIODO": "Período",
             "GRUPO_UC": "Grupo da UC",
             "TIPO_ALERTA": "Tipo de alerta",
             "CAMPO": "Campo",
@@ -1588,8 +1671,9 @@ def update_report_page(frame: pd.DataFrame) -> None:
             "DETALHE": "Detalhe",
         }
     )
+    detail["Data do alerta"] = detail["Data do alerta"].dt.strftime("%d/%m/%Y")
     st.dataframe(
-        detail.sort_values(["Tipo de alerta", "NUM_UC", "Campo"]),
+        detail,
         width="stretch",
         hide_index=True,
         height=500,

@@ -19,6 +19,7 @@ DATA_DIR = ROOT / "data"
 BASE_FILE = ROOT / "base_consolidada_copel.csv"
 BASE_XLSX_FILE = ROOT / "base_consolidada_copel.xlsx"
 ALERT_FILE = DATA_DIR / "ultima_atualizacao_alertas.csv"
+HISTORY_FILE = DATA_DIR / "historico_alertas.csv"
 SUMMARY_FILE = DATA_DIR / "ultima_atualizacao_resumo.json"
 BACKUP_DIR = DATA_DIR / "backups"
 REPORT_PATTERN = re.compile(
@@ -29,6 +30,7 @@ TITLE_CHANGE_START_DATE = pd.Timestamp("2026-03-01")
 TRACKING_COLUMNS = ["DT_SITUACAO_UC", "DT_MUD_TIT", "MUD_TIT"]
 
 ALERT_COLUMNS = [
+    "DATA_ALERTA",
     "NUM_UC",
     "GRUPO_UC",
     "TIPO_ALERTA",
@@ -204,6 +206,13 @@ def atomic_json(payload: dict, destination: Path) -> None:
     temporary.replace(destination)
 
 
+def report_end_date(report: Path) -> str:
+    match = REPORT_PATTERN.fullmatch(report.name)
+    if not match:
+        raise ValueError(f"Nome de relatório inválido: {report.name}")
+    return datetime.strptime(match.group(2), "%Y%m%d").strftime("%Y-%m-%d")
+
+
 def update_excel_tracking_columns(base: pd.DataFrame, report: Path) -> None:
     if not BASE_XLSX_FILE.exists():
         return
@@ -277,9 +286,11 @@ def add_alert(
     new: str,
     detail: str,
     source: str,
+    alert_date: str = "",
 ) -> None:
     alerts.append(
         {
+            "DATA_ALERTA": alert_date,
             "NUM_UC": uc,
             "GRUPO_UC": group,
             "TIPO_ALERTA": alert_type,
@@ -290,6 +301,102 @@ def add_alert(
             "ARQUIVO_ORIGEM": source,
         }
     )
+
+
+def alert_date_for_change(
+    field: str, new: str, converted: dict[str, str], fallback_date: str
+) -> str:
+    if field == "SITUACAO_UC":
+        return converted.get("DT_SITUACAO_UC") or fallback_date
+    if field in {"GD_BENE_INIC", "GD_BENE_FIM", "DATA_INICIO_GD", "DATA_FIM_GD"}:
+        return new or fallback_date
+    return fallback_date
+
+
+def dated_history_from_base(base: pd.DataFrame, source: str) -> pd.DataFrame:
+    events: list[dict[str, str]] = []
+    for _, row in base.iterrows():
+        uc = identifier(row["NUM_UC"])
+        group = group_label(row["SITUACAO_INICIAL"])
+
+        title_date = iso_date(row.get("DT_MUD_TIT", ""))
+        if title_date and pd.Timestamp(title_date) >= TITLE_CHANGE_START_DATE:
+            add_alert(
+                events,
+                uc,
+                group,
+                "Mudança de Titularidade",
+                "MUD_TIT",
+                "",
+                title_date,
+                "Mudança de titularidade registrada desde o início do experimento.",
+                source,
+                title_date,
+            )
+
+        situation_date = iso_date(row.get("DT_SITUACAO_UC", ""))
+        if (
+            upper(row.get("SITUACAO_UC", "")) == "DS"
+            and situation_date
+            and pd.Timestamp(situation_date) >= TITLE_CHANGE_START_DATE
+        ):
+            add_alert(
+                events,
+                uc,
+                group,
+                "Desligamento",
+                "SITUACAO_UC",
+                "",
+                "DS",
+                "Desligamento registrado desde o início do experimento.",
+                source,
+                situation_date,
+            )
+
+        for field in ("GD_BENE_INIC", "GD_BENE_FIM", "DATA_INICIO_GD", "DATA_FIM_GD"):
+            event_date = iso_date(row.get(field, ""))
+            if event_date and pd.Timestamp(event_date) >= TITLE_CHANGE_START_DATE:
+                add_alert(
+                    events,
+                    uc,
+                    group,
+                    "Alteração GD",
+                    field,
+                    "",
+                    event_date,
+                    "Evento de GD datado desde o início do experimento.",
+                    source,
+                    event_date,
+                )
+    return pd.DataFrame(events, columns=ALERT_COLUMNS)
+
+
+def update_alert_history(base: pd.DataFrame, latest: pd.DataFrame, report: Path) -> int:
+    frames = [dated_history_from_base(base, report.name), latest]
+    if HISTORY_FILE.exists():
+        existing = pd.read_csv(
+            HISTORY_FILE,
+            dtype=str,
+            keep_default_na=False,
+            encoding="utf-8-sig",
+        )
+        for column in ALERT_COLUMNS:
+            if column not in existing.columns:
+                existing[column] = ""
+        frames.insert(0, existing[ALERT_COLUMNS])
+
+    history = pd.concat(frames, ignore_index=True)
+    history["DATA_ALERTA"] = history["DATA_ALERTA"].map(iso_date)
+    history = history[
+        history["DATA_ALERTA"].ne("")
+        & pd.to_datetime(history["DATA_ALERTA"]).ge(TITLE_CHANGE_START_DATE)
+    ].copy()
+    history = history.drop_duplicates(
+        subset=["NUM_UC", "TIPO_ALERTA", "CAMPO", "DATA_ALERTA", "VALOR_NOVO"],
+        keep="last",
+    ).sort_values(["DATA_ALERTA", "NUM_UC", "TIPO_ALERTA", "CAMPO"])
+    atomic_csv(history[ALERT_COLUMNS], HISTORY_FILE)
+    return int(len(history))
 
 
 def change_detail(field: str, new: str) -> tuple[str, str]:
@@ -354,6 +461,7 @@ def process_report(report: Path, force: bool = False) -> dict:
         raise ValueError(f"UCs duplicadas no relatório: {', '.join(duplicates[:10])}")
 
     base_index = {uc: index for index, uc in base["NUM_UC"].items()}
+    current_report_date = report_end_date(report)
     alerts: list[dict[str, str]] = []
     changed_ucs: set[str] = set()
     ignored_extra_ucs = 0
@@ -382,6 +490,26 @@ def process_report(report: Path, force: bool = False) -> dict:
         matched_uc_ids.add(uc)
         index = base_index[uc]
         group = group_label(base.at[index, "SITUACAO_INICIAL"])
+        previous_title_date = iso_date(base.at[index, "DT_MUD_TIT"])
+        new_title_date = converted.get("DT_MUD_TIT", "")
+        if (
+            new_title_date
+            and pd.Timestamp(new_title_date) >= TITLE_CHANGE_START_DATE
+            and new_title_date != previous_title_date
+        ):
+            add_alert(
+                alerts,
+                uc,
+                group,
+                "Mudança de Titularidade",
+                "MUD_TIT",
+                previous_title_date,
+                new_title_date,
+                "Nova mudança de titularidade identificada no relatório.",
+                report.name,
+                new_title_date,
+            )
+            changed_ucs.add(uc)
         for field in MONITORED_COLUMNS:
             if field not in converted:
                 continue
@@ -402,6 +530,9 @@ def process_report(report: Path, force: bool = False) -> dict:
                     new,
                     detail,
                     report.name,
+                    alert_date_for_change(
+                        field, new, converted, current_report_date
+                    ),
                 )
                 changed_ucs.add(uc)
 
@@ -430,6 +561,7 @@ def process_report(report: Path, force: bool = False) -> dict:
                     current,
                     f"Valor esperado: {expected}.",
                     report.name,
+                    current_report_date,
                 )
 
     missing_update_ucs = set(base_index).difference(matched_uc_ids)
@@ -445,6 +577,7 @@ def process_report(report: Path, force: bool = False) -> dict:
             "Ausente no relatório",
             "A UC não recebeu dados no último relatório processado.",
             report.name,
+            current_report_date,
         )
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -457,6 +590,7 @@ def process_report(report: Path, force: bool = False) -> dict:
     atomic_csv(base, BASE_FILE)
     atomic_csv(alerts_frame, ALERT_FILE)
     update_excel_tracking_columns(base, report)
+    history_count = update_alert_history(base, alerts_frame, report)
 
     filename_match = REPORT_PATTERN.fullmatch(report.name)
     summary = {
@@ -470,6 +604,7 @@ def process_report(report: Path, force: bool = False) -> dict:
         "ucs_sem_atualizacao": int(len(missing_update_ucs)),
         "ucs_alteradas": int(len(changed_ucs)),
         "alertas": int(len(alerts_frame)),
+        "eventos_historicos": history_count,
         "total_base": int(len(base)),
     }
     atomic_json(summary, SUMMARY_FILE)
