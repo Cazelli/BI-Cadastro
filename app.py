@@ -283,6 +283,21 @@ MONTH_NAMES = {
     12: "Dezembro",
 }
 EXPERIMENT_START_DATE = pd.Timestamp("2026-03-01")
+ALERT_FIELD_LABELS = {
+    "SITUACAO_UC": "Situação da UC alterada",
+    "CLASSE": "Classe da UC alterada",
+    "GRUPO": "Grupo tarifário alterado",
+    "GD_BENE_INIC": "Início como beneficiária de GD",
+    "GD_BENE_FIM": "Fim do vínculo como beneficiária de GD",
+    "TIPO_GD_BENE": "Tipo de GD beneficiária alterado",
+    "DATA_INICIO_GD": "Início da geração distribuída",
+    "DATA_FIM_GD": "Fim da geração distribuída",
+    "TIPO_GD_GERA": "Tipo de GD geradora alterado",
+    "TARIFA_SOCIAL": "Tarifa social ativada",
+    "TARIFA_BRANCA": "Tarifa branca ativada",
+    "MUD_TIT": "Mudança de titularidade",
+    "PRESENCA_NO_RELATORIO": "UC ausente no último relatório",
+}
 
 
 def alert_period_label(value: object) -> str:
@@ -1610,6 +1625,9 @@ def update_report_page(frame: pd.DataFrame) -> None:
                 barmode="group",
                 text="Alertas",
                 labels={"GRUPO_UC": "Grupo da UC", "TIPO_ALERTA": "Tipo"},
+                category_orders={
+                    "GRUPO_UC": ["Tratamento", "Controle", "Reserva"]
+                },
                 color_discrete_sequence=COLORS,
             )
             fig.update_traces(textposition="outside")
@@ -1622,15 +1640,23 @@ def update_report_page(frame: pd.DataFrame) -> None:
             )
         with right:
             by_field = view.groupby("CAMPO").size().reset_index(name="Alertas")
+            by_field["Alteração"] = by_field["CAMPO"].map(
+                lambda field: ALERT_FIELD_LABELS.get(
+                    field, str(field).replace("_", " ").capitalize()
+                )
+            )
             fig = px.pie(
                 by_field,
-                names="CAMPO",
+                names="Alteração",
                 values="Alertas",
                 hole=.42,
                 color_discrete_sequence=COLORS,
             )
             fig.update_traces(textinfo="label+value")
-            fig.update_layout(title="Distribuição por campo alterado")
+            fig.update_layout(
+                title="Distribuição por campo alterado",
+                legend_title_text="Tipo de alteração",
+            )
             st.plotly_chart(
                 chart_style(fig, 430),
                 width="stretch",
