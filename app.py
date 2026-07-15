@@ -403,13 +403,10 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
         "Atalhos por período",
         list(period_dates),
         selection_mode="single",
+        label_visibility="collapsed",
         key="reference_period",
         on_change=apply_reference_period,
         args=(period_dates,),
-        help=(
-            "Inicial usa 28/02/2026. Cada mês usa o respectivo "
-            "último dia como data de referência."
-        ),
     )
 
     reference_frame = frame.copy()
