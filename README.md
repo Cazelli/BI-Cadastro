@@ -58,5 +58,10 @@ coluna `amostra` e todas as UCs extras do relatório são ignoradas. UCs da base
 que não apareçam no relatório permanecem inalteradas. Uma cópia de segurança
 local é criada em `data/backups/` antes de cada atualização.
 
+O processo também sincroniza no CSV e no XLSX as colunas
+`DT_SITUACAO_UC` (`data_situacao`), `DT_MUD_TIT` (`max_data_tt`) e
+`MUD_TIT`. Esta última recebe `S` quando `DT_MUD_TIT` é igual ou posterior a
+01/03/2026; nos demais casos permanece vazia.
+
 Os relatórios brutos e backups ficam fora do Git por poderem conter dados
 pessoais. Os arquivos de alertas publicados não incluem nome, telefone ou e-mail.

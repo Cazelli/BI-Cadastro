@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from copy import copy
 import json
 import re
 import shutil
@@ -9,11 +10,14 @@ from pathlib import Path
 from typing import Callable
 
 import pandas as pd
+from openpyxl import load_workbook
+from openpyxl.utils import get_column_letter
 
 
 ROOT = Path(__file__).resolve().parent
 DATA_DIR = ROOT / "data"
 BASE_FILE = ROOT / "base_consolidada_copel.csv"
+BASE_XLSX_FILE = ROOT / "base_consolidada_copel.xlsx"
 ALERT_FILE = DATA_DIR / "ultima_atualizacao_alertas.csv"
 SUMMARY_FILE = DATA_DIR / "ultima_atualizacao_resumo.json"
 BACKUP_DIR = DATA_DIR / "backups"
@@ -21,6 +25,8 @@ REPORT_PATTERN = re.compile(
     r"^mdm-sandbox_clientes_novo-(\d{8})-(\d{8})\.csv$",
     re.IGNORECASE,
 )
+TITLE_CHANGE_START_DATE = pd.Timestamp("2026-03-01")
+TRACKING_COLUMNS = ["DT_SITUACAO_UC", "DT_MUD_TIT", "MUD_TIT"]
 
 ALERT_COLUMNS = [
     "NUM_UC",
@@ -130,6 +136,8 @@ FIELD_MAP: dict[str, tuple[str, Normalizer]] = {
     "situacao_uc": ("SITUACAO_UC", upper),
     "tipo_fase": ("TIPO_FASE", upper),
     "municipio": ("LOCAL", upper),
+    "data_situacao": ("DT_SITUACAO_UC", iso_date),
+    "max_data_tt": ("DT_MUD_TIT", iso_date),
     "inicio_beneficiaria": ("GD_BENE_INIC", iso_date),
     "fim_benificiaria": ("GD_BENE_FIM", iso_date),
     # TIPO_GD_BENE is not modalidade_geracao. This optional source column will
@@ -151,6 +159,7 @@ TARGET_NORMALIZERS: dict[str, Normalizer] = {
     )
     for target, normalizer in FIELD_MAP.values()
 }
+TARGET_NORMALIZERS["MUD_TIT"] = upper
 
 
 def newest_report() -> Path:
@@ -193,6 +202,69 @@ def atomic_json(payload: dict, destination: Path) -> None:
         encoding="utf-8",
     )
     temporary.replace(destination)
+
+
+def update_excel_tracking_columns(base: pd.DataFrame, report: Path) -> None:
+    if not BASE_XLSX_FILE.exists():
+        return
+
+    excel_backup = BACKUP_DIR / f"base_consolidada_xlsx_before_{report.stem}.xlsx"
+    if not excel_backup.exists():
+        shutil.copy2(BASE_XLSX_FILE, excel_backup)
+
+    workbook = load_workbook(BASE_XLSX_FILE)
+    worksheet = (
+        workbook["base_consolidada"]
+        if "base_consolidada" in workbook.sheetnames
+        else workbook.active
+    )
+    headers = {
+        text(cell.value): cell.column
+        for cell in worksheet[1]
+        if text(cell.value)
+    }
+    if "NUM_UC" not in headers:
+        raise ValueError("A planilha base_consolidada_copel.xlsx não possui NUM_UC.")
+
+    for column in TRACKING_COLUMNS:
+        if column in headers:
+            continue
+        new_column = worksheet.max_column + 1
+        header_cell = worksheet.cell(row=1, column=new_column, value=column)
+        previous_header = worksheet.cell(row=1, column=new_column - 1)
+        if previous_header.has_style:
+            header_cell._style = copy(previous_header._style)
+            header_cell.font = copy(previous_header.font)
+            header_cell.fill = copy(previous_header.fill)
+            header_cell.border = copy(previous_header.border)
+            header_cell.alignment = copy(previous_header.alignment)
+            header_cell.number_format = previous_header.number_format
+            header_cell.protection = copy(previous_header.protection)
+        headers[column] = new_column
+
+    if worksheet.auto_filter.ref:
+        worksheet.auto_filter.ref = (
+            f"A1:{get_column_letter(worksheet.max_column)}{worksheet.max_row}"
+        )
+
+    base_by_uc = base.set_index("NUM_UC", drop=False)
+    uc_column = headers["NUM_UC"]
+    for row_number in range(2, worksheet.max_row + 1):
+        uc = identifier(worksheet.cell(row=row_number, column=uc_column).value)
+        if not uc or uc not in base_by_uc.index:
+            continue
+        for column in TRACKING_COLUMNS:
+            value = text(base_by_uc.at[uc, column])
+            cell = worksheet.cell(row=row_number, column=headers[column])
+            if column.startswith("DT_") and value:
+                cell.value = datetime.strptime(value, "%Y-%m-%d").date()
+                cell.number_format = "yyyy-mm-dd"
+            else:
+                cell.value = value or None
+
+    temporary = BASE_XLSX_FILE.with_suffix(".tmp.xlsx")
+    workbook.save(temporary)
+    temporary.replace(BASE_XLSX_FILE)
 
 
 def add_alert(
@@ -263,6 +335,9 @@ def process_report(report: Path, force: bool = False) -> dict:
     base.columns = [text(column) for column in base.columns]
     incoming.columns = [text(column).lower() for column in incoming.columns]
 
+    for column in TRACKING_COLUMNS:
+        if column not in base.columns:
+            base[column] = ""
     validate_columns(base, {"NUM_UC", "SITUACAO_INICIAL", *TARGET_NORMALIZERS}, "base")
     required_sources = set(FIELD_MAP).difference(OPTIONAL_SOURCE_COLUMNS)
     validate_columns(incoming, {"uc", *required_sources}, report.name)
@@ -296,6 +371,13 @@ def process_report(report: Path, force: bool = False) -> dict:
             for source, (target, normalizer) in FIELD_MAP.items()
             if source in incoming.columns
         }
+        title_change_date = converted.get("DT_MUD_TIT", "")
+        converted["MUD_TIT"] = (
+            "S"
+            if title_change_date
+            and pd.Timestamp(title_change_date) >= TITLE_CHANGE_START_DATE
+            else ""
+        )
         matched_ucs += 1
         matched_uc_ids.add(uc)
         index = base_index[uc]
@@ -374,6 +456,7 @@ def process_report(report: Path, force: bool = False) -> dict:
     alerts_frame = pd.DataFrame(alerts, columns=ALERT_COLUMNS)
     atomic_csv(base, BASE_FILE)
     atomic_csv(alerts_frame, ALERT_FILE)
+    update_excel_tracking_columns(base, report)
 
     filename_match = REPORT_PATTERN.fullmatch(report.name)
     summary = {

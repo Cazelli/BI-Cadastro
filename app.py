@@ -223,6 +223,8 @@ def load_data(file_mtime: float) -> pd.DataFrame:
     ]
     for column in [
         "DT_ATIVACAO",
+        "DT_SITUACAO_UC",
+        "DT_MUD_TIT",
         "DT_DISTRATO",
         "GD_BENE_INIC",
         "GD_BENE_FIM",
@@ -1623,6 +1625,9 @@ def quality_page(frame: pd.DataFrame) -> None:
         "TIPO_FASE",
         "ETAPA",
         "DT_ATIVACAO",
+        "DT_SITUACAO_UC",
+        "DT_MUD_TIT",
+        "MUD_TIT",
         "DT_DISTRATO",
         "MOTIV_DIST",
         "IND_SOLICITACAO",
