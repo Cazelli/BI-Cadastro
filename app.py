@@ -329,6 +329,16 @@ def options_for(frame: pd.DataFrame, column: str) -> list[str]:
     return sorted(frame[column].dropna().astype(str).unique().tolist())
 
 
+def apply_reference_period(period_dates: dict[str, pd.Timestamp]) -> None:
+    selected = st.session_state.get("reference_period")
+    if selected in period_dates:
+        st.session_state["reference_date"] = period_dates[selected].date()
+
+
+def clear_reference_period() -> None:
+    st.session_state["reference_period"] = None
+
+
 def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestamp]:
     st.sidebar.markdown("## BI Cadastro")
     page = st.sidebar.radio(
@@ -351,15 +361,44 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
         '<p class="filter-caption">Seleção vazia considera todos os valores.</p>',
         unsafe_allow_html=True,
     )
+    if "reference_date" not in st.session_state:
+        st.session_state["reference_date"] = PROJECT_START_DATE.date()
     gd_reference_date = pd.Timestamp(
         st.sidebar.date_input(
             "Data de referência",
-            value=PROJECT_START_DATE.date(),
+            key="reference_date",
+            on_change=clear_reference_period,
             help=(
                 "Recalcula a GD inicial e a situação das UCs na data "
                 "selecionada."
             ),
         )
+    )
+
+    latest_date = latest_report_date() or PROJECT_START_DATE
+    period_dates = {
+        "Situação inicial": PROJECT_START_DATE - pd.Timedelta(days=1)
+    }
+    for month_start in pd.date_range(
+        PROJECT_START_DATE.replace(day=1),
+        latest_date.replace(day=1),
+        freq="MS",
+    ):
+        label = MONTH_NAMES[month_start.month]
+        if month_start.year != PROJECT_START_DATE.year:
+            label = f"{label}/{month_start.year}"
+        period_dates[label] = month_start + pd.offsets.MonthEnd(0)
+    st.sidebar.pills(
+        "Atalhos por período",
+        list(period_dates),
+        selection_mode="single",
+        key="reference_period",
+        on_change=apply_reference_period,
+        args=(period_dates,),
+        help=(
+            "Situação inicial usa 28/02/2026. Cada mês usa o respectivo "
+            "último dia como data de referência."
+        ),
     )
 
     reference_frame = frame.copy()
