@@ -270,11 +270,17 @@ def dated_history_from_base(base: pd.DataFrame, source: str) -> pd.DataFrame:
             )
 
         situation_date = iso_date(row.get("DT_SITUACAO_UC", ""))
+        situation = upper(row.get("SITUACAO_UC", ""))
         if (
-            upper(row.get("SITUACAO_UC", "")) == "DS"
+            situation in {"DS", "CR"}
             and situation_date
             and pd.Timestamp(situation_date) >= TITLE_CHANGE_START_DATE
         ):
+            detail = (
+                "Desligamento registrado desde o início do experimento."
+                if situation == "DS"
+                else "Corte registrado desde o início do experimento."
+            )
             add_alert(
                 events,
                 uc,
@@ -282,8 +288,8 @@ def dated_history_from_base(base: pd.DataFrame, source: str) -> pd.DataFrame:
                 "Desligamento",
                 "SITUACAO_UC",
                 "",
-                "DS",
-                "Desligamento registrado desde o início do experimento.",
+                situation,
+                detail,
                 source,
                 situation_date,
             )
@@ -307,6 +313,10 @@ def dated_history_from_base(base: pd.DataFrame, source: str) -> pd.DataFrame:
 
 
 def update_alert_history(base: pd.DataFrame, latest: pd.DataFrame, report: Path) -> int:
+    latest = latest.copy()
+    latest["TIPO_ALERTA"] = latest["TIPO_ALERTA"].replace(
+        {"Corte": "Desligamento"}
+    )
     frames = [dated_history_from_base(base, report.name), latest]
     if HISTORY_FILE.exists():
         existing = pd.read_csv(
@@ -318,6 +328,9 @@ def update_alert_history(base: pd.DataFrame, latest: pd.DataFrame, report: Path)
         for column in ALERT_COLUMNS:
             if column not in existing.columns:
                 existing[column] = ""
+        existing["TIPO_ALERTA"] = existing["TIPO_ALERTA"].replace(
+            {"Corte": "Desligamento"}
+        )
         frames.insert(0, existing[ALERT_COLUMNS])
 
     history = pd.concat(frames, ignore_index=True)
@@ -337,6 +350,8 @@ def update_alert_history(base: pd.DataFrame, latest: pd.DataFrame, report: Path)
 def change_detail(field: str, new: str) -> tuple[str, str]:
     if field == "SITUACAO_UC" and new == "DS":
         return "Desligamento", "A situação da UC mudou para desligada (DS)."
+    if field == "SITUACAO_UC" and new == "CR":
+        return "Desligamento", "A situação da UC mudou para corte (CR)."
     if field == "CLASSE":
         if new != "B1":
             return "Mudança de Classe", "A classe esperada é B1."

@@ -70,7 +70,8 @@ permanece vazia. Durante a leitura, o relatório MDM é regravado sem as colunas
 
 Cada execução acrescenta ao `data/historico_alertas.csv` os novos eventos sem
 duplicar os já registrados. O histórico contém somente mudanças com data igual
-ou posterior a 01/03/2026, incluindo mudança de titularidade, desligamento,
+ou posterior a 01/03/2026, incluindo mudança de titularidade, desligamentos
+(categoria única para DS e CR, diferenciados no detalhe),
 mudança de classe, ativação de tarifa especial e alterações de geração
 distribuída. Na página **Atualizações e alertas**, os seletores de período aceitam
 uma ou várias opções. **Inicial** considera registros até 28/02/2026 e **Março**

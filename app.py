@@ -495,7 +495,7 @@ def metric_calculation_help(label: str) -> str:
         "UCs removidas — Tratamento": "Conta as UCs removidas do grupo Tratamento de acordo com os filtros ativos.",
         "UCs com alertas": "Quantidade de UCs com pelo menos uma linha de alerta na seção e nos filtros selecionados.",
         "Sem atualização": "Quantidade distinta de UCs da base que não aparecem no relatório.",
-        "Desligamentos": "Quantidade distinta de UCs com alerta de desligamento ou corte.",
+        "Desligamentos": "Quantidade distinta de UCs cuja SITUACAO_UC mudou para DS (desligamento) ou CR (corte).",
         "Mudanças de Titularidade": "Quantidade distinta de UCs com mudança de titularidade.",
         "Mudança de Classe": "Quantidade distinta de UCs com mudança de Classe e/ou Subgrupo.",
         "Tarifas Especiais Ativadas": "Quantidade distinta de UCs que passaram a ter tarifa social ou tarifa branca.",
@@ -1652,6 +1652,7 @@ def update_report_page(frame: pd.DataFrame) -> None:
         prepared["TIPO_ALERTA"] = prepared["TIPO_ALERTA"].replace(
             {
                 "Desconexão": "Desligamento",
+                "Corte": "Desligamento",
                 "Fora do padrão": "Mudança de Classe",
                 "Tarifa ativada": "Tarifa Especial Ativada",
             }
