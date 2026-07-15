@@ -206,8 +206,7 @@ def login_screen() -> None:
     left, center, right = st.columns([1, 1.15, 1])
     with center:
         st.markdown(
-            '<div class="brand-mark">BI <span>Cadastral</span></div>'
-            '<p style="color:#69727D">Painel consolidado de unidades consumidoras</p>',
+            '<div class="brand-mark">BI <span>Cadastral</span></div>',
             unsafe_allow_html=True,
         )
         with st.form("login_form", clear_on_submit=False):
