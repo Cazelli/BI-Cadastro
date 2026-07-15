@@ -408,11 +408,6 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
             filtered = filtered[filtered[column].astype(str).isin(source_values)]
 
     st.sidebar.divider()
-    show_metric(
-        st.sidebar,
-        "UCs na seleção",
-        f"{len(filtered):,}".replace(",", "."),
-    )
     if st.sidebar.button("Sair", width="stretch"):
         st.session_state.authenticated = False
         st.rerun()
@@ -435,7 +430,6 @@ def empty_state() -> None:
 
 def metric_calculation_help(label: str) -> str:
     rules = {
-        "UCs na seleção": "Número de linhas da base que permanecem após todos os filtros ativos da barra lateral.",
         "UCs — Tratamento": "Conta as UCs do grupo Tratamento de acordo com os filtros ativos.",
         "UCs — Controle": "Conta as UCs do grupo Controle de acordo com os filtros ativos.",
         "UCs — Reserva": "Conta as UCs do grupo Reserva de acordo com os filtros ativos.",
