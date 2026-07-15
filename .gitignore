@@ -8,3 +8,5 @@ venv/
 logs-*.txt
 data/mdm-sandbox_clientes_novo-*.csv
 data/backups/
+base_consolidada_copel.csv
+base_consolidada_copel.xlsx

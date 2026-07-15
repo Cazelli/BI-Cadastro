@@ -14,7 +14,7 @@ import streamlit as st
 
 
 APP_TITLE = "BI Cadastro | Copel"
-DATA_FILE = Path(__file__).with_name("base_consolidada_copel.csv")
+DATA_FILE = Path(__file__).with_name("base_consolidada_BI.csv")
 ASSET_DIR = Path(__file__).with_name("assets")
 MUNICIPALITY_COORDINATES_FILE = ASSET_DIR / "municipios_coordenadas.csv"
 PARANA_BOUNDARY_FILE = ASSET_DIR / "parana_contorno.geojson"

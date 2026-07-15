@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-from copy import copy
 import json
 import re
 import shutil
@@ -10,14 +9,11 @@ from pathlib import Path
 from typing import Callable
 
 import pandas as pd
-from openpyxl import load_workbook
-from openpyxl.utils import get_column_letter
 
 
 ROOT = Path(__file__).resolve().parent
 DATA_DIR = ROOT / "data"
-BASE_FILE = ROOT / "base_consolidada_copel.csv"
-BASE_XLSX_FILE = ROOT / "base_consolidada_copel.xlsx"
+BASE_FILE = ROOT / "base_consolidada_BI.csv"
 ALERT_FILE = DATA_DIR / "ultima_atualizacao_alertas.csv"
 HISTORY_FILE = DATA_DIR / "historico_alertas.csv"
 SUMMARY_FILE = DATA_DIR / "ultima_atualizacao_resumo.json"
@@ -28,6 +24,7 @@ REPORT_PATTERN = re.compile(
 )
 TITLE_CHANGE_START_DATE = pd.Timestamp("2026-03-01")
 TRACKING_COLUMNS = ["DT_SITUACAO_UC", "DT_MUD_TIT", "MUD_TIT"]
+PERSONAL_REPORT_COLUMNS = {"cliente", "nome", "celular", "email", "medidor"}
 
 ALERT_COLUMNS = [
     "DATA_ALERTA",
@@ -128,11 +125,6 @@ Normalizer = Callable[[object], str]
 # existing governance.
 FIELD_MAP: dict[str, tuple[str, Normalizer]] = {
     "uc_aneel": ("NUM_UC_ANEEL", identifier),
-    "cliente": ("COD_CLIENTE", identifier),
-    "nome": ("NOME_TITULAR", text),
-    "celular": ("CELULAR", identifier),
-    "email": ("EMAIL", text),
-    "medidor": ("NIO", identifier),
     "sub_grupo": ("CLASSE", upper),
     "classe_principal": ("GRUPO", integer),
     "situacao_uc": ("SITUACAO_UC", upper),
@@ -191,9 +183,15 @@ def validate_columns(frame: pd.DataFrame, required: set[str], label: str) -> Non
         raise ValueError(f"Colunas ausentes em {label}: {', '.join(missing)}")
 
 
-def atomic_csv(frame: pd.DataFrame, destination: Path) -> None:
+def atomic_csv(frame: pd.DataFrame, destination: Path, sep: str = ",") -> None:
     temporary = destination.with_suffix(destination.suffix + ".tmp")
-    frame.to_csv(temporary, index=False, encoding="utf-8-sig", lineterminator="\n")
+    frame.to_csv(
+        temporary,
+        index=False,
+        sep=sep,
+        encoding="utf-8-sig",
+        lineterminator="\n",
+    )
     temporary.replace(destination)
 
 
@@ -211,69 +209,6 @@ def report_end_date(report: Path) -> str:
     if not match:
         raise ValueError(f"Nome de relatório inválido: {report.name}")
     return datetime.strptime(match.group(2), "%Y%m%d").strftime("%Y-%m-%d")
-
-
-def update_excel_tracking_columns(base: pd.DataFrame, report: Path) -> None:
-    if not BASE_XLSX_FILE.exists():
-        return
-
-    excel_backup = BACKUP_DIR / f"base_consolidada_xlsx_before_{report.stem}.xlsx"
-    if not excel_backup.exists():
-        shutil.copy2(BASE_XLSX_FILE, excel_backup)
-
-    workbook = load_workbook(BASE_XLSX_FILE)
-    worksheet = (
-        workbook["base_consolidada"]
-        if "base_consolidada" in workbook.sheetnames
-        else workbook.active
-    )
-    headers = {
-        text(cell.value): cell.column
-        for cell in worksheet[1]
-        if text(cell.value)
-    }
-    if "NUM_UC" not in headers:
-        raise ValueError("A planilha base_consolidada_copel.xlsx não possui NUM_UC.")
-
-    for column in TRACKING_COLUMNS:
-        if column in headers:
-            continue
-        new_column = worksheet.max_column + 1
-        header_cell = worksheet.cell(row=1, column=new_column, value=column)
-        previous_header = worksheet.cell(row=1, column=new_column - 1)
-        if previous_header.has_style:
-            header_cell._style = copy(previous_header._style)
-            header_cell.font = copy(previous_header.font)
-            header_cell.fill = copy(previous_header.fill)
-            header_cell.border = copy(previous_header.border)
-            header_cell.alignment = copy(previous_header.alignment)
-            header_cell.number_format = previous_header.number_format
-            header_cell.protection = copy(previous_header.protection)
-        headers[column] = new_column
-
-    if worksheet.auto_filter.ref:
-        worksheet.auto_filter.ref = (
-            f"A1:{get_column_letter(worksheet.max_column)}{worksheet.max_row}"
-        )
-
-    base_by_uc = base.set_index("NUM_UC", drop=False)
-    uc_column = headers["NUM_UC"]
-    for row_number in range(2, worksheet.max_row + 1):
-        uc = identifier(worksheet.cell(row=row_number, column=uc_column).value)
-        if not uc or uc not in base_by_uc.index:
-            continue
-        for column in TRACKING_COLUMNS:
-            value = text(base_by_uc.at[uc, column])
-            cell = worksheet.cell(row=row_number, column=headers[column])
-            if column.startswith("DT_") and value:
-                cell.value = datetime.strptime(value, "%Y-%m-%d").date()
-                cell.number_format = "yyyy-mm-dd"
-            else:
-                cell.value = value or None
-
-    temporary = BASE_XLSX_FILE.with_suffix(".tmp.xlsx")
-    workbook.save(temporary)
-    temporary.replace(BASE_XLSX_FILE)
 
 
 def add_alert(
@@ -426,11 +361,6 @@ def process_report(report: Path, force: bool = False) -> dict:
     if not BASE_FILE.exists():
         raise FileNotFoundError(f"Base consolidada não encontrada: {BASE_FILE}")
 
-    previous_summary = read_summary()
-    if previous_summary.get("arquivo_origem") == report.name and not force:
-        print(f"Relatório já processado: {report.name}")
-        return previous_summary
-
     base = pd.read_csv(BASE_FILE, dtype=str, keep_default_na=False, encoding="utf-8-sig")
     incoming = pd.read_csv(
         report,
@@ -441,6 +371,17 @@ def process_report(report: Path, force: bool = False) -> dict:
     )
     base.columns = [text(column) for column in base.columns]
     incoming.columns = [text(column).lower() for column in incoming.columns]
+    removed_personal_columns = sorted(
+        PERSONAL_REPORT_COLUMNS.intersection(incoming.columns)
+    )
+    if removed_personal_columns:
+        incoming = incoming.drop(columns=removed_personal_columns)
+        atomic_csv(incoming, report, sep=";")
+
+    previous_summary = read_summary()
+    if previous_summary.get("arquivo_origem") == report.name and not force:
+        print(f"Relatório já processado e higienizado: {report.name}")
+        return previous_summary
 
     for column in TRACKING_COLUMNS:
         if column not in base.columns:
@@ -582,14 +523,13 @@ def process_report(report: Path, force: bool = False) -> dict:
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     BACKUP_DIR.mkdir(parents=True, exist_ok=True)
-    backup = BACKUP_DIR / f"base_consolidada_before_{report.stem}.csv"
+    backup = BACKUP_DIR / f"base_consolidada_BI_before_{report.stem}.csv"
     if not backup.exists():
         shutil.copy2(BASE_FILE, backup)
 
     alerts_frame = pd.DataFrame(alerts, columns=ALERT_COLUMNS)
     atomic_csv(base, BASE_FILE)
     atomic_csv(alerts_frame, ALERT_FILE)
-    update_excel_tracking_columns(base, report)
     history_count = update_alert_history(base, alerts_frame, report)
 
     filename_match = REPORT_PATTERN.fullmatch(report.name)
@@ -606,6 +546,7 @@ def process_report(report: Path, force: bool = False) -> dict:
         "alertas": int(len(alerts_frame)),
         "eventos_historicos": history_count,
         "total_base": int(len(base)),
+        "colunas_pessoais_removidas_relatorio": removed_personal_columns,
     }
     atomic_json(summary, SUMMARY_FILE)
     return summary

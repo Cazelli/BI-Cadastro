@@ -1,6 +1,7 @@
 # BI Cadastro Copel
 
-Dashboard Streamlit para análise consolidada das unidades consumidoras do arquivo `base_consolidada_copel.csv`.
+Dashboard Streamlit para análise consolidada das unidades consumidoras do arquivo
+`base_consolidada_BI.csv`, preparado sem campos pessoais diretos.
 
 ## Recursos
 
@@ -35,7 +36,9 @@ Acesse `http://localhost:8501` e use o login fornecido pelo administrador.
 3. Crie um app escolhendo o repositório, a branch principal e `app.py` como arquivo inicial.
 4. Publique. Cada novo commit na branch selecionada atualiza o app automaticamente.
 
-> A autenticação reduz o acesso casual, mas dados pessoais não devem ser publicados em um repositório público. Use um repositório privado compatível com sua conta do Streamlit Community Cloud e limite o acesso ao app quando necessário.
+> A base do BI não contém nome, telefone, e-mail, código de cliente, medidor,
+> placa ou coordenada individual. Os identificadores de UC continuam presentes
+> para permitir o monitoramento e devem ser tratados como dados pseudonimizados.
 
 ## Atualizar a base
 
@@ -48,20 +51,21 @@ Acesse `http://localhost:8501` e use o login fornecido pelo administrador.
    ```
 
 3. Revise o resumo exibido no terminal e a página **Atualizações e alertas**.
-4. Faça commit e push de `base_consolidada_copel.csv`,
+4. Faça commit e push de `base_consolidada_BI.csv`,
    `data/historico_alertas.csv`, `data/ultima_atualizacao_alertas.csv` e
    `data/ultima_atualizacao_resumo.json`.
 
 O atualizador escolhe automaticamente o relatório com a data final mais recente.
-Somente UCs que já existem em `base_consolidada_copel.csv` são atualizadas. A
+Somente UCs que já existem em `base_consolidada_BI.csv` são atualizadas. A
 coluna `amostra` e todas as UCs extras do relatório são ignoradas. UCs da base
 que não apareçam no relatório permanecem inalteradas. Uma cópia de segurança
 local é criada em `data/backups/` antes de cada atualização.
 
-O processo também sincroniza no CSV e no XLSX as colunas
-`DT_SITUACAO_UC` (`data_situacao`), `DT_MUD_TIT` (`max_data_tt`) e
-`MUD_TIT`. Esta última recebe `S` quando `DT_MUD_TIT` é igual ou posterior a
-01/03/2026; nos demais casos permanece vazia.
+O processo sincroniza na base BI as colunas `DT_SITUACAO_UC`
+(`data_situacao`), `DT_MUD_TIT` (`max_data_tt`) e `MUD_TIT`. Esta última recebe
+`S` quando `DT_MUD_TIT` é igual ou posterior a 01/03/2026; nos demais casos
+permanece vazia. Durante a leitura, o relatório MDM é regravado sem as colunas
+`cliente`, `nome`, `celular`, `email` e `medidor`.
 
 Cada execução acrescenta ao `data/historico_alertas.csv` os novos eventos sem
 duplicar os já registrados. O histórico contém somente mudanças com data igual
@@ -74,5 +78,9 @@ indicadores, gráficos e a tabela exclusivos do relatório mais recente. Em segu
 apresenta uma segunda visão com os totais históricos e seus próprios filtros,
 gráficos e tabela.
 
-Os relatórios brutos e backups ficam fora do Git por poderem conter dados
-pessoais. Os arquivos de alertas publicados não incluem nome, telefone ou e-mail.
+Os relatórios MDM, backups e as antigas bases `base_consolidada_copel.csv` e
+`.xlsx` ficam fora do Git. Os arquivos de alertas publicados não incluem nome,
+telefone ou e-mail. Se as bases antigas já foram publicadas, removê-las em um
+novo commit não apaga versões anteriores do histórico do Git; nesse caso, use um
+novo repositório ou faça uma limpeza controlada do histórico antes de torná-lo
+público.
