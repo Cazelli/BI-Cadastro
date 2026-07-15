@@ -176,7 +176,7 @@ def render_data_disclaimer() -> None:
     st.markdown(
         '<div class="data-disclaimer">'
         f"Dados atualizados à partir do relatório feito em {formatted_date}, "
-        "e no arquivo Amostra Final - Tarifa Mobiflex - 02.07.2026"
+        "e no arquivo Amostra Final - Tarifa Mobiflex - 14.07.2026"
         "</div>",
         unsafe_allow_html=True,
     )
