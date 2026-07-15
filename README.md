@@ -70,7 +70,10 @@ mudança de classe, ativação de tarifa especial e alterações de geração
 distribuída. Na página **Atualizações e alertas**, os seletores de período aceitam
 uma ou várias opções. **Inicial** corresponde exclusivamente a 01/03/2026 e
 **Março** corresponde ao restante do mês, evitando contar o mesmo evento duas
-vezes quando ambas as opções forem selecionadas.
+vezes quando ambas as opções forem selecionadas. A página apresenta primeiro os
+indicadores, gráficos e a tabela exclusivos do relatório mais recente. Em seguida,
+apresenta uma segunda visão com os totais históricos e seus próprios filtros,
+gráficos e tabela.
 
 Os relatórios brutos e backups ficam fora do Git por poderem conter dados
 pessoais. Os arquivos de alertas publicados não incluem nome, telefone ou e-mail.

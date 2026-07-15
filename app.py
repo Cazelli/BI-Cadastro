@@ -249,17 +249,23 @@ def load_map_assets() -> tuple[pd.DataFrame, dict]:
 
 @st.cache_data
 def load_update_report(
-    history_mtime: float, summary_mtime: float
-) -> tuple[pd.DataFrame, dict]:
-    del history_mtime, summary_mtime
-    alerts = pd.read_csv(
+    history_mtime: float, alerts_mtime: float, summary_mtime: float
+) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
+    del history_mtime, alerts_mtime, summary_mtime
+    history = pd.read_csv(
         UPDATE_HISTORY_FILE,
         dtype=str,
         keep_default_na=False,
         encoding="utf-8-sig",
     )
+    latest = pd.read_csv(
+        UPDATE_ALERT_FILE,
+        dtype=str,
+        keep_default_na=False,
+        encoding="utf-8-sig",
+    )
     summary = json.loads(UPDATE_SUMMARY_FILE.read_text(encoding="utf-8"))
-    return alerts, summary
+    return history, latest, summary
 
 
 MONTH_NAMES = {
@@ -1468,25 +1474,23 @@ def update_report_page(frame: pd.DataFrame) -> None:
     title(
         "Monitoramento cadastral",
         "Atualizações e alertas",
-        "Histórico de alterações desde o início do experimento para UCs da base consolidada.",
+        "Última atualização e histórico de alterações para UCs da base consolidada.",
     )
-    if not UPDATE_HISTORY_FILE.exists() or not UPDATE_SUMMARY_FILE.exists():
+    if (
+        not UPDATE_HISTORY_FILE.exists()
+        or not UPDATE_ALERT_FILE.exists()
+        or not UPDATE_SUMMARY_FILE.exists()
+    ):
         st.info(
             "Nenhum histórico foi gerado. Execute `py update_base.py --force` uma "
             "vez para construir o histórico inicial."
         )
         return
 
-    alerts, summary = load_update_report(
+    history, latest, summary = load_update_report(
         UPDATE_HISTORY_FILE.stat().st_mtime,
+        UPDATE_ALERT_FILE.stat().st_mtime,
         UPDATE_SUMMARY_FILE.stat().st_mtime,
-    )
-    alerts["TIPO_ALERTA"] = alerts["TIPO_ALERTA"].replace(
-        {
-            "Desconexão": "Desligamento",
-            "Fora do padrão": "Mudança de Classe",
-            "Tarifa ativada": "Tarifa Especial Ativada",
-        }
     )
 
     def normalized_uc(value: object) -> str:
@@ -1498,10 +1502,28 @@ def update_report_page(frame: pd.DataFrame) -> None:
             return str(value).strip()
 
     allowed_ucs = {normalized_uc(value) for value in frame["NUM_UC"]}
-    alerts = alerts[alerts["NUM_UC"].map(normalized_uc).isin(allowed_ucs)].copy()
-    alerts["DATA_ALERTA"] = pd.to_datetime(alerts["DATA_ALERTA"], errors="coerce")
-    alerts = alerts[alerts["DATA_ALERTA"].notna()].copy()
-    alerts["PERIODO"] = alerts["DATA_ALERTA"].map(alert_period_label)
+
+    def prepare_alerts(source: pd.DataFrame) -> pd.DataFrame:
+        prepared = source.copy()
+        prepared["TIPO_ALERTA"] = prepared["TIPO_ALERTA"].replace(
+            {
+                "Desconexão": "Desligamento",
+                "Fora do padrão": "Mudança de Classe",
+                "Tarifa ativada": "Tarifa Especial Ativada",
+            }
+        )
+        prepared = prepared[
+            prepared["NUM_UC"].map(normalized_uc).isin(allowed_ucs)
+        ].copy()
+        prepared["DATA_ALERTA"] = pd.to_datetime(
+            prepared["DATA_ALERTA"], errors="coerce"
+        )
+        prepared = prepared[prepared["DATA_ALERTA"].notna()].copy()
+        prepared["PERIODO"] = prepared["DATA_ALERTA"].map(alert_period_label)
+        return prepared
+
+    history = prepare_alerts(history)
+    latest = prepare_alerts(latest)
 
     start = pd.to_datetime(summary.get("periodo_inicio"), format="%Y%m%d", errors="coerce")
     end = pd.to_datetime(summary.get("periodo_fim"), format="%Y%m%d", errors="coerce")
@@ -1518,11 +1540,148 @@ def update_report_page(frame: pd.DataFrame) -> None:
         f"Período do relatório: {period} · Histórico desde 01/03/2026"
     )
 
+    def render_metrics(alerts: pd.DataFrame) -> None:
+        def unique_ucs(alert_type: str) -> int:
+            return int(
+                alerts.loc[alerts["TIPO_ALERTA"].eq(alert_type), "NUM_UC"].nunique()
+            )
+
+        alert_ucs = int(alerts["NUM_UC"].nunique()) if not alerts.empty else 0
+        first_metrics = st.columns(4)
+        first_metrics[0].metric(
+            "UCs com alertas", f"{alert_ucs:,}".replace(",", ".")
+        )
+        first_metrics[1].metric(
+            "Sem atualização",
+            f"{unique_ucs('Sem atualização'):,}".replace(",", "."),
+        )
+        first_metrics[2].metric(
+            "Desligamentos", f"{unique_ucs('Desligamento'):,}".replace(",", ".")
+        )
+        first_metrics[3].metric(
+            "Mudanças de Titularidade",
+            f"{unique_ucs('Mudança de Titularidade'):,}".replace(",", "."),
+        )
+        second_metrics = st.columns(3)
+        second_metrics[0].metric(
+            "Mudança de Classe",
+            f"{unique_ucs('Mudança de Classe'):,}".replace(",", "."),
+        )
+        second_metrics[1].metric(
+            "Tarifas Especiais Ativadas",
+            f"{unique_ucs('Tarifa Especial Ativada'):,}".replace(",", "."),
+        )
+        second_metrics[2].metric(
+            "Alterações GD", f"{unique_ucs('Alteração GD'):,}".replace(",", ".")
+        )
+
+    def render_alert_content(
+        alerts: pd.DataFrame, section_key: str, table_title: str
+    ) -> None:
+        if alerts.empty:
+            st.success("Nenhum alerta foi encontrado para esta seção.")
+            return
+
+        alert_types = sorted(alerts["TIPO_ALERTA"].unique().tolist())
+        selected_types = st.multiselect(
+            "Tipos de alerta",
+            alert_types,
+            placeholder="Todos os tipos",
+            key=f"alert_types_{section_key}",
+        )
+        view = (
+            alerts[alerts["TIPO_ALERTA"].isin(selected_types)].copy()
+            if selected_types
+            else alerts.copy()
+        )
+
+        left, right = st.columns([1.25, 1])
+        by_group = (
+            view.groupby(["GRUPO_UC", "TIPO_ALERTA"])
+            .size()
+            .reset_index(name="Alertas")
+        )
+        with left:
+            fig = px.bar(
+                by_group,
+                x="GRUPO_UC",
+                y="Alertas",
+                color="TIPO_ALERTA",
+                barmode="group",
+                text="Alertas",
+                labels={"GRUPO_UC": "Grupo da UC", "TIPO_ALERTA": "Tipo"},
+                color_discrete_sequence=COLORS,
+            )
+            fig.update_traces(textposition="outside")
+            fig.update_layout(title="Alertas por grupo da UC")
+            st.plotly_chart(
+                chart_style(fig, 430),
+                width="stretch",
+                config={"displayModeBar": False},
+                key=f"alerts_group_{section_key}",
+            )
+        with right:
+            by_field = view.groupby("CAMPO").size().reset_index(name="Alertas")
+            fig = px.pie(
+                by_field,
+                names="CAMPO",
+                values="Alertas",
+                hole=.42,
+                color_discrete_sequence=COLORS,
+            )
+            fig.update_traces(textinfo="label+value")
+            fig.update_layout(title="Distribuição por campo alterado")
+            st.plotly_chart(
+                chart_style(fig, 430),
+                width="stretch",
+                config={"displayModeBar": False},
+                key=f"alerts_field_{section_key}",
+            )
+
+        st.markdown(f"#### {table_title}")
+        detail = view.sort_values(
+            ["DATA_ALERTA", "TIPO_ALERTA", "NUM_UC", "CAMPO"],
+            ascending=[False, True, True, True],
+        )[
+            [
+                "DATA_ALERTA",
+                "PERIODO",
+                "NUM_UC",
+                "GRUPO_UC",
+                "TIPO_ALERTA",
+                "CAMPO",
+                "VALOR_ANTERIOR",
+                "VALOR_NOVO",
+                "DETALHE",
+            ]
+        ].rename(
+            columns={
+                "DATA_ALERTA": "Data do alerta",
+                "PERIODO": "Período",
+                "GRUPO_UC": "Grupo da UC",
+                "TIPO_ALERTA": "Tipo de alerta",
+                "CAMPO": "Campo",
+                "VALOR_ANTERIOR": "Valor anterior",
+                "VALOR_NOVO": "Valor novo",
+                "DETALHE": "Detalhe",
+            }
+        )
+        detail["Data do alerta"] = detail["Data do alerta"].dt.strftime("%d/%m/%Y")
+        st.dataframe(detail, width="stretch", hide_index=True, height=420)
+
+    st.markdown("### Última atualização")
+    st.caption("Indicadores e alertas gerados exclusivamente pelo relatório mais recente.")
+    render_metrics(latest)
+    render_alert_content(latest, "latest", "Detalhamento da última atualização")
+
+    st.divider()
+    st.markdown("### Histórico acumulado")
+    st.caption("Totais e eventos registrados desde 01/03/2026.")
     history_end_candidates = [EXPERIMENT_START_DATE]
     if pd.notna(end):
         history_end_candidates.append(end)
-    if not alerts.empty:
-        history_end_candidates.append(alerts["DATA_ALERTA"].max())
+    if not history.empty:
+        history_end_candidates.append(history["DATA_ALERTA"].max())
     history_end = max(history_end_candidates)
     month_starts = pd.date_range(
         EXPERIMENT_START_DATE.replace(day=1),
@@ -1544,140 +1703,10 @@ def update_report_page(frame: pd.DataFrame) -> None:
         ),
     )
     if selected_periods:
-        alerts = alerts[alerts["PERIODO"].isin(selected_periods)].copy()
+        history = history[history["PERIODO"].isin(selected_periods)].copy()
 
-    alert_ucs = int(alerts["NUM_UC"].nunique()) if not alerts.empty else 0
-    switched_off = int(
-        alerts.loc[alerts["TIPO_ALERTA"].eq("Desligamento"), "NUM_UC"].nunique()
-    )
-    class_changes = int(
-        alerts.loc[alerts["TIPO_ALERTA"].eq("Mudança de Classe"), "NUM_UC"].nunique()
-    )
-    special_tariffs = int(
-        alerts.loc[
-            alerts["TIPO_ALERTA"].eq("Tarifa Especial Ativada"), "NUM_UC"
-        ].nunique()
-    )
-    gd_changes = int(
-        alerts.loc[alerts["TIPO_ALERTA"].eq("Alteração GD"), "NUM_UC"].nunique()
-    )
-    without_update = int(
-        alerts.loc[alerts["TIPO_ALERTA"].eq("Sem atualização"), "NUM_UC"].nunique()
-    )
-    title_changes = int(
-        alerts.loc[
-            alerts["TIPO_ALERTA"].eq("Mudança de Titularidade"), "NUM_UC"
-        ].nunique()
-    )
-    first_metrics = st.columns(4)
-    first_metrics[0].metric("UCs com alertas", f"{alert_ucs:,}".replace(",", "."))
-    first_metrics[1].metric(
-        "Sem atualização", f"{without_update:,}".replace(",", ".")
-    )
-    first_metrics[2].metric(
-        "Desligamentos", f"{switched_off:,}".replace(",", ".")
-    )
-    first_metrics[3].metric(
-        "Mudanças de Titularidade", f"{title_changes:,}".replace(",", ".")
-    )
-    second_metrics = st.columns(3)
-    second_metrics[0].metric(
-        "Mudança de Classe", f"{class_changes:,}".replace(",", ".")
-    )
-    second_metrics[1].metric(
-        "Tarifas Especiais Ativadas",
-        f"{special_tariffs:,}".replace(",", "."),
-    )
-    second_metrics[2].metric(
-        "Alterações GD", f"{gd_changes:,}".replace(",", ".")
-    )
-
-    if alerts.empty:
-        st.success("Nenhum alerta foi encontrado para a seleção atual.")
-        return
-
-    alert_types = sorted(alerts["TIPO_ALERTA"].unique().tolist())
-    selected_types = st.multiselect(
-        "Tipos de alerta",
-        alert_types,
-        placeholder="Todos os tipos",
-    )
-    view = alerts[
-        alerts["TIPO_ALERTA"].isin(selected_types)
-    ].copy() if selected_types else alerts.copy()
-
-    left, right = st.columns([1.25, 1])
-    by_group = (
-        view.groupby(["GRUPO_UC", "TIPO_ALERTA"])
-        .size()
-        .reset_index(name="Alertas")
-    )
-    with left:
-        fig = px.bar(
-            by_group,
-            x="GRUPO_UC",
-            y="Alertas",
-            color="TIPO_ALERTA",
-            barmode="group",
-            text="Alertas",
-            labels={"GRUPO_UC": "Grupo da UC", "TIPO_ALERTA": "Tipo"},
-            color_discrete_sequence=COLORS,
-        )
-        fig.update_traces(textposition="outside")
-        fig.update_layout(title="Alertas por grupo da UC")
-        st.plotly_chart(
-            chart_style(fig, 430), width="stretch", config={"displayModeBar": False}
-        )
-    with right:
-        by_field = view.groupby("CAMPO").size().reset_index(name="Alertas")
-        fig = px.pie(
-            by_field,
-            names="CAMPO",
-            values="Alertas",
-            hole=.42,
-            color_discrete_sequence=COLORS,
-        )
-        fig.update_traces(textinfo="label+value")
-        fig.update_layout(title="Distribuição por campo alterado")
-        st.plotly_chart(
-            chart_style(fig, 430), width="stretch", config={"displayModeBar": False}
-        )
-
-    st.markdown("#### Histórico detalhado de alertas")
-    detail = view.sort_values(
-        ["DATA_ALERTA", "TIPO_ALERTA", "NUM_UC", "CAMPO"],
-        ascending=[False, True, True, True],
-    )[
-        [
-            "DATA_ALERTA",
-            "PERIODO",
-            "NUM_UC",
-            "GRUPO_UC",
-            "TIPO_ALERTA",
-            "CAMPO",
-            "VALOR_ANTERIOR",
-            "VALOR_NOVO",
-            "DETALHE",
-        ]
-    ].rename(
-        columns={
-            "DATA_ALERTA": "Data do alerta",
-            "PERIODO": "Período",
-            "GRUPO_UC": "Grupo da UC",
-            "TIPO_ALERTA": "Tipo de alerta",
-            "CAMPO": "Campo",
-            "VALOR_ANTERIOR": "Valor anterior",
-            "VALOR_NOVO": "Valor novo",
-            "DETALHE": "Detalhe",
-        }
-    )
-    detail["Data do alerta"] = detail["Data do alerta"].dt.strftime("%d/%m/%Y")
-    st.dataframe(
-        detail,
-        width="stretch",
-        hide_index=True,
-        height=500,
-    )
+    render_metrics(history)
+    render_alert_content(history, "history", "Histórico detalhado de alertas")
 
 
 def quality_page(frame: pd.DataFrame) -> None:
