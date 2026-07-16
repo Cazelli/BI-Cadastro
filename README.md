@@ -87,3 +87,31 @@ telefone ou e-mail. Se as bases antigas já foram publicadas, removê-las em um
 novo commit não apaga versões anteriores do histórico do Git; nesse caso, use um
 novo repositório ou faça uma limpeza controlada do histórico antes de torná-lo
 público.
+# BI Cadastro
+
+## Monitoramento automático do Streamlit
+
+O workflow `.github/workflows/monitor-streamlit.yml` acessa o app às 00:01,
+06:01, 12:01 e 18:01 no horário de Brasília. Se o Streamlit estiver suspenso,
+o agente aciona o botão de despertar e envia um e-mail. Se ocorrer uma falha,
+envia um e-mail de erro e tenta salvar uma captura de tela nos artefatos da
+execução.
+
+### Configuração no GitHub
+
+1. No repositório, abra **Settings → Secrets and variables → Actions**.
+2. Em **Repository secrets**, cadastre:
+   - `EMAIL_REMETENTE`: endereço Gmail usado para enviar os alertas.
+   - `EMAIL_SENHA`: senha de app do Gmail, não a senha normal da conta.
+3. Opcionalmente, em **Variables**, cadastre `EMAIL_DESTINO`. Se não for
+   cadastrada, será usado `pedro.cazelli@essenzsolucoes.com`.
+4. Envie os arquivos para a branch padrão do GitHub.
+5. Abra **Actions → Monitor Streamlit → Run workflow** para testar manualmente.
+
+Na conta Google do remetente, a verificação em duas etapas deve estar ativa.
+Depois, crie uma senha de app em **Conta Google → Segurança → Senhas de app** e
+salve esse valor no secret `EMAIL_SENHA`.
+
+O agendamento do GitHub Actions usa UTC e pode iniciar alguns minutos depois do
+horário previsto em períodos de alta demanda. O cron configurado corresponde ao
+horário de Brasília enquanto o fuso permanecer em UTC-3.
