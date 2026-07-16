@@ -1914,16 +1914,6 @@ def update_report_page(frame: pd.DataFrame) -> None:
                 key=f"table_fields_{section_key}",
             )
 
-            text_filter_row = st.columns(2)
-            previous_value_filter = text_filter_row[0].text_input(
-                "Valor anterior contém",
-                key=f"table_previous_{section_key}",
-            )
-            new_value_filter = text_filter_row[1].text_input(
-                "Valor novo contém",
-                key=f"table_new_{section_key}",
-            )
-
             minimum_date = view["DATA_ALERTA"].min().date()
             maximum_date = view["DATA_ALERTA"].max().date()
             selected_date_range = st.date_input(
@@ -1952,17 +1942,6 @@ def update_report_page(frame: pd.DataFrame) -> None:
             ]
         if selected_fields:
             detail_view = detail_view[detail_view["CAMPO"].isin(selected_fields)]
-        for column, search_text in [
-            ("VALOR_ANTERIOR", previous_value_filter),
-            ("VALOR_NOVO", new_value_filter),
-        ]:
-            if search_text.strip():
-                detail_view = detail_view[
-                    detail_view[column]
-                    .fillna("")
-                    .astype(str)
-                    .str.contains(search_text.strip(), case=False, regex=False)
-                ]
         if len(selected_date_range) == 2:
             start_date, end_date = map(pd.Timestamp, selected_date_range)
             detail_view = detail_view[
