@@ -519,7 +519,7 @@ def metric_calculation_help(
         category = label.split(" — ")[0]
         return (
             f"Quantidade de UCs do {group} com finalidade de {category} de acordo com os filtros; o percentual divide "
-            f"essa contagem pelo total atual de UCs do {group}."
+            f"essa contagem pelo total filtrado de UCs do {group}."
         )
     if "com veículo" in label:
         return "Conta UCs do grupo indicado com FABRI_VEIC preenchido; o percentual divide a contagem pelo total atual do grupo."
