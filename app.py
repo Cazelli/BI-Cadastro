@@ -397,7 +397,8 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
         label = MONTH_NAMES[month_start.month]
         if month_start.year != PROJECT_START_DATE.year:
             label = f"{label}/{month_start.year}"
-        period_dates[label] = month_start + pd.offsets.MonthEnd(0)
+        month_end = month_start + pd.offsets.MonthEnd(0)
+        period_dates[label] = min(month_end, latest_date)
     st.sidebar.pills(
         "Atalhos por período",
         list(period_dates),
@@ -474,7 +475,9 @@ def empty_state() -> None:
     st.warning("Nenhuma UC corresponde aos filtros selecionados.")
 
 
-def metric_calculation_help(label: str) -> str:
+def metric_calculation_help(
+    label: str, reference_date: pd.Timestamp | None = None
+) -> str:
     rules = {
         "UCs — Tratamento": "UCs do grupo Tratamento de acordo com os filtros ativos.",
         "UCs — Controle": "UCs do grupo Controle de acordo com os filtros ativos.",
@@ -492,10 +495,22 @@ def metric_calculation_help(label: str) -> str:
     if label in rules:
         return rules[label]
     if label.startswith("GD "):
-        reference = "01/03/2026" if label.endswith("inicial") else "a data de referência"
         group = "Tratamento" if "Tratamento" in label else "Controle"
+        if label.endswith("inicial"):
+            period_description = (
+                f"até a data inicial, {PROJECT_START_DATE:%d/%m/%Y}"
+            )
+        else:
+            effective_reference = (
+                reference_date
+                if reference_date is not None
+                else PROJECT_START_DATE
+            )
+            period_description = (
+                f"até a data de referência, {effective_reference:%d/%m/%Y}"
+            )
         return (
-            f"Quantidade de UCs inicial do {group} até a data de referência. {reference}. "
+            f"Quantidade de UCs inicial do {group} {period_description}. "
             "Casos com início e fim da GD beneficiária no mesmo dia são excluídos; o percentual usa o total inicial do grupo."
         )
     if "Uso Pessoal" in label or "Trabalho" in label or "Não informada" in label:
@@ -514,8 +529,15 @@ def metric_calculation_help(label: str) -> str:
     return "Valor calculado sobre as UCs resultantes dos filtros ativos da barra lateral."
 
 
-def show_metric(container, label: str, value: object, *args, **kwargs) -> None:
-    kwargs.setdefault("help", metric_calculation_help(label))
+def show_metric(
+    container,
+    label: str,
+    value: object,
+    *args,
+    reference_date: pd.Timestamp | None = None,
+    **kwargs,
+) -> None:
+    kwargs.setdefault("help", metric_calculation_help(label, reference_date))
     container.metric(label, value, *args, **kwargs)
 
 
@@ -665,6 +687,7 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
         "GD Tratamento — filtrada",
         f"{active_filtered_gd:,}".replace(",", "."),
         f"{active_filtered_gd_percentage:.1%}".replace(".", ","),
+        reference_date=gd_reference_date,
         delta_color="normal",
     )
     show_metric(
@@ -672,6 +695,7 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
         "GD Controle — filtrada",
         f"{control_filtered_gd:,}".replace(",", "."),
         f"{control_filtered_gd_percentage:.1%}".replace(".", ","),
+        reference_date=gd_reference_date,
         delta_color="normal",
     )
     st.caption("Finalidade por situação atual")
