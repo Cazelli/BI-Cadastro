@@ -570,6 +570,7 @@ def chart_style(fig: go.Figure, height: int = 390) -> go.Figure:
         font=dict(family="Arial", color="#33373D"),
         colorway=COLORS,
         legend_title_text="",
+        uniformtext=dict(minsize=12, mode="show"),
     )
     return fig
 
