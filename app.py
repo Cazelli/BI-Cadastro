@@ -379,6 +379,7 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
         st.sidebar.date_input(
             "Data de referência",
             key="reference_date",
+            format="DD/MM/YYYY",
             on_change=clear_reference_period,
             help=(
                 "Recalcula a GD inicial e a situação das UCs na data "
