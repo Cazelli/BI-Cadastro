@@ -1879,7 +1879,54 @@ def update_report_page(frame: pd.DataFrame) -> None:
             )
 
         st.markdown(f"#### {table_title}")
-        detail = view.sort_values(
+        with st.expander("Filtros da tabela", expanded=False):
+            filter_row = st.columns(3)
+            selected_ucs = filter_row[0].multiselect(
+                "UC",
+                sorted(view["NUM_UC"].dropna().unique().tolist(), key=normalized_uc),
+                placeholder="Todas as UCs",
+                key=f"table_ucs_{section_key}",
+            )
+            selected_groups = filter_row[1].multiselect(
+                "Grupo da UC",
+                sorted(view["GRUPO_UC"].dropna().unique().tolist()),
+                placeholder="Todos os grupos",
+                key=f"table_groups_{section_key}",
+            )
+            selected_fields = filter_row[2].multiselect(
+                "Campo alterado",
+                sorted(view["CAMPO"].dropna().unique().tolist()),
+                placeholder="Todos os campos",
+                key=f"table_fields_{section_key}",
+            )
+
+            minimum_date = view["DATA_ALERTA"].min().date()
+            maximum_date = view["DATA_ALERTA"].max().date()
+            selected_date_range = st.date_input(
+                "Período dos alertas",
+                value=(minimum_date, maximum_date),
+                min_value=minimum_date,
+                max_value=maximum_date,
+                format="DD/MM/YYYY",
+                key=f"table_dates_{section_key}",
+            )
+
+        detail_view = view.copy()
+        if selected_ucs:
+            detail_view = detail_view[detail_view["NUM_UC"].isin(selected_ucs)]
+        if selected_groups:
+            detail_view = detail_view[
+                detail_view["GRUPO_UC"].isin(selected_groups)
+            ]
+        if selected_fields:
+            detail_view = detail_view[detail_view["CAMPO"].isin(selected_fields)]
+        if len(selected_date_range) == 2:
+            start_date, end_date = map(pd.Timestamp, selected_date_range)
+            detail_view = detail_view[
+                detail_view["DATA_ALERTA"].between(start_date, end_date)
+            ]
+
+        detail = detail_view.sort_values(
             ["DATA_ALERTA", "TIPO_ALERTA", "NUM_UC", "CAMPO"],
             ascending=[False, True, True, True],
         )[
@@ -1907,6 +1954,9 @@ def update_report_page(frame: pd.DataFrame) -> None:
             }
         )
         detail["Data do alerta"] = detail["Data do alerta"].dt.strftime("%d/%m/%Y")
+        st.caption(
+            f"{len(detail):,} registro(s) exibido(s).".replace(",", ".")
+        )
         st.dataframe(detail, width="stretch", hide_index=True, height=420)
 
     st.markdown("### Última atualização")
