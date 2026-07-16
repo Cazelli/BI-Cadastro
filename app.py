@@ -476,11 +476,11 @@ def empty_state() -> None:
 
 def metric_calculation_help(label: str) -> str:
     rules = {
-        "UCs — Tratamento": "Conta as UCs do grupo Tratamento de acordo com os filtros ativos.",
-        "UCs — Controle": "Conta as UCs do grupo Controle de acordo com os filtros ativos.",
-        "UCs — Reserva": "Conta as UCs do grupo Reserva de acordo com os filtros ativos.",
-        "UCs removidas — Controle": "Conta as UCs removidas do grupo Controle de acordo com os filtros ativos.",
-        "UCs removidas — Tratamento": "Conta as UCs removidas do grupo Tratamento de acordo com os filtros ativos.",
+        "UCs — Tratamento": "UCs do grupo Tratamento de acordo com os filtros ativos.",
+        "UCs — Controle": "UCs do grupo Controle de acordo com os filtros ativos.",
+        "UCs — Reserva": "UCs do grupo Reserva de acordo com os filtros ativos.",
+        "UCs removidas — Controle": "UCs removidas do grupo Controle de acordo com os filtros ativos.",
+        "UCs removidas — Tratamento": "UCs removidas do grupo Tratamento de acordo com os filtros ativos.",
         "UCs com alertas": "Quantidade de UCs com pelo menos uma linha de alerta na seção e nos filtros selecionados.",
         "Sem atualização": "Quantidade distinta de UCs da base que não aparecem no relatório.",
         "Desligamentos": "Quantidade distinta de UCs cuja SITUACAO_UC mudou para DS (desligamento) ou CR (corte).",
@@ -495,15 +495,15 @@ def metric_calculation_help(label: str) -> str:
         reference = "01/03/2026" if label.endswith("inicial") else "a data de referência"
         group = "Tratamento" if "Tratamento" in label else "Controle"
         return (
-            f"Conta UCs inicialmente em {group} com data de início de GD anterior a {reference}. "
+            f"Quantidade de UCs inicial do {group} até a data de referência. {reference}. "
             "Casos com início e fim da GD beneficiária no mesmo dia são excluídos; o percentual usa o total inicial do grupo."
         )
     if "Uso Pessoal" in label or "Trabalho" in label or "Não informada" in label:
         group = "Tratamento" if "Tratamento" in label else "Controle"
         category = label.split(" — ")[0]
         return (
-            f"Conta UCs em {group} cuja FINALIDADE é {category}; o percentual divide "
-            f"essa contagem pelo total atual de UCs em {group}."
+            f"Quantidade de UCs inicial do {group} com finalidade de {category}; o percentual divide "
+            f"essa contagem pelo total atual de UCs do {group}."
         )
     if "com veículo" in label:
         return "Conta UCs do grupo indicado com FABRI_VEIC preenchido; o percentual divide a contagem pelo total atual do grupo."
