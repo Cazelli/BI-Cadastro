@@ -522,11 +522,11 @@ def metric_calculation_help(
             f"essa contagem pelo total filtrado de UCs do {group}."
         )
     if "com veículo" in label:
-        return "Conta UCs do grupo indicado com FABRI_VEIC preenchido; o percentual divide a contagem pelo total atual do grupo."
+        return "Quantidade de UCs do grupo indicado com informação do veículo preenchida; o percentual divide a contagem pelo total filtrado de UCs do {group}."
     if "com wallbox" in label:
-        return "Conta UCs do grupo indicado cujo STATUS_WALLBOX é igual a S; o percentual divide a contagem pelo total atual do grupo."
+        return "Quantidade de UCs do grupo indicado que possuem wallbox; o percentual divide a contagem pelo total filtrado de UCs do {group}."
     if "com portátil" in label:
-        return "Conta UCs do grupo indicado cujo STATUS_PORTATIL é igual a S; o percentual divide a contagem pelo total atual do grupo."
+        return "Quantidade de UCs do grupo indicado que possuem carreador portátil; o percentual divide a contagem pelo total filtrado de UCs do {group}."
     return "Valor calculado sobre as UCs resultantes dos filtros ativos da barra lateral."
 
 
