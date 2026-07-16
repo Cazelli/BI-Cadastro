@@ -28,6 +28,25 @@ PASSWORD_HASH = bytes.fromhex(
 )
 COLORS = ["#F5821E", "#FDB422", "#E65D24", "#3F444B", "#69727D", "#8D3F8F"]
 PROJECT_START_DATE = pd.Timestamp("2026-03-01")
+PLOTLY_CONFIG = {
+    "displayModeBar": True,
+    "displaylogo": False,
+    "modeBarButtonsToRemove": [
+        "zoom2d",
+        "pan2d",
+        "select2d",
+        "lasso2d",
+        "zoomIn2d",
+        "zoomOut2d",
+        "autoScale2d",
+        "resetScale2d",
+    ],
+    "toImageButtonOptions": {
+        "format": "png",
+        "filename": "bi_cadastro",
+        "scale": 2,
+    },
+}
 
 st.set_page_config(page_title=APP_TITLE, page_icon="⚡", layout="wide")
 
@@ -867,7 +886,7 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
             margin=dict(l=95, r=95, t=75, b=115),
         )
         fig.add_annotation(text=f"<b>{status_total}</b><br>UCs", showarrow=False, font_size=18)
-        st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
+        st.plotly_chart(fig, width="stretch", config=PLOTLY_CONFIG)
     with manufacturer_column:
         vehicle_population = frame[
             (active_mask | control_mask) & frame["FABRI_VEIC"].notna()
@@ -896,7 +915,7 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
             st.plotly_chart(
                 chart_style(fig, 520),
                 width="stretch",
-                config={"displayModeBar": False},
+                config=PLOTLY_CONFIG,
             )
 
     st.markdown("#### Distribuição municipal de UCs em tratamento e controle")
@@ -969,7 +988,7 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
                 x=0,
             ),
         )
-        st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
+        st.plotly_chart(fig, width="stretch", config=PLOTLY_CONFIG)
         st.caption(
             "O tamanho das bolhas representa a quantidade de UCs. Os pontos "
             "são levemente separados ao redor do centro municipal para manter "
@@ -1037,7 +1056,7 @@ def uc_page(frame: pd.DataFrame) -> None:
         st.plotly_chart(
             chart_style(fig, chart_height),
             width="stretch",
-            config={"displayModeBar": False},
+            config=PLOTLY_CONFIG,
         )
 
     st.markdown("#### Mapas por situação")
@@ -1098,7 +1117,7 @@ def uc_page(frame: pd.DataFrame) -> None:
             st.plotly_chart(
                 fig,
                 width="stretch",
-                config={"displayModeBar": False},
+                config=PLOTLY_CONFIG,
             )
 
 
@@ -1146,7 +1165,7 @@ def vehicle_page(frame: pd.DataFrame) -> None:
             st.plotly_chart(
                 chart_style(fig, 440),
                 width="stretch",
-                config={"displayModeBar": False},
+                config=PLOTLY_CONFIG,
             )
     with st.container():
         motor_vehicles = vehicles[
@@ -1188,7 +1207,7 @@ def vehicle_page(frame: pd.DataFrame) -> None:
             st.plotly_chart(
                 chart_style(fig, 440),
                 width="stretch",
-                config={"displayModeBar": False},
+                config=PLOTLY_CONFIG,
             )
 
     for motor_value, motor_label in [
@@ -1238,7 +1257,7 @@ def vehicle_page(frame: pd.DataFrame) -> None:
             st.plotly_chart(
                 chart_style(fig, model_chart_height),
                 width="stretch",
-                config={"displayModeBar": False},
+                config=PLOTLY_CONFIG,
             )
 
 
@@ -1321,7 +1340,7 @@ def charging_page(frame: pd.DataFrame) -> None:
             st.plotly_chart(
                 chart_style(fig, 420),
                 width="stretch",
-                config={"displayModeBar": False},
+                config=PLOTLY_CONFIG,
             )
 
     st.markdown("#### Equipamentos por motorização")
@@ -1363,7 +1382,7 @@ def charging_page(frame: pd.DataFrame) -> None:
             st.plotly_chart(
                 chart_style(fig, 420),
                 width="stretch",
-                config={"displayModeBar": False},
+                config=PLOTLY_CONFIG,
             )
 
     st.markdown("#### Marcas dos equipamentos")
@@ -1417,7 +1436,7 @@ def charging_page(frame: pd.DataFrame) -> None:
             st.plotly_chart(
                 chart_style(fig, 500),
                 width="stretch",
-                config={"displayModeBar": False},
+                config=PLOTLY_CONFIG,
             )
     st.caption("Os gráficos de marcas exibem as dez mais frequentes em cada equipamento.")
 
@@ -1477,7 +1496,7 @@ def charging_page(frame: pd.DataFrame) -> None:
         st.plotly_chart(
             chart_style(fig, 470),
             width="stretch",
-            config={"displayModeBar": False},
+            config=PLOTLY_CONFIG,
         )
     else:
         st.info("Nenhuma potência de equipamento informada.")
@@ -1521,7 +1540,7 @@ def charging_page(frame: pd.DataFrame) -> None:
         st.plotly_chart(
             chart_style(fig, 430),
             width="stretch",
-            config={"displayModeBar": False},
+            config=PLOTLY_CONFIG,
         )
     else:
         st.info("Nenhum local de recarga informado.")
@@ -1568,7 +1587,7 @@ def gd_page(frame: pd.DataFrame) -> None:
             st.plotly_chart(
                 chart_style(fig, 430),
                 width="stretch",
-                config={"displayModeBar": False},
+                config=PLOTLY_CONFIG,
             )
 
     beneficiary = (
@@ -1629,7 +1648,7 @@ def gd_page(frame: pd.DataFrame) -> None:
             st.plotly_chart(
                 chart_style(fig, 430),
                 width="stretch",
-                config={"displayModeBar": False},
+                config=PLOTLY_CONFIG,
             )
     st.caption(
         "GD beneficiária considera GD_BENE_INIC, GD_BENE_FIM ou TIPO_GD_BENE. "
@@ -1813,7 +1832,7 @@ def update_report_page(frame: pd.DataFrame) -> None:
             st.plotly_chart(
                 styled_group_fig,
                 width="stretch",
-                config={"displayModeBar": False},
+                config=PLOTLY_CONFIG,
                 key=f"alerts_group_{section_key}",
             )
         with right:
@@ -1840,7 +1859,7 @@ def update_report_page(frame: pd.DataFrame) -> None:
             st.plotly_chart(
                 styled_field_fig,
                 width="stretch",
-                config={"displayModeBar": False},
+                config=PLOTLY_CONFIG,
                 key=f"alerts_field_{section_key}",
             )
 
@@ -1930,7 +1949,11 @@ def quality_page(frame: pd.DataFrame) -> None:
         marker=dict(color=quality["Completude"], colorscale=[[0, "#A83D2D"], [.5, "#FDB422"], [1, "#F5821E"]], cmin=0, cmax=1),
     ))
     fig.update_layout(title="Completude dos principais campos", xaxis=dict(tickformat=".0%", range=[0, 1.08]), yaxis=dict(autorange="reversed"))
-    st.plotly_chart(chart_style(fig, 520), width="stretch", config={"displayModeBar": False})
+    st.plotly_chart(
+        chart_style(fig, 520),
+        width="stretch",
+        config=PLOTLY_CONFIG,
+    )
     st.markdown("#### Consulta operacional (sem dados pessoais)")
     public_columns = [
         "NUM_UC",
