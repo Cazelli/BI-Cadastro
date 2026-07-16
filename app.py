@@ -1881,29 +1881,53 @@ def update_report_page(frame: pd.DataFrame) -> None:
         st.markdown(f"#### {table_title}")
         with st.expander("Filtros da tabela", expanded=False):
             filter_row = st.columns(3)
-            selected_ucs = filter_row[0].multiselect(
+            selected_periods_table = filter_row[0].multiselect(
+                "Período",
+                sorted(view["PERIODO"].dropna().unique().tolist()),
+                placeholder="Todos os períodos",
+                key=f"table_periods_{section_key}",
+            )
+            selected_ucs = filter_row[1].multiselect(
                 "UC",
                 sorted(view["NUM_UC"].dropna().unique().tolist(), key=normalized_uc),
                 placeholder="Todas as UCs",
                 key=f"table_ucs_{section_key}",
             )
-            selected_groups = filter_row[1].multiselect(
+            selected_groups = filter_row[2].multiselect(
                 "Grupo da UC",
                 sorted(view["GRUPO_UC"].dropna().unique().tolist()),
                 placeholder="Todos os grupos",
                 key=f"table_groups_{section_key}",
             )
-            selected_fields = filter_row[2].multiselect(
+
+            category_filter_row = st.columns(2)
+            selected_table_types = category_filter_row[0].multiselect(
+                "Tipo de alerta",
+                sorted(view["TIPO_ALERTA"].dropna().unique().tolist()),
+                placeholder="Todos os tipos",
+                key=f"table_types_{section_key}",
+            )
+            selected_fields = category_filter_row[1].multiselect(
                 "Campo alterado",
                 sorted(view["CAMPO"].dropna().unique().tolist()),
                 placeholder="Todos os campos",
                 key=f"table_fields_{section_key}",
             )
 
+            text_filter_row = st.columns(2)
+            previous_value_filter = text_filter_row[0].text_input(
+                "Valor anterior contém",
+                key=f"table_previous_{section_key}",
+            )
+            new_value_filter = text_filter_row[1].text_input(
+                "Valor novo contém",
+                key=f"table_new_{section_key}",
+            )
+
             minimum_date = view["DATA_ALERTA"].min().date()
             maximum_date = view["DATA_ALERTA"].max().date()
             selected_date_range = st.date_input(
-                "Período dos alertas",
+                "Data do alerta",
                 value=(minimum_date, maximum_date),
                 min_value=minimum_date,
                 max_value=maximum_date,
@@ -1912,14 +1936,33 @@ def update_report_page(frame: pd.DataFrame) -> None:
             )
 
         detail_view = view.copy()
+        if selected_periods_table:
+            detail_view = detail_view[
+                detail_view["PERIODO"].isin(selected_periods_table)
+            ]
         if selected_ucs:
             detail_view = detail_view[detail_view["NUM_UC"].isin(selected_ucs)]
         if selected_groups:
             detail_view = detail_view[
                 detail_view["GRUPO_UC"].isin(selected_groups)
             ]
+        if selected_table_types:
+            detail_view = detail_view[
+                detail_view["TIPO_ALERTA"].isin(selected_table_types)
+            ]
         if selected_fields:
             detail_view = detail_view[detail_view["CAMPO"].isin(selected_fields)]
+        for column, search_text in [
+            ("VALOR_ANTERIOR", previous_value_filter),
+            ("VALOR_NOVO", new_value_filter),
+        ]:
+            if search_text.strip():
+                detail_view = detail_view[
+                    detail_view[column]
+                    .fillna("")
+                    .astype(str)
+                    .str.contains(search_text.strip(), case=False, regex=False)
+                ]
         if len(selected_date_range) == 2:
             start_date, end_date = map(pd.Timestamp, selected_date_range)
             detail_view = detail_view[
