@@ -1161,10 +1161,18 @@ def vehicle_page(frame: pd.DataFrame) -> None:
             fig.update_layout(
                 title="Fabricantes — UCs do Tratamento e Controle",
                 yaxis=dict(title="", categoryorder="total ascending"),
-                legend=dict(orientation="h", yanchor="bottom", y=1.01, x=0),
+                legend=dict(
+                    orientation="v",
+                    yanchor="top",
+                    y=1,
+                    xanchor="left",
+                    x=1.02,
+                ),
             )
+            fig = chart_style(fig, 440)
+            fig.update_layout(margin=dict(l=20, r=150, t=55, b=20))
             st.plotly_chart(
-                chart_style(fig, 440),
+                fig,
                 width="stretch",
                 config=PLOTLY_CONFIG,
             )
@@ -1204,9 +1212,20 @@ def vehicle_page(frame: pd.DataFrame) -> None:
                 category_orders={"Situação": ["Tratamento", "Controle"]},
             )
             fig.update_traces(textangle=0, textfont_color="#151C21")
-            fig.update_layout(title="Motorização por Finalidade")
+            fig.update_layout(
+                title="Motorização por Finalidade",
+                legend=dict(
+                    orientation="v",
+                    yanchor="top",
+                    y=1,
+                    xanchor="left",
+                    x=1.02,
+                ),
+            )
+            fig = chart_style(fig, 440)
+            fig.update_layout(margin=dict(l=20, r=180, t=55, b=20))
             st.plotly_chart(
-                chart_style(fig, 440),
+                fig,
                 width="stretch",
                 config=PLOTLY_CONFIG,
             )
@@ -1253,10 +1272,18 @@ def vehicle_page(frame: pd.DataFrame) -> None:
             fig.update_layout(
                 title=f"Modelos {motor_label} — UCs do Tratamento e Controle",
                 yaxis=dict(title="", categoryorder="total ascending"),
-                legend=dict(orientation="h", yanchor="bottom", y=1.01, x=0),
+                legend=dict(
+                    orientation="v",
+                    yanchor="top",
+                    y=1,
+                    xanchor="left",
+                    x=1.02,
+                ),
             )
+            fig = chart_style(fig, model_chart_height)
+            fig.update_layout(margin=dict(l=20, r=150, t=55, b=20))
             st.plotly_chart(
-                chart_style(fig, model_chart_height),
+                fig,
                 width="stretch",
                 config=PLOTLY_CONFIG,
             )
