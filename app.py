@@ -518,7 +518,7 @@ def metric_calculation_help(
         group = "Tratamento" if "Tratamento" in label else "Controle"
         category = label.split(" — ")[0]
         return (
-            f"Quantidade de UCs inicial do {group} com finalidade de {category}; o percentual divide "
+            f"Quantidade de UCs do {group} com finalidade de {category} de acordo com os filtros; o percentual divide "
             f"essa contagem pelo total atual de UCs do {group}."
         )
     if "com veículo" in label:
