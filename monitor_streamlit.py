@@ -11,8 +11,7 @@ from email.mime.text import MIMEText
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from playwright.async_api import Page, TimeoutError as PlaywrightTimeoutError
-from playwright.async_api import async_playwright
+from playwright.async_api import Page, async_playwright
 
 
 URL = os.getenv(
@@ -33,6 +32,15 @@ WAKE_BUTTON_NAMES = (
     "Yes, get this app back up",
     "Wake up",
     "Acordar",
+)
+ERROR_TEXTS = (
+    "there was an error",
+    "there was a problem",
+    "this app has gone over its resource limits",
+    "app is not running",
+    "page not found",
+    "internal server error",
+    "connection error",
 )
 
 
@@ -113,20 +121,42 @@ async def find_wake_button(page: Page):
     return None
 
 
-async def wait_until_app_is_ready(page: Page) -> None:
-    await page.wait_for_load_state("domcontentloaded")
-    try:
-        await page.wait_for_selector(
-            '[data-testid="stApp"], [data-testid="stAppViewContainer"]',
-            state="visible",
-            timeout=90_000,
-        )
-    except PlaywrightTimeoutError:
-        if await find_wake_button(page):
-            raise RuntimeError("O app continuou na tela de suspensão.")
+async def page_summary(page: Page) -> tuple[str, str]:
+    title = (await page.title()).strip()
+    body = (await page.locator("body").inner_text(timeout=15_000)).strip()
+    return title, body
+
+
+async def confirm_page_is_available(page: Page) -> None:
+    title, body = await page_summary(page)
+    normalized_content = f"{title}\n{body}".lower()
+    print(
+        f"Página carregada: título={title!r}; URL final={page.url}; "
+        f"conteúdo={body[:200]!r}"
+    )
+
+    matching_error = next(
+        (text for text in ERROR_TEXTS if text in normalized_content),
+        None,
+    )
+    if matching_error:
         raise RuntimeError(
-            "A interface do app não ficou disponível dentro de 90 segundos."
+            f"A página exibiu uma mensagem de erro: {matching_error!r}."
         )
+    if not title and not body:
+        raise RuntimeError("A página respondeu, mas não apresentou conteúdo.")
+
+
+async def wait_until_app_is_ready(page: Page) -> None:
+    # Não depende de seletores internos do Streamlit, que podem mudar e não
+    # existem na tela de login. Aguarda o botão de suspensão desaparecer e
+    # aceita como disponível qualquer página válida do app ou de autenticação.
+    for _ in range(24):
+        await page.wait_for_timeout(5_000)
+        if await find_wake_button(page) is None:
+            await confirm_page_is_available(page)
+            return
+    raise RuntimeError("O app continuou na tela de suspensão por 120 segundos.")
 
 
 async def check_site() -> str:
@@ -153,7 +183,7 @@ async def check_site() -> str:
             await page.wait_for_timeout(5_000)
             wake_button = await find_wake_button(page)
             if wake_button is None:
-                await wait_until_app_is_ready(page)
+                await confirm_page_is_available(page)
                 print(f"[{format_time(current_time())}] App ativo.")
                 return "active"
 
