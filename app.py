@@ -1309,21 +1309,24 @@ def charging_page(frame: pd.DataFrame) -> None:
             situation_frame["STATUS_PORTATIL"].fillna("").astype(str).str.strip()
         )
         has_both = wallbox_status.eq("S") & portable_status.eq("S")
+        has_neither = wallbox_status.eq("N") & portable_status.eq("N")
         both_not_informed = (
             ~wallbox_status.isin(["S", "N"])
             & ~portable_status.isin(["S", "N"])
         )
-        both_availability = pd.Series(
-            "Não", index=situation_frame.index, dtype="object"
-        )
-        both_availability.loc[has_both] = "Sim"
-        both_availability.loc[both_not_informed] = "Não informado"
-        for label, count in both_availability.value_counts().items():
+        both_counts = {
+            "Sim": int(has_both.sum()),
+            "Não": int(has_neither.sum()),
+            "Não informado": int(both_not_informed.sum()),
+        }
+        for label, count in both_counts.items():
+            if count == 0:
+                continue
             records.append(
                 {
                     "Equipamento": "Ambos",
                     "Disponibilidade": label,
-                    "UCs": int(count),
+                    "UCs": count,
                 }
             )
         with chart_column:
