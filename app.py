@@ -506,7 +506,7 @@ def metric_calculation_help(
         "UCs removidas — Tratamento": "UCs removidas do grupo Tratamento de acordo com os filtros ativos.",
         "UCs com alertas": "Quantidade de UCs com pelo menos uma linha de alerta na seção e nos filtros selecionados.",
         "Sem atualização": "Quantidade distinta de UCs da base que não aparecem no relatório.",
-        "Desligamentos": "Quantidade distinta de UCs cuja situação mudou para DS (desligamento) ou CR (corte).",
+        "Desligamentos": "Quantidade distinta de UCs cuja situação mudou para DS (Desligamento) ou CR (Corte).",
         "Mudanças de Titularidade": "Quantidade distinta de UCs com mudança de titularidade.",
         "Mudança de Classe": "Quantidade distinta de UCs com mudança de Classe e/ou Subgrupo.",
         "Tarifas Especiais Ativadas": "Quantidade distinta de UCs que passaram a ter tarifa social ou tarifa branca.",
