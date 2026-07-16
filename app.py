@@ -1029,7 +1029,7 @@ def uc_page(frame: pd.DataFrame) -> None:
     )
     fig.update_traces(textposition="inside", textangle=0)
     fig.update_layout(
-        title="Todos os municípios por situação",
+        title="Municípios por situação",
         legend=dict(orientation="h", yanchor="bottom", y=1.01, x=0),
         yaxis=dict(title="", categoryorder="total ascending"),
     )
@@ -1139,7 +1139,7 @@ def vehicle_page(frame: pd.DataFrame) -> None:
             )
             fig.update_traces(textposition="inside", textangle=0)
             fig.update_layout(
-                title="Fabricantes — UCs em tratamento e controle",
+                title="Fabricantes — UCs do Tratamento e Controle",
                 yaxis=dict(title="", categoryorder="total ascending"),
                 legend=dict(orientation="h", yanchor="bottom", y=1.01, x=0),
             )
@@ -1153,7 +1153,7 @@ def vehicle_page(frame: pd.DataFrame) -> None:
             vehicles["SITUACAO_ATUAL"].isin(["Ativo", "Controle"])
         ].copy()
         if motor_vehicles.empty:
-            st.info("Nenhuma motorização em tratamento ou controle para exibir.")
+            st.info("Nenhuma motorização do Tratamento ou Controle para exibir.")
         else:
             comparison = (
                 motor_vehicles.groupby(
@@ -1184,7 +1184,7 @@ def vehicle_page(frame: pd.DataFrame) -> None:
                 category_orders={"Situação": ["Tratamento", "Controle"]},
             )
             fig.update_traces(textangle=0, textfont_color="#151C21")
-            fig.update_layout(title="Motorização por finalidade")
+            fig.update_layout(title="Motorização por Finalidade")
             st.plotly_chart(
                 chart_style(fig, 440),
                 width="stretch",
@@ -1231,7 +1231,7 @@ def vehicle_page(frame: pd.DataFrame) -> None:
             )
             fig.update_traces(textposition="inside", textangle=0)
             fig.update_layout(
-                title=f"Modelos {motor_label} — UCs em tratamento e controle",
+                title=f"Modelos {motor_label} — UCs do Tratamento e Controle",
                 yaxis=dict(title="", categoryorder="total ascending"),
                 legend=dict(orientation="h", yanchor="bottom", y=1.01, x=0),
             )
