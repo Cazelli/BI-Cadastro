@@ -1400,7 +1400,7 @@ def charging_page(frame: pd.DataFrame) -> None:
                 config=PLOTLY_CONFIG,
             )
 
-    st.markdown("#### Marcas dos equipamentos")
+    st.markdown("#### Modelos dos Equipamentos")
     brand_columns = st.columns(2)
     brand_fields = [
         ("MARCA_WALLB", "Wallbox"),
@@ -1427,7 +1427,7 @@ def charging_page(frame: pd.DataFrame) -> None:
         brands = brands[brands["Marca"].isin(top_brands)]
         with chart_column:
             if brands.empty:
-                st.info(f"Nenhuma marca de {equipment_label.lower()} informada.")
+                st.info(f"Nenhum modelo de {equipment_label.lower()} informado.")
                 continue
             fig = px.bar(
                 brands,
@@ -1444,7 +1444,7 @@ def charging_page(frame: pd.DataFrame) -> None:
             )
             fig.update_traces(textposition="outside")
             fig.update_layout(
-                title=f"Principais marcas — {equipment_label}",
+                title=f"Principais modelos — {equipment_label}",
                 yaxis=dict(title="", categoryorder="total ascending"),
                 legend=dict(traceorder="reversed"),
             )
@@ -1453,7 +1453,7 @@ def charging_page(frame: pd.DataFrame) -> None:
                 width="stretch",
                 config=PLOTLY_CONFIG,
             )
-    st.caption("Os gráficos de marcas exibem as dez mais frequentes em cada equipamento.")
+    st.caption("Os gráficos de modelos exibem as dez mais frequentes em cada equipamento.")
 
     st.markdown("#### Potência declarada dos equipamentos")
     power_order = [
