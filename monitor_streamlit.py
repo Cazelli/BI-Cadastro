@@ -11,7 +11,7 @@ from email.mime.text import MIMEText
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from playwright.async_api import Page, async_playwright
+from playwright.async_api import Locator, Page, async_playwright
 
 
 URL = os.getenv(
@@ -113,7 +113,7 @@ def send_error_email(detected_at: datetime, error: str) -> None:
     )
 
 
-async def find_wake_button(page: Page):
+async def find_wake_button(page: Page) -> Locator | None:
     for name in WAKE_BUTTON_NAMES:
         button = page.get_by_role("button", name=name, exact=False)
         if await button.count() and await button.first.is_visible():
