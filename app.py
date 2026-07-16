@@ -1302,18 +1302,30 @@ def charging_page(frame: pd.DataFrame) -> None:
                         "UCs": int(count),
                     }
                 )
-        records.append(
-            {
-                "Equipamento": "Ambos",
-                "Disponibilidade": "Sim",
-                "UCs": int(
-                    (
-                        situation_frame["STATUS_WALLBOX"].eq("S")
-                        & situation_frame["STATUS_PORTATIL"].eq("S")
-                    ).sum()
-                ),
-            }
+        wallbox_status = (
+            situation_frame["STATUS_WALLBOX"].fillna("").astype(str).str.strip()
         )
+        portable_status = (
+            situation_frame["STATUS_PORTATIL"].fillna("").astype(str).str.strip()
+        )
+        has_both = wallbox_status.eq("S") & portable_status.eq("S")
+        both_not_informed = (
+            ~wallbox_status.isin(["S", "N"])
+            & ~portable_status.isin(["S", "N"])
+        )
+        both_availability = pd.Series(
+            "Não", index=situation_frame.index, dtype="object"
+        )
+        both_availability.loc[has_both] = "Sim"
+        both_availability.loc[both_not_informed] = "Não informado"
+        for label, count in both_availability.value_counts().items():
+            records.append(
+                {
+                    "Equipamento": "Ambos",
+                    "Disponibilidade": label,
+                    "UCs": int(count),
+                }
+            )
         with chart_column:
             if not records:
                 st.info(f"Nenhuma UC em {situation.lower()} para exibir.")
