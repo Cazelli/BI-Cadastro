@@ -1,15 +1,21 @@
 {
-  "arquivo_origem": "mdm-sandbox_clientes_novo-20260706-20260706.csv",
-  "periodo_inicio": "20260706",
-  "periodo_fim": "20260706",
-  "processado_em": "2026-07-14T22:34:04-03:00",
+  "arquivo_origem": "mdm-sandbox_clientes_novo-20260714-20260714.csv",
+  "periodo_inicio": "20260714",
+  "periodo_fim": "20260714",
+  "processado_em": "2026-07-21T10:06:50-03:00",
   "ucs_no_relatorio": 253,
   "ucs_correspondentes": 237,
   "ucs_extras_ignoradas": 16,
   "ucs_sem_atualizacao": 1,
-  "ucs_alteradas": 0,
-  "alertas": 1,
-  "eventos_historicos": 53,
+  "ucs_alteradas": 4,
+  "alertas": 6,
+  "eventos_historicos": 59,
   "total_base": 238,
-  "colunas_pessoais_removidas_relatorio": []
+  "colunas_pessoais_removidas_relatorio": [
+    "celular",
+    "cliente",
+    "email",
+    "medidor",
+    "nome"
+  ]
 }
