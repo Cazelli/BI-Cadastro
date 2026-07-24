@@ -1,60 +1,64 @@
 ﻿DATA_ALERTA,NUM_UC,GRUPO_UC,TIPO_ALERTA,CAMPO,VALOR_ANTERIOR,VALOR_NOVO,DETALHE,ARQUIVO_ORIGEM
-2026-03-01,101474237,Controle,Alteração GD,GD_BENE_INIC,,2026-03-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-03-01,112309224,Reserva,Alteração GD,GD_BENE_INIC,,2026-03-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-03-01,112868290,Controle,Alteração GD,GD_BENE_INIC,,2026-03-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-03-01,113440944,Controle,Alteração GD,DATA_INICIO_GD,,2026-03-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-03-01,44649444,Controle,Alteração GD,GD_BENE_INIC,2026-07-01,2026-03-01,Informação de geração distribuída alterada.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-03-01,48061980,Tratamento,Alteração GD,GD_BENE_INIC,,2026-03-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-03-01,86830635,Controle,Alteração GD,GD_BENE_INIC,,2026-03-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-03-01,93121954,Reserva,Alteração GD,DATA_INICIO_GD,,2026-03-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-03-01,93121954,Reserva,Alteração GD,GD_BENE_INIC,,2026-03-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
+2026-03-01,101474237,Controle,Alteração GD,GD_BENE_INIC,,2026-03-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-03-01,112309224,Reserva,Alteração GD,GD_BENE_INIC,,2026-03-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-03-01,112868290,Controle,Alteração GD,GD_BENE_INIC,,2026-03-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-03-01,113440944,Controle,Alteração GD,DATA_INICIO_GD,,2026-03-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-03-01,44649444,Controle,Alteração GD,GD_BENE_INIC,,2026-03-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-03-01,48061980,Tratamento,Alteração GD,GD_BENE_INIC,,2026-03-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-03-01,86830635,Controle,Alteração GD,GD_BENE_INIC,,2026-03-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-03-01,93121954,Reserva,Alteração GD,DATA_INICIO_GD,,2026-03-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-03-01,93121954,Reserva,Alteração GD,GD_BENE_INIC,,2026-03-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
 2026-03-07,84955007,Controle,Desligamento,SITUACAO_UC,,DS,Desligamento registrado desde o início do experimento.,mdm-sandbox_clientes_novo-20260706-20260706.csv
-2026-03-12,7003455,Controle,Mudança de Titularidade,MUD_TIT,,2026-03-12,Mudança de titularidade registrada desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-04-01,107295245,Reserva,Alteração GD,GD_BENE_INIC,,2026-04-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-04-01,109846869,Reserva,Alteração GD,GD_BENE_INIC,,2026-04-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-04-01,21372039,Controle,Alteração GD,GD_BENE_INIC,,2026-04-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-04-01,82166749,Controle,Alteração GD,GD_BENE_INIC,,2026-04-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-04-01,88686043,Controle,Alteração GD,GD_BENE_INIC,,2026-04-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-04-01,98830376,Tratamento,Alteração GD,GD_BENE_INIC,,2026-04-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-04-15,88396371,Controle,Mudança de Titularidade,MUD_TIT,,2026-04-15,Mudança de titularidade registrada desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-04-18,43879870,Tratamento,Mudança de Titularidade,MUD_TIT,,2026-04-18,Mudança de titularidade registrada desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-05-01,102006288,Reserva,Alteração GD,GD_BENE_INIC,,2026-05-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-05-01,11578912,Tratamento,Alteração GD,GD_BENE_INIC,,2026-05-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-05-01,79792634,Tratamento,Alteração GD,GD_BENE_INIC,,2026-05-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-05-01,91375444,Tratamento,Alteração GD,GD_BENE_INIC,,2026-05-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-05-01,99213451,Controle,Alteração GD,DATA_INICIO_GD,,2026-05-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-05-07,99509725,Controle,Mudança de Titularidade,MUD_TIT,,2026-05-07,Mudança de titularidade registrada desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-05-12,88811220,Tratamento,Mudança de Titularidade,MUD_TIT,,2026-05-12,Mudança de titularidade registrada desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-06-01,107778963,Reserva,Alteração GD,DATA_INICIO_GD,,2026-06-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-06-01,108430766,Controle,Alteração GD,GD_BENE_INIC,,2026-06-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-06-01,88811220,Tratamento,Alteração GD,DATA_INICIO_GD,,2026-06-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-06-01,88811220,Tratamento,Alteração GD,GD_BENE_INIC,,2026-06-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-06-01,88946185,Tratamento,Alteração GD,GD_BENE_INIC,,2026-06-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
+2026-03-12,7003455,Controle,Mudança de Titularidade,MUD_TIT,,2026-03-12,Mudança de titularidade registrada desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-04-01,107295245,Reserva,Alteração GD,GD_BENE_INIC,,2026-04-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-04-01,109846869,Reserva,Alteração GD,GD_BENE_INIC,,2026-04-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-04-01,21372039,Controle,Alteração GD,GD_BENE_INIC,,2026-04-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-04-01,82166749,Controle,Alteração GD,GD_BENE_INIC,,2026-04-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-04-01,88686043,Controle,Alteração GD,GD_BENE_INIC,,2026-04-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-04-01,98830376,Tratamento,Alteração GD,GD_BENE_INIC,,2026-04-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-04-15,88396371,Controle,Mudança de Titularidade,MUD_TIT,,2026-04-15,Mudança de titularidade registrada desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-04-18,43879870,Tratamento,Mudança de Titularidade,MUD_TIT,,2026-04-18,Mudança de titularidade registrada desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-05-01,102006288,Reserva,Alteração GD,GD_BENE_INIC,,2026-05-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-05-01,11578912,Tratamento,Alteração GD,GD_BENE_INIC,,2026-05-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-05-01,79792634,Tratamento,Alteração GD,GD_BENE_INIC,,2026-05-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-05-01,90216806,Tratamento,Alteração GD,GD_BENE_INIC,2026-06-01,2026-05-01,Informação de geração distribuída alterada.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-05-01,91375444,Tratamento,Alteração GD,GD_BENE_INIC,,2026-05-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-05-01,99213451,Controle,Alteração GD,DATA_INICIO_GD,,2026-05-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-05-07,99509725,Controle,Mudança de Titularidade,MUD_TIT,,2026-05-07,Mudança de titularidade registrada desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-05-12,88811220,Tratamento,Mudança de Titularidade,MUD_TIT,,2026-05-12,Mudança de titularidade registrada desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-06-01,107778963,Reserva,Alteração GD,DATA_INICIO_GD,,2026-06-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-06-01,108430766,Controle,Alteração GD,GD_BENE_INIC,,2026-06-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-06-01,88811220,Tratamento,Alteração GD,DATA_INICIO_GD,,2026-06-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-06-01,88811220,Tratamento,Alteração GD,GD_BENE_INIC,,2026-06-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-06-01,88946185,Tratamento,Alteração GD,GD_BENE_INIC,,2026-06-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
 2026-06-01,90216806,Tratamento,Alteração GD,GD_BENE_INIC,,2026-06-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-06-01,99213451,Controle,Alteração GD,GD_BENE_INIC,,2026-06-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-06-04,112453570,Controle,Mudança de Titularidade,MUD_TIT,,2026-06-04,Mudança de titularidade registrada desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-06-19,7128118,Controle,Mudança de Titularidade,MUD_TIT,,2026-06-19,Mudança de titularidade registrada desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-06-30,106318284,Tratamento,Mudança de Titularidade,MUD_TIT,,2026-06-30,Mudança de titularidade registrada desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-07-01,10551182,Tratamento,Alteração GD,GD_BENE_INIC,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-07-01,106306766,Tratamento,Alteração GD,GD_BENE_INIC,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-07-01,110995996,Tratamento,Desligamento,SITUACAO_UC,,CR,Corte registrado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-07-01,113440944,Controle,Alteração GD,GD_BENE_INIC,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-07-01,23678593,Tratamento,Alteração GD,GD_BENE_INIC,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-07-01,29684030,Controle,Alteração GD,GD_BENE_FIM,,2026-07-01,Informação de geração distribuída alterada.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-07-01,29684030,Controle,Alteração GD,GD_BENE_INIC,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-07-01,39078655,Controle,Alteração GD,GD_BENE_FIM,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-07-01,39078655,Controle,Alteração GD,GD_BENE_INIC,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
+2026-06-01,99213451,Controle,Alteração GD,GD_BENE_INIC,,2026-06-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-06-04,112453570,Controle,Mudança de Titularidade,MUD_TIT,,2026-06-04,Mudança de titularidade registrada desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-06-19,7128118,Controle,Mudança de Titularidade,MUD_TIT,,2026-06-19,Mudança de titularidade registrada desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-06-30,106318284,Tratamento,Mudança de Titularidade,MUD_TIT,,2026-06-30,Mudança de titularidade registrada desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-07-01,10551182,Tratamento,Alteração GD,GD_BENE_INIC,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-07-01,106306766,Tratamento,Alteração GD,GD_BENE_INIC,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-07-01,108430766,Controle,Alteração GD,GD_BENE_FIM,,2026-07-01,Informação de geração distribuída alterada.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-07-01,110995996,Tratamento,Desligamento,SITUACAO_UC,,CR,Corte registrado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-07-01,113440944,Controle,Alteração GD,GD_BENE_INIC,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-07-01,23678593,Tratamento,Alteração GD,GD_BENE_INIC,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-07-01,29684030,Controle,Alteração GD,GD_BENE_FIM,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-07-01,29684030,Controle,Alteração GD,GD_BENE_INIC,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-07-01,39078655,Controle,Alteração GD,GD_BENE_FIM,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-07-01,39078655,Controle,Alteração GD,GD_BENE_INIC,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
 2026-07-01,44649444,Controle,Alteração GD,GD_BENE_INIC,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260706-20260706.csv
-2026-07-01,78620929,Controle,Alteração GD,GD_BENE_INIC,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-07-01,89911369,Controle,Alteração GD,GD_BENE_INIC,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-07-01,90659066,Controle,Alteração GD,GD_BENE_INIC,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-07-01,91526370,Controle,Alteração GD,GD_BENE_INIC,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-07-01,9359117,Tratamento,Alteração GD,DATA_INICIO_GD,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-07-01,9359117,Tratamento,Alteração GD,GD_BENE_INIC,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-07-01,96507284,Controle,Alteração GD,GD_BENE_FIM,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-07-01,96507284,Controle,Alteração GD,GD_BENE_INIC,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260714-20260714.csv
+2026-07-01,78620929,Controle,Alteração GD,GD_BENE_INIC,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-07-01,89911369,Controle,Alteração GD,GD_BENE_INIC,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-07-01,90659066,Controle,Alteração GD,GD_BENE_INIC,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-07-01,91526370,Controle,Alteração GD,GD_BENE_INIC,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-07-01,9359117,Tratamento,Alteração GD,DATA_INICIO_GD,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-07-01,9359117,Tratamento,Alteração GD,GD_BENE_INIC,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-07-01,96507284,Controle,Alteração GD,GD_BENE_FIM,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-07-01,96507284,Controle,Alteração GD,GD_BENE_INIC,,2026-07-01,Evento de GD datado desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
 2026-07-06,105667226,Reserva,Sem atualização,PRESENCA_NO_RELATORIO,Presente na base,Ausente no relatório,A UC não recebeu dados no último relatório processado.,mdm-sandbox_clientes_novo-20260706-20260706.csv
-2026-07-10,5902126,Tratamento,Mudança de Titularidade,MUD_TIT,,2026-07-10,Nova mudança de titularidade identificada no relatório.,mdm-sandbox_clientes_novo-20260714-20260714.csv
+2026-07-10,5902126,Tratamento,Mudança de Titularidade,MUD_TIT,,2026-07-10,Mudança de titularidade registrada desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
 2026-07-10,84955007,Controle,Alteração cadastral,SITUACAO_UC,DS,LG,Valor cadastral alterado no último relatório.,mdm-sandbox_clientes_novo-20260714-20260714.csv
-2026-07-10,84955007,Controle,Mudança de Titularidade,MUD_TIT,,2026-07-10,Nova mudança de titularidade identificada no relatório.,mdm-sandbox_clientes_novo-20260714-20260714.csv
+2026-07-10,84955007,Controle,Mudança de Titularidade,MUD_TIT,,2026-07-10,Mudança de titularidade registrada desde o início do experimento.,mdm-sandbox_clientes_novo-20260719-20260719.csv
 2026-07-14,105667226,Reserva,Sem atualização,PRESENCA_NO_RELATORIO,Presente na base,Ausente no relatório,A UC não recebeu dados no último relatório processado.,mdm-sandbox_clientes_novo-20260714-20260714.csv
+2026-07-19,105667226,Reserva,Sem atualização,PRESENCA_NO_RELATORIO,Presente na base,Ausente no relatório,A UC não recebeu dados no último relatório processado.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2026-07-19,74629565,Controle,Alteração GD,TIPO_GD_GERA,GDII,GDI,Informação de geração distribuída alterada.,mdm-sandbox_clientes_novo-20260719-20260719.csv
