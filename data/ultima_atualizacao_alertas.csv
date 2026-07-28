@@ -1,5 +1,7 @@
 ﻿DATA_ALERTA,NUM_UC,GRUPO_UC,TIPO_ALERTA,CAMPO,VALOR_ANTERIOR,VALOR_NOVO,DETALHE,ARQUIVO_ORIGEM
-2026-07-19,74629565,Controle,Alteração GD,TIPO_GD_GERA,GDII,GDI,Informação de geração distribuída alterada.,mdm-sandbox_clientes_novo-20260719-20260719.csv
-2026-05-01,90216806,Tratamento,Alteração GD,GD_BENE_INIC,2026-06-01,2026-05-01,Informação de geração distribuída alterada.,mdm-sandbox_clientes_novo-20260719-20260719.csv
-2026-07-01,108430766,Controle,Alteração GD,GD_BENE_FIM,,2026-07-01,Informação de geração distribuída alterada.,mdm-sandbox_clientes_novo-20260719-20260719.csv
-2026-07-19,105667226,Reserva,Sem atualização,PRESENCA_NO_RELATORIO,Presente na base,Ausente no relatório,A UC não recebeu dados no último relatório processado.,mdm-sandbox_clientes_novo-20260719-20260719.csv
+2025-02-01,10551182,Tratamento,Alteração GD,GD_BENE_INIC,2026-07-01,2025-02-01,Informação de geração distribuída alterada.,mdm-sandbox_clientes_novo-20260726-20260726.csv
+2026-07-01,78620929,Controle,Alteração GD,GD_BENE_FIM,,2026-07-01,Informação de geração distribuída alterada.,mdm-sandbox_clientes_novo-20260726-20260726.csv
+2026-07-01,89911369,Controle,Alteração GD,GD_BENE_FIM,,2026-07-01,Informação de geração distribuída alterada.,mdm-sandbox_clientes_novo-20260726-20260726.csv
+2026-07-20,92941192,Tratamento,Mudança de Titularidade,MUD_TIT,,2026-07-20,Nova mudança de titularidade identificada no relatório.,mdm-sandbox_clientes_novo-20260726-20260726.csv
+2026-07-01,106306766,Tratamento,Alteração GD,GD_BENE_FIM,,2026-07-01,Informação de geração distribuída alterada.,mdm-sandbox_clientes_novo-20260726-20260726.csv
+2026-07-26,105667226,Reserva,Sem atualização,PRESENCA_NO_RELATORIO,Presente na base,Ausente no relatório,A UC não recebeu dados no último relatório processado.,mdm-sandbox_clientes_novo-20260726-20260726.csv
