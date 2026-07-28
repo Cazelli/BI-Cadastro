@@ -11,6 +11,8 @@ Dashboard Streamlit para análise consolidada das unidades consumidoras do arqui
 - filtros globais de situação, município, fase, etapa, finalidade e fabricante;
 - atalhos de data para o período Inicial e para o último dia de cada mês;
 - páginas comparativas de UCs, veículos, recarga, geração distribuída e qualidade;
+- alertas de UCs sem comunicação, incluindo o atraso em dias;
+- disponibilidade mensal de dados e consulta das maiores lacunas por UC;
 - histórico acumulado de alertas desde 01/03/2026, com valores anteriores e novos por UC;
 - consulta operacional sem nome, telefone ou e-mail do titular;
 - atualização automática ao substituir o arquivo CSV no repositório;
@@ -19,6 +21,10 @@ Dashboard Streamlit para análise consolidada das unidades consumidoras do arqui
 As marcas exibidas no cabeçalho foram obtidas nos sites oficiais da
 [COPEL](https://www.copel.com/site/) e da
 [Essenz Soluções](https://www.essenzsolucoes.com/).
+
+As páginas de medição usam `relatorio_medicao/relatorio_alertas_por_uc.csv`
+e `relatorio_medicao/detalhe_gaps.csv`. Substitua esses arquivos por uma nova
+execução do relatório para atualizar os alertas e os gráficos.
 
 ## Executar localmente
 

@@ -10,3 +10,5 @@ data/mdm-sandbox_clientes_novo-*.csv
 data/backups/
 base_consolidada_copel.csv
 base_consolidada_copel.xlsx
+relatorio_medicao/*.sqlite
+relatorio_medicao/registros_rejeitados.csv

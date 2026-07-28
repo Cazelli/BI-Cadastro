@@ -21,6 +21,9 @@ PARANA_BOUNDARY_FILE = ASSET_DIR / "parana_contorno.geojson"
 UPDATE_ALERT_FILE = Path(__file__).with_name("data") / "ultima_atualizacao_alertas.csv"
 UPDATE_HISTORY_FILE = Path(__file__).with_name("data") / "historico_alertas.csv"
 UPDATE_SUMMARY_FILE = Path(__file__).with_name("data") / "ultima_atualizacao_resumo.json"
+MEASUREMENT_DIR = Path(__file__).with_name("relatorio_medicao")
+MEASUREMENT_ALERT_FILE = MEASUREMENT_DIR / "relatorio_alertas_por_uc.csv"
+MEASUREMENT_GAPS_FILE = MEASUREMENT_DIR / "detalhe_gaps.csv"
 LOGIN_USER = "Copel"
 PASSWORD_SALT = b"copel-bi-cadastro-v1"
 PASSWORD_HASH = bytes.fromhex(
@@ -299,6 +302,48 @@ def load_update_report(
     return history, latest, summary
 
 
+@st.cache_data(show_spinner="Carregando relatório de medição...")
+def load_measurement_alerts(file_mtime: float) -> pd.DataFrame:
+    del file_mtime
+    frame = pd.read_csv(
+        MEASUREMENT_ALERT_FILE,
+        sep=";",
+        dtype={"uc": "string", "medidor_arquivo_normalizado": "string"},
+        encoding="utf-8-sig",
+    )
+    for column in ["primeira_leitura", "ultima_leitura", "fim_dados_origem"]:
+        frame[column] = pd.to_datetime(frame[column], errors="coerce")
+    numeric_columns = [
+        "atraso_min",
+        "intervalo_predominante_min",
+        "registros",
+        "gaps",
+        "intervalos_ausentes",
+    ]
+    frame[numeric_columns] = frame[numeric_columns].apply(
+        pd.to_numeric, errors="coerce"
+    )
+    frame["dias_sem_comunicacao"] = frame["atraso_min"].fillna(0) / 1_440
+    return frame
+
+
+@st.cache_data(show_spinner="Carregando lacunas de medição...")
+def load_measurement_gaps(file_mtime: float) -> pd.DataFrame:
+    del file_mtime
+    frame = pd.read_csv(
+        MEASUREMENT_GAPS_FILE,
+        sep=";",
+        dtype={"uc": "string", "medidor_normalizado": "string"},
+        encoding="utf-8-sig",
+    )
+    frame["inicio_gap"] = pd.to_datetime(frame["inicio_gap"], errors="coerce")
+    frame["fim_gap"] = pd.to_datetime(frame["fim_gap"], errors="coerce")
+    frame["intervalos_ausentes"] = pd.to_numeric(
+        frame["intervalos_ausentes"], errors="coerce"
+    ).fillna(0)
+    return frame
+
+
 MONTH_NAMES = {
     1: "Janeiro",
     2: "Fevereiro",
@@ -381,6 +426,8 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
             "Infraestrutura de recarga",
             "Geração distribuída",
             "Atualizações e alertas",
+            "Alertas de comunicação",
+            "Disponibilidade de medição",
             "Qualidade dos dados",
         ],
         label_visibility="collapsed",
@@ -464,6 +511,7 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
     }
 
     filtered = reference_frame.copy()
+    st.session_state["global_filters_active"] = any(filters.values())
     for column, chosen in filters.items():
         if chosen:
             source_values = chosen
@@ -2127,6 +2175,166 @@ def quality_page(frame: pd.DataFrame) -> None:
     st.dataframe(view, width="stretch", hide_index=True, height=410)
 
 
+def measurement_scope(frame: pd.DataFrame, measurement: pd.DataFrame) -> pd.DataFrame:
+    """Apply the dashboard's UC filters to a measurement report."""
+    if not st.session_state.get("global_filters_active", False):
+        return measurement.copy()
+    allowed_ucs = set(
+        frame["NUM_UC"]
+        .dropna()
+        .astype(str)
+        .str.replace(r"\.0$", "", regex=True)
+    )
+    return measurement[measurement["uc"].astype(str).isin(allowed_ucs)].copy()
+
+
+def communication_alerts_page(frame: pd.DataFrame) -> None:
+    title(
+        "Continuidade dos dados",
+        "Alertas de comunicação",
+        "UCs cuja última leitura ultrapassou o limite de comunicação da sua origem.",
+    )
+    if not MEASUREMENT_ALERT_FILE.exists():
+        st.error("O arquivo relatorio_alertas_por_uc.csv não foi encontrado.")
+        return
+
+    report = measurement_scope(
+        frame, load_measurement_alerts(MEASUREMENT_ALERT_FILE.stat().st_mtime)
+    )
+    alerts = report[report["alerta_sem_comunicacao"].eq("SIM")].copy()
+    alerts = alerts.sort_values("atraso_min", ascending=False)
+
+    cols = st.columns(4)
+    cols[0].metric("UCs monitoradas", f"{report['uc'].nunique():,}".replace(",", "."))
+    cols[1].metric("Sem comunicação", f"{alerts['uc'].nunique():,}".replace(",", "."))
+    cols[2].metric(
+        "Maior atraso",
+        f"{alerts['dias_sem_comunicacao'].max():.1f} dias" if not alerts.empty else "0 dias",
+    )
+    cols[3].metric(
+        "Origens afetadas",
+        str(alerts["origem"].nunique()),
+    )
+
+    if alerts.empty:
+        st.success("Nenhuma UC nos filtros atuais está sem comunicação.")
+        return
+
+    source_options = sorted(alerts["origem"].dropna().unique().tolist())
+    selected_sources = st.multiselect(
+        "Origem", source_options, default=source_options, key="communication_sources"
+    )
+    if selected_sources:
+        alerts = alerts[alerts["origem"].isin(selected_sources)]
+
+    fig = px.bar(
+        alerts.head(40).sort_values("dias_sem_comunicacao"),
+        x="dias_sem_comunicacao",
+        y="uc",
+        orientation="h",
+        color="origem",
+        labels={"dias_sem_comunicacao": "Dias sem comunicação", "uc": "UC"},
+        title="UCs com maior tempo sem comunicação",
+        hover_data={"ultima_leitura": True, "atraso_min": ":.0f"},
+    )
+    st.plotly_chart(chart_style(fig, max(420, min(900, len(alerts.head(40)) * 24))), width="stretch", config=PLOTLY_CONFIG)
+
+    view = alerts[
+        ["uc", "origem", "ultima_leitura", "fim_dados_origem", "dias_sem_comunicacao",
+         "intervalo_predominante_min", "gaps", "intervalos_ausentes"]
+    ].rename(columns={
+        "uc": "UC", "origem": "Origem", "ultima_leitura": "Última leitura",
+        "fim_dados_origem": "Fim dos dados da origem",
+        "dias_sem_comunicacao": "Dias sem comunicação",
+        "intervalo_predominante_min": "Intervalo esperado (min)",
+        "gaps": "Lacunas", "intervalos_ausentes": "Intervalos ausentes",
+    })
+    view["Dias sem comunicação"] = view["Dias sem comunicação"].round(2)
+    st.dataframe(view, width="stretch", hide_index=True, height=430)
+
+
+def measurement_availability_page(frame: pd.DataFrame) -> None:
+    title(
+        "Continuidade dos dados",
+        "Disponibilidade de medição",
+        "Disponibilidade mensal e lacunas de dados para cada unidade consumidora.",
+    )
+    if not MEASUREMENT_ALERT_FILE.exists() or not MEASUREMENT_GAPS_FILE.exists():
+        st.error("Os arquivos de alertas e detalhe de gaps não foram encontrados.")
+        return
+
+    report = measurement_scope(
+        frame, load_measurement_alerts(MEASUREMENT_ALERT_FILE.stat().st_mtime)
+    )
+    if report.empty:
+        empty_state()
+        return
+
+    report["availability_overall"] = (
+        1
+        - report["intervalos_ausentes"]
+        / (
+            (report["ultima_leitura"] - report["primeira_leitura"]).dt.total_seconds()
+            / 60
+            / report["intervalo_predominante_min"]
+            + 1
+        )
+    ).clip(0, 1)
+    uc_options = report.sort_values(["availability_overall", "uc"])["uc"].tolist()
+    selected_uc = st.selectbox(
+        "Selecione a UC", uc_options, format_func=lambda value: f"UC {value}"
+    )
+    uc_row = report[report["uc"].eq(selected_uc)].iloc[0]
+
+    metrics = st.columns(4)
+    metrics[0].metric("Disponibilidade geral", f"{uc_row['availability_overall']:.2%}")
+    metrics[1].metric("Registros recebidos", f"{int(uc_row['registros']):,}".replace(",", "."))
+    metrics[2].metric("Intervalos ausentes", f"{int(uc_row['intervalos_ausentes']):,}".replace(",", "."))
+    metrics[3].metric("Intervalo esperado", f"{int(uc_row['intervalo_predominante_min'])} min")
+
+    gaps = load_measurement_gaps(MEASUREMENT_GAPS_FILE.stat().st_mtime)
+    gaps = gaps[gaps["uc"].eq(selected_uc)].copy()
+    gaps["mes"] = gaps["inicio_gap"].dt.to_period("M").dt.to_timestamp()
+    missing = gaps.groupby("mes", as_index=False)["intervalos_ausentes"].sum()
+
+    start = uc_row["primeira_leitura"].to_period("M").to_timestamp()
+    end = uc_row["ultima_leitura"].to_period("M").to_timestamp()
+    monthly = pd.DataFrame({"mes": pd.date_range(start, end, freq="MS")})
+    monthly = monthly.merge(missing, on="mes", how="left").fillna({"intervalos_ausentes": 0})
+    month_end = monthly["mes"] + pd.offsets.MonthEnd(1) + pd.Timedelta(days=1)
+    observed_start = monthly["mes"].clip(lower=uc_row["primeira_leitura"])
+    observed_end = month_end.clip(upper=uc_row["ultima_leitura"] + pd.Timedelta(minutes=float(uc_row["intervalo_predominante_min"])))
+    monthly["intervalos_esperados"] = (
+        (observed_end - observed_start).dt.total_seconds()
+        / 60
+        / float(uc_row["intervalo_predominante_min"])
+    ).clip(lower=1)
+    monthly["disponibilidade"] = (
+        1 - monthly["intervalos_ausentes"] / monthly["intervalos_esperados"]
+    ).clip(0, 1)
+
+    fig = px.bar(
+        monthly,
+        x="mes",
+        y="disponibilidade",
+        text=monthly["disponibilidade"].map(lambda value: f"{value:.1%}"),
+        labels={"mes": "Mês", "disponibilidade": "Disponibilidade"},
+        title=f"Disponibilidade mensal — UC {selected_uc}",
+    )
+    fig.update_yaxes(tickformat=".0%", range=[0, 1.08])
+    fig.update_traces(marker_color="#F5821E", textposition="outside")
+    st.plotly_chart(chart_style(fig, 430), width="stretch", config=PLOTLY_CONFIG)
+
+    st.markdown("#### Maiores lacunas")
+    gap_view = gaps.nlargest(100, "intervalos_ausentes")[
+        ["inicio_gap", "fim_gap", "duracao_min", "intervalos_ausentes"]
+    ].rename(columns={
+        "inicio_gap": "Início", "fim_gap": "Fim", "duracao_min": "Duração (min)",
+        "intervalos_ausentes": "Intervalos ausentes",
+    })
+    st.dataframe(gap_view, width="stretch", hide_index=True, height=360)
+
+
 inject_css()
 render_brand_banner()
 if not st.session_state.get("authenticated", False):
@@ -2157,5 +2365,9 @@ elif selected_page == "Geração distribuída":
     gd_page(filtered_data)
 elif selected_page == "Atualizações e alertas":
     update_report_page(filtered_data)
+elif selected_page == "Alertas de comunicação":
+    communication_alerts_page(filtered_data)
+elif selected_page == "Disponibilidade de medição":
+    measurement_availability_page(filtered_data)
 else:
     quality_page(filtered_data)
