@@ -2176,16 +2176,26 @@ def quality_page(frame: pd.DataFrame) -> None:
 
 
 def measurement_scope(frame: pd.DataFrame, measurement: pd.DataFrame) -> pd.DataFrame:
-    """Apply the dashboard's UC filters to a measurement report."""
-    if not st.session_state.get("global_filters_active", False):
-        return measurement.copy()
-    allowed_ucs = set(
-        frame["NUM_UC"]
+    """Apply the dashboard's UC filters and attach each UC's experiment group."""
+    uc_groups = frame[["NUM_UC", "SITUACAO_INICIAL"]].copy()
+    uc_groups["uc"] = (
+        uc_groups["NUM_UC"]
         .dropna()
         .astype(str)
         .str.replace(r"\.0$", "", regex=True)
     )
-    return measurement[measurement["uc"].astype(str).isin(allowed_ucs)].copy()
+    uc_groups["grupo_uc"] = (
+        uc_groups["SITUACAO_INICIAL"].map(status_display_label).map(clean_label)
+    )
+    uc_groups = uc_groups[["uc", "grupo_uc"]].drop_duplicates("uc")
+
+    scoped = measurement.copy()
+    scoped["uc"] = scoped["uc"].astype(str)
+    if st.session_state.get("global_filters_active", False):
+        scoped = scoped[scoped["uc"].isin(set(uc_groups["uc"]))].copy()
+    scoped = scoped.merge(uc_groups, on="uc", how="left")
+    scoped["grupo_uc"] = scoped["grupo_uc"].fillna("Não informado")
+    return scoped
 
 
 def latest_measurement_date_label(report: pd.DataFrame) -> str:
@@ -2232,30 +2242,78 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
         st.success("Nenhuma UC nos filtros atuais está sem comunicação.")
         return
 
+    filter_cols = st.columns(2)
     source_options = sorted(alerts["origem"].dropna().unique().tolist())
-    selected_sources = st.multiselect(
+    selected_sources = filter_cols[0].multiselect(
         "Origem", source_options, default=source_options, key="communication_sources"
     )
     if selected_sources:
         alerts = alerts[alerts["origem"].isin(selected_sources)]
 
-    fig = px.bar(
-        alerts.head(40).sort_values("dias_sem_comunicacao"),
-        x="dias_sem_comunicacao",
-        y="uc",
-        orientation="h",
-        color="origem",
-        labels={"dias_sem_comunicacao": "Dias sem comunicação", "uc": "UC"},
-        title="UCs com maior tempo sem comunicação",
-        hover_data={"ultima_leitura": True, "atraso_min": ":.0f"},
+    group_order = ["Tratamento", "Controle", "Reserva"]
+    group_options = sorted(
+        alerts["grupo_uc"].dropna().unique().tolist(),
+        key=lambda value: (
+            group_order.index(value) if value in group_order else len(group_order),
+            value,
+        ),
     )
-    st.plotly_chart(chart_style(fig, max(420, min(900, len(alerts.head(40)) * 24))), width="stretch", config=PLOTLY_CONFIG)
+    selected_groups = filter_cols[1].multiselect(
+        "Grupo",
+        group_options,
+        default=group_options,
+        key="communication_groups",
+    )
+    if selected_groups:
+        alerts = alerts[alerts["grupo_uc"].isin(selected_groups)]
+
+    timeline = alerts.sort_values(["grupo_uc", "uc"]).copy()
+    timeline["UC"] = timeline["uc"].map(lambda value: f"UC {value}")
+    timeline["Grupo"] = timeline["grupo_uc"]
+    timeline["Origem"] = timeline["origem"]
+    fig = px.timeline(
+        timeline,
+        x_start="primeira_leitura",
+        x_end="ultima_leitura",
+        y="UC",
+        color="Grupo",
+        color_discrete_map={
+            "Tratamento": "#F5821E",
+            "Controle": "#69727D",
+            "Reserva": "#6EBAE8",
+            "Não informado": "#A8ADB4",
+        },
+        category_orders={"Grupo": group_order},
+        labels={
+            "primeira_leitura": "Primeira leitura",
+            "ultima_leitura": "Última leitura",
+        },
+        title="Período com dados por UC, agrupado pelo grupo experimental",
+        hover_data={
+            "Origem": True,
+            "primeira_leitura": True,
+            "ultima_leitura": True,
+            "dias_sem_comunicacao": ":.2f",
+            "gaps": ":.0f",
+        },
+    )
+    fig.update_yaxes(
+        categoryorder="array",
+        categoryarray=timeline["UC"].tolist()[::-1],
+    )
+    st.plotly_chart(
+        chart_style(fig, max(500, min(1_800, len(timeline) * 28))),
+        width="stretch",
+        config=PLOTLY_CONFIG,
+    )
 
     view = alerts[
-        ["uc", "origem", "ultima_leitura", "fim_dados_origem", "dias_sem_comunicacao",
-         "intervalo_predominante_min", "gaps", "intervalos_ausentes"]
+        ["uc", "grupo_uc", "origem", "ultima_leitura", "fim_dados_origem",
+         "dias_sem_comunicacao", "intervalo_predominante_min", "gaps",
+         "intervalos_ausentes"]
     ].rename(columns={
-        "uc": "UC", "origem": "Origem", "ultima_leitura": "Última leitura",
+        "uc": "UC", "grupo_uc": "Grupo", "origem": "Origem",
+        "ultima_leitura": "Última leitura",
         "fim_dados_origem": "Fim dos dados da origem",
         "dias_sem_comunicacao": "Dias sem comunicação",
         "intervalo_predominante_min": "Intervalo esperado (min)",
@@ -2292,18 +2350,24 @@ def measurement_availability_page(frame: pd.DataFrame) -> None:
             + 1
         )
     ).clip(0, 1)
-    uc_options = report.sort_values(["availability_overall", "uc"])["uc"].tolist()
+    uc_options = report.sort_values(
+        ["grupo_uc", "availability_overall", "uc"]
+    )["uc"].tolist()
+    group_by_uc = report.set_index("uc")["grupo_uc"].to_dict()
     selected_uc = st.selectbox(
-        "Selecione a UC", uc_options, format_func=lambda value: f"UC {value}"
+        "Selecione a UC",
+        uc_options,
+        format_func=lambda value: f"{group_by_uc[value]} — UC {value}",
     )
     uc_row = report[report["uc"].eq(selected_uc)].iloc[0]
 
-    metrics = st.columns(5)
+    metrics = st.columns(6)
     metrics[0].metric("Disponibilidade geral", f"{uc_row['availability_overall']:.2%}")
-    metrics[1].metric("Registros recebidos", f"{int(uc_row['registros']):,}".replace(",", "."))
-    metrics[2].metric("Intervalos ausentes", f"{int(uc_row['intervalos_ausentes']):,}".replace(",", "."))
-    metrics[3].metric("Intervalo esperado", f"{int(uc_row['intervalo_predominante_min'])} min")
-    metrics[4].metric(
+    metrics[1].metric("Grupo", uc_row["grupo_uc"])
+    metrics[2].metric("Registros recebidos", f"{int(uc_row['registros']):,}".replace(",", "."))
+    metrics[3].metric("Intervalos ausentes", f"{int(uc_row['intervalos_ausentes']):,}".replace(",", "."))
+    metrics[4].metric("Intervalo esperado", f"{int(uc_row['intervalo_predominante_min'])} min")
+    metrics[5].metric(
         "Dados disponíveis até", latest_measurement_date_label(report)
     )
 
