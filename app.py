@@ -2242,19 +2242,20 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
 
     if alerts.empty:
         st.success("Nenhuma UC nos filtros atuais está sem comunicação.")
-        return
 
     filter_cols = st.columns(2)
-    source_options = sorted(alerts["origem"].dropna().unique().tolist())
+    source_options = sorted(report["origem"].dropna().unique().tolist())
     selected_sources = filter_cols[0].multiselect(
         "Origem", source_options, default=source_options, key="communication_sources"
     )
+    timeline = report.copy()
     if selected_sources:
+        timeline = timeline[timeline["origem"].isin(selected_sources)]
         alerts = alerts[alerts["origem"].isin(selected_sources)]
 
     group_order = ["Tratamento", "Controle", "Reserva", "Reserva Extra"]
     group_options = sorted(
-        alerts["grupo_uc"].dropna().unique().tolist(),
+        timeline["grupo_uc"].dropna().unique().tolist(),
         key=lambda value: (
             group_order.index(value) if value in group_order else len(group_order),
             value,
@@ -2267,12 +2268,17 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
         key="communication_groups",
     )
     if selected_groups:
+        timeline = timeline[timeline["grupo_uc"].isin(selected_groups)]
         alerts = alerts[alerts["grupo_uc"].isin(selected_groups)]
 
-    timeline = alerts.sort_values(["grupo_uc", "uc"]).copy()
+    timeline = timeline.sort_values(["grupo_uc", "uc"]).copy()
     timeline["UC"] = timeline["uc"].map(lambda value: f"UC {value}")
     timeline["Grupo"] = timeline["grupo_uc"]
     timeline["Origem"] = timeline["origem"]
+    st.caption(
+        f"{timeline['uc'].nunique():,} UCs exibidas — role a página para consultar "
+        "toda a linha do tempo.".replace(",", ".")
+    )
     fig = px.timeline(
         timeline,
         x_start="primeira_leitura",
@@ -2304,11 +2310,12 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
         categoryarray=timeline["UC"].tolist()[::-1],
     )
     st.plotly_chart(
-        chart_style(fig, max(500, min(1_800, len(timeline) * 28))),
+        chart_style(fig, max(500, len(timeline) * 28)),
         width="stretch",
         config=PLOTLY_CONFIG,
     )
 
+    st.markdown("#### Detalhes dos alertas de comunicação")
     view = alerts[
         ["uc", "grupo_uc", "origem", "ultima_leitura", "fim_dados_origem",
          "dias_sem_comunicacao", "intervalo_predominante_min", "gaps",
