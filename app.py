@@ -2319,17 +2319,12 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
     )
     timeline_start = timeline["primeira_leitura"].min()
     timeline_end = timeline["ultima_leitura"].max()
-    if pd.isna(timeline_start) or pd.isna(timeline_end):
-        timeline_start = report["primeira_leitura"].min()
-        timeline_end = report["ultima_leitura"].max()
-    month_starts = pd.DatetimeIndex([])
     if pd.notna(timeline_start) and pd.notna(timeline_end):
-        month_starts = pd.date_range(
+        for month_start in pd.date_range(
             timeline_start.to_period("M").to_timestamp(),
             timeline_end.to_period("M").to_timestamp(),
             freq="MS",
-        )
-        for month_start in month_starts:
+        ):
             fig.add_vline(
                 x=month_start,
                 line_width=2 if month_start.month == 3 else 1,
@@ -2340,45 +2335,7 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
                     else "rgba(63, 68, 75, 0.35)"
                 ),
             )
-    fig.update_xaxes(
-        range=[timeline_start, timeline_end],
-        showticklabels=False,
-        title_text=None,
-    )
-
-    month_header = go.Figure()
-    for month_start in month_starts:
-        month_header.add_vline(
-            x=month_start,
-            line_width=2 if month_start.month == 3 else 1,
-            line_dash="dash",
-            line_color=(
-                "#D62728"
-                if month_start.month == 3
-                else "rgba(63, 68, 75, 0.35)"
-            ),
-        )
-    month_header.update_xaxes(
-        range=[timeline_start, timeline_end],
-        dtick="M1",
-        tickformat="%b/%Y",
-        title_text="Período de medição",
-        side="top",
-    )
-    month_header.update_yaxes(visible=False, range=[0, 1])
-    month_header.update_layout(
-        height=85,
-        margin=dict(l=95, r=20, t=42, b=5),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        showlegend=False,
-    )
-    st.plotly_chart(
-        month_header,
-        width="stretch",
-        config={"displayModeBar": False},
-        key="communication_timeline_month_header",
-    )
+    fig.update_xaxes(dtick="M1", tickformat="%b/%Y")
     with st.container(height=720, border=True):
         timeline_selection = st.plotly_chart(
             chart_style(fig, max(600, len(timeline) * 30)),
