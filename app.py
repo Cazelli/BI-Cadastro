@@ -2323,18 +2323,18 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
         timeline["faixa_sem_comunicacao"].unique().tolist(),
         key=delay_order,
     )
-    selected_delays = filter_cols[3].multiselect(
-        "Tempo sem comunicação",
-        delay_options,
-        default=delay_options,
-        key="communication_delay",
+    selected_delay = filter_cols[3].selectbox(
+        "Dias sem comunicação",
+        ["Todos", *delay_options],
+        index=0,
+        key="communication_delay_days",
     )
-    if selected_delays:
+    if selected_delay != "Todos":
         timeline = timeline[
-            timeline["faixa_sem_comunicacao"].isin(selected_delays)
+            timeline["faixa_sem_comunicacao"].eq(selected_delay)
         ].copy()
         alerts = alerts[
-            alerts["faixa_sem_comunicacao"].isin(selected_delays)
+            alerts["faixa_sem_comunicacao"].eq(selected_delay)
         ].copy()
 
     filtered_alerts = timeline[
@@ -2367,7 +2367,9 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
     timeline["UC"] = timeline["uc"].map(lambda value: f"UC {value}")
     timeline["Grupo"] = timeline["grupo_uc"]
     timeline["Origem"] = timeline["origem"]
-    timeline["Tempo sem comunicação"] = timeline["faixa_sem_comunicacao"]
+    timeline["Faixa de dias sem comunicação"] = timeline[
+        "faixa_sem_comunicacao"
+    ]
     st.caption(
         f"{timeline['uc'].nunique():,} UCs exibidas — use a barra de rolagem da "
         "janela para consultar toda a linha do tempo.".replace(",", ".")
@@ -2393,7 +2395,7 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
         title="Período com dados por UC, agrupado pelo grupo experimental",
         hover_data={
             "Origem": True,
-            "Tempo sem comunicação": True,
+            "Faixa de dias sem comunicação": True,
             "primeira_leitura": True,
             "ultima_leitura": True,
             "dias_sem_comunicacao": ":.2f",
@@ -2473,7 +2475,7 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
     ].rename(columns={
         "uc": "UC", "grupo_uc": "Grupo", "origem": "Origem",
         "situacao_comunicacao": "Situação da comunicação",
-        "faixa_sem_comunicacao": "Tempo sem comunicação",
+        "faixa_sem_comunicacao": "Faixa de dias sem comunicação",
         "ultima_leitura": "Última leitura",
         "fim_dados_origem": "Fim dos dados da origem",
         "dias_sem_comunicacao": "Dias sem comunicação",
