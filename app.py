@@ -2319,12 +2319,14 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
     )
     timeline_start = timeline["primeira_leitura"].min()
     timeline_end = timeline["ultima_leitura"].max()
+    month_starts = pd.DatetimeIndex([])
     if pd.notna(timeline_start) and pd.notna(timeline_end):
-        for month_start in pd.date_range(
+        month_starts = pd.date_range(
             timeline_start.to_period("M").to_timestamp(),
             timeline_end.to_period("M").to_timestamp(),
             freq="MS",
-        ):
+        )
+        for month_start in month_starts:
             fig.add_vline(
                 x=month_start,
                 line_width=2 if month_start.month == 3 else 1,
@@ -2335,15 +2337,23 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
                     else "rgba(63, 68, 75, 0.35)"
                 ),
             )
-    fig.update_xaxes(dtick="M1", tickformat="%b/%Y")
+    month_labels = [
+        f"{MONTH_NAMES[month.month][:3]}/{month.year}" for month in month_starts
+    ]
+    fig.update_xaxes(
+        tickmode="array",
+        tickvals=month_starts,
+        ticktext=month_labels,
+    )
     fig.update_layout(
         xaxis2=dict(
             anchor="y",
             overlaying="x",
             matches="x",
             side="top",
-            dtick="M1",
-            tickformat="%b/%Y",
+            tickmode="array",
+            tickvals=month_starts,
+            ticktext=month_labels,
             showgrid=False,
             title_text=None,
         )
