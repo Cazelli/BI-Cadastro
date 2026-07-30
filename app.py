@@ -2312,29 +2312,49 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
         communication_delay_label, axis=1
     )
 
-    def delay_order(label: str) -> tuple[int, int]:
-        if label == "Menos de 1 dia":
-            return (0, 0)
-        if label == "Sem medição":
-            return (2, 0)
-        return (1, int(label.split()[0]))
-
-    delay_options = sorted(
-        timeline["faixa_sem_comunicacao"].unique().tolist(),
-        key=delay_order,
+    measured_delays = timeline.loc[
+        timeline["ultima_leitura"].notna(), "dias_sem_comunicacao"
+    ].dropna()
+    max_complete_days = (
+        int(measured_delays.max()) if not measured_delays.empty else 0
     )
+    delay_options = ["Menos de 1 dia"]
+    delay_options.extend(
+        f"{days} dia" if days == 1 else f"{days} dias"
+        for days in range(1, max_complete_days + 1)
+    )
+    if timeline["ultima_leitura"].isna().any():
+        delay_options.append("Sem medição")
+    delay_choices = ["Todos", *delay_options]
+    if st.session_state.get("communication_delay_days") not in delay_choices:
+        st.session_state["communication_delay_days"] = "Todos"
     selected_delay = filter_cols[3].selectbox(
         "Dias sem comunicação",
-        ["Todos", *delay_options],
+        delay_choices,
         index=0,
         key="communication_delay_days",
     )
-    if selected_delay != "Todos":
+    if selected_delay == "Menos de 1 dia":
         timeline = timeline[
-            timeline["faixa_sem_comunicacao"].eq(selected_delay)
+            timeline["ultima_leitura"].notna()
+            & timeline["dias_sem_comunicacao"].lt(1)
         ].copy()
         alerts = alerts[
-            alerts["faixa_sem_comunicacao"].eq(selected_delay)
+            alerts["ultima_leitura"].notna()
+            & alerts["dias_sem_comunicacao"].lt(1)
+        ].copy()
+    elif selected_delay == "Sem medição":
+        timeline = timeline[timeline["ultima_leitura"].isna()].copy()
+        alerts = alerts[alerts["ultima_leitura"].isna()].copy()
+    elif selected_delay != "Todos":
+        maximum_days = int(selected_delay.split()[0])
+        timeline = timeline[
+            timeline["ultima_leitura"].notna()
+            & timeline["dias_sem_comunicacao"].lt(maximum_days + 1)
+        ].copy()
+        alerts = alerts[
+            alerts["ultima_leitura"].notna()
+            & alerts["dias_sem_comunicacao"].lt(maximum_days + 1)
         ].copy()
 
     filtered_alerts = timeline[
