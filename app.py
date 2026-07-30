@@ -2338,6 +2338,7 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
     fig.update_xaxes(dtick="M1", tickformat="%b/%Y")
     fig.update_layout(
         xaxis2=dict(
+            anchor="y",
             overlaying="x",
             matches="x",
             side="top",
