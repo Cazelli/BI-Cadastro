@@ -3,7 +3,6 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import Callable
@@ -17,7 +16,6 @@ BASE_FILE = ROOT / "base_consolidada_BI.csv"
 ALERT_FILE = DATA_DIR / "ultima_atualizacao_alertas.csv"
 HISTORY_FILE = DATA_DIR / "historico_alertas.csv"
 SUMMARY_FILE = DATA_DIR / "ultima_atualizacao_resumo.json"
-BACKUP_DIR = DATA_DIR / "backups"
 REPORT_PATTERN = re.compile(
     r"^mdm-sandbox_clientes_novo-(\d{8})-(\d{8})\.csv$",
     re.IGNORECASE,
@@ -537,10 +535,6 @@ def process_report(report: Path, force: bool = False) -> dict:
         )
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    BACKUP_DIR.mkdir(parents=True, exist_ok=True)
-    backup = BACKUP_DIR / f"base_consolidada_BI_before_{report.stem}.csv"
-    if not backup.exists():
-        shutil.copy2(BASE_FILE, backup)
 
     alerts_frame = pd.DataFrame(alerts, columns=ALERT_COLUMNS)
     atomic_csv(base, BASE_FILE)
