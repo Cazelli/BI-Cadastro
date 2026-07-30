@@ -2370,7 +2370,7 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
         f"{filtered_alerts['uc'].nunique():,}".replace(",", "."),
     )
     cols[2].metric(
-        "Dados disponíveis até",
+        "Ultima data de medição dispopnível",
         latest_measurement_date_label(timeline),
     )
     if filtered_alerts.empty:
