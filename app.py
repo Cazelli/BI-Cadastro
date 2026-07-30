@@ -2271,7 +2271,10 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
         timeline = timeline[timeline["grupo_uc"].isin(selected_groups)]
         alerts = alerts[alerts["grupo_uc"].isin(selected_groups)]
 
-    timeline = timeline.sort_values(["grupo_uc", "uc"]).copy()
+    timeline["ordem_grupo"] = timeline["grupo_uc"].map(
+        {group: index for index, group in enumerate(group_order)}
+    ).fillna(len(group_order))
+    timeline = timeline.sort_values(["ordem_grupo", "uc"]).copy()
     timeline["UC"] = timeline["uc"].map(lambda value: f"UC {value}")
     timeline["Grupo"] = timeline["grupo_uc"]
     timeline["Origem"] = timeline["origem"]
