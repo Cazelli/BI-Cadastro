@@ -2194,7 +2194,9 @@ def measurement_scope(frame: pd.DataFrame, measurement: pd.DataFrame) -> pd.Data
     if st.session_state.get("global_filters_active", False):
         scoped = scoped[scoped["uc"].isin(set(uc_groups["uc"]))].copy()
     scoped = scoped.merge(uc_groups, on="uc", how="left")
-    scoped["grupo_uc"] = scoped["grupo_uc"].fillna("Não informado")
+    scoped["grupo_uc"] = scoped["grupo_uc"].replace(
+        {"Não informado": "Reserva Extra"}
+    ).fillna("Reserva Extra")
     return scoped
 
 
@@ -2250,7 +2252,7 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
     if selected_sources:
         alerts = alerts[alerts["origem"].isin(selected_sources)]
 
-    group_order = ["Tratamento", "Controle", "Reserva"]
+    group_order = ["Tratamento", "Controle", "Reserva", "Reserva Extra"]
     group_options = sorted(
         alerts["grupo_uc"].dropna().unique().tolist(),
         key=lambda value: (
@@ -2281,7 +2283,7 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
             "Tratamento": "#F5821E",
             "Controle": "#69727D",
             "Reserva": "#6EBAE8",
-            "Não informado": "#A8ADB4",
+            "Reserva Extra": "#A8ADB4",
         },
         category_orders={"Grupo": group_order},
         labels={
