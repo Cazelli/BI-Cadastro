@@ -2188,6 +2188,15 @@ def measurement_scope(frame: pd.DataFrame, measurement: pd.DataFrame) -> pd.Data
     return measurement[measurement["uc"].astype(str).isin(allowed_ucs)].copy()
 
 
+def latest_measurement_date_label(report: pd.DataFrame) -> str:
+    latest_data_date = report["fim_dados_origem"].max()
+    return (
+        latest_data_date.strftime("%d/%m/%Y")
+        if pd.notna(latest_data_date)
+        else "Não disponível"
+    )
+
+
 def communication_alerts_page(frame: pd.DataFrame) -> None:
     title(
         "Continuidade dos dados",
@@ -2204,7 +2213,7 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
     alerts = report[report["alerta_sem_comunicacao"].eq("SIM")].copy()
     alerts = alerts.sort_values("atraso_min", ascending=False)
 
-    cols = st.columns(4)
+    cols = st.columns(5)
     cols[0].metric("UCs monitoradas", f"{report['uc'].nunique():,}".replace(",", "."))
     cols[1].metric("Sem comunicação", f"{alerts['uc'].nunique():,}".replace(",", "."))
     cols[2].metric(
@@ -2215,6 +2224,7 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
         "Origens afetadas",
         str(alerts["origem"].nunique()),
     )
+    cols[4].metric("Dados disponíveis até", latest_measurement_date_label(report))
 
     if alerts.empty:
         st.success("Nenhuma UC nos filtros atuais está sem comunicação.")
@@ -2286,11 +2296,14 @@ def measurement_availability_page(frame: pd.DataFrame) -> None:
     )
     uc_row = report[report["uc"].eq(selected_uc)].iloc[0]
 
-    metrics = st.columns(4)
+    metrics = st.columns(5)
     metrics[0].metric("Disponibilidade geral", f"{uc_row['availability_overall']:.2%}")
     metrics[1].metric("Registros recebidos", f"{int(uc_row['registros']):,}".replace(",", "."))
     metrics[2].metric("Intervalos ausentes", f"{int(uc_row['intervalos_ausentes']):,}".replace(",", "."))
     metrics[3].metric("Intervalo esperado", f"{int(uc_row['intervalo_predominante_min'])} min")
+    metrics[4].metric(
+        "Dados disponíveis até", latest_measurement_date_label(report)
+    )
 
     gaps = load_measurement_gaps(MEASUREMENT_GAPS_FILE.stat().st_mtime)
     gaps = gaps[gaps["uc"].eq(selected_uc)].copy()
