@@ -2303,6 +2303,7 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
             "primeira_leitura": "Primeira leitura",
             "ultima_leitura": "Última leitura",
         },
+        custom_data=["uc"],
         title="Período com dados por UC, agrupado pelo grupo experimental",
         hover_data={
             "Origem": True,
@@ -2335,11 +2336,23 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
                 ),
             )
     fig.update_xaxes(dtick="M1", tickformat="%b/%Y")
-    st.plotly_chart(
+    timeline_selection = st.plotly_chart(
         chart_style(fig, max(500, len(timeline) * 28)),
         width="stretch",
         config=PLOTLY_CONFIG,
+        key="communication_timeline",
+        on_select="rerun",
+        selection_mode="points",
     )
+    selected_points = timeline_selection.selection.get("points", [])
+    if selected_points:
+        selected_uc = str(selected_points[0]["customdata"][0])
+        st.markdown("**UC selecionada — clique no ícone para copiar:**")
+        st.code(selected_uc, language=None)
+    else:
+        st.caption(
+            "Clique na barra de uma UC para exibir o número em um campo copiável."
+        )
 
     st.markdown("#### Detalhes dos alertas de comunicação")
     view = alerts[
