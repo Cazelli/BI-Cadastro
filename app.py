@@ -2326,9 +2326,13 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
         ):
             fig.add_vline(
                 x=month_start,
-                line_width=1,
+                line_width=2 if month_start.month == 3 else 1,
                 line_dash="dash",
-                line_color="rgba(63, 68, 75, 0.35)",
+                line_color=(
+                    "#D62728"
+                    if month_start.month == 3
+                    else "rgba(63, 68, 75, 0.35)"
+                ),
             )
     fig.update_xaxes(dtick="M1", tickformat="%b/%Y")
     st.plotly_chart(
