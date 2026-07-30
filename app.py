@@ -2189,7 +2189,9 @@ def measurement_scope(frame: pd.DataFrame, measurement: pd.DataFrame) -> pd.Data
 
 
 def latest_measurement_date_label(report: pd.DataFrame) -> str:
-    latest_data_date = report["fim_dados_origem"].max()
+    latest_data_date = report["ultima_leitura"].max()
+    if pd.notna(latest_data_date) and latest_data_date == latest_data_date.normalize():
+        latest_data_date -= pd.Timedelta(days=1)
     return (
         latest_data_date.strftime("%d/%m/%Y")
         if pd.notna(latest_data_date)
