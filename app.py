@@ -2283,8 +2283,8 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
     timeline["Grupo"] = timeline["grupo_uc"]
     timeline["Origem"] = timeline["origem"]
     st.caption(
-        f"{timeline['uc'].nunique():,} UCs exibidas — role a página para consultar "
-        "toda a linha do tempo.".replace(",", ".")
+        f"{timeline['uc'].nunique():,} UCs exibidas — use a barra de rolagem da "
+        "janela para consultar toda a linha do tempo.".replace(",", ".")
     )
     fig = px.timeline(
         timeline,
@@ -2336,14 +2336,15 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
                 ),
             )
     fig.update_xaxes(dtick="M1", tickformat="%b/%Y")
-    timeline_selection = st.plotly_chart(
-        chart_style(fig, max(500, len(timeline) * 28)),
-        width="stretch",
-        config=PLOTLY_CONFIG,
-        key="communication_timeline",
-        on_select="rerun",
-        selection_mode="points",
-    )
+    with st.container(height=720, border=True):
+        timeline_selection = st.plotly_chart(
+            chart_style(fig, max(600, len(timeline) * 30)),
+            width="stretch",
+            config=PLOTLY_CONFIG,
+            key="communication_timeline",
+            on_select="rerun",
+            selection_mode="points",
+        )
     selected_points = timeline_selection.selection.get("points", [])
     if selected_points:
         selected_uc = str(selected_points[0]["customdata"][0])
