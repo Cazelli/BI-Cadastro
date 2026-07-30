@@ -2251,7 +2251,10 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
     selected_groups = filter_cols[1].multiselect(
         "Grupo",
         group_options,
-        default=group_options,
+        default=[
+            group for group in ["Tratamento", "Controle"]
+            if group in group_options
+        ],
         key="communication_groups",
     )
     if selected_groups:
@@ -2278,7 +2281,10 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
     selected_communication = filter_cols[2].multiselect(
         "Situação da comunicação",
         communication_options,
-        default=communication_options,
+        default=[
+            status for status in ["Sem comunicação"]
+            if status in communication_options
+        ],
         key="communication_status",
     )
     if selected_communication:
