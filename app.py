@@ -2227,14 +2227,6 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
     alerts = report[report["alerta_sem_comunicacao"].eq("SIM")].copy()
     alerts = alerts.sort_values("atraso_min", ascending=False)
 
-    cols = st.columns(3)
-    cols[0].metric("UCs monitoradas", f"{report['uc'].nunique():,}".replace(",", "."))
-    cols[1].metric("Sem comunicação", f"{alerts['uc'].nunique():,}".replace(",", "."))
-    cols[2].metric("Dados disponíveis até", latest_measurement_date_label(report))
-
-    if alerts.empty:
-        st.success("Nenhuma UC nos filtros atuais está sem comunicação.")
-
     filter_cols = st.columns(3)
     source_options = sorted(report["origem"].dropna().unique().tolist())
     selected_sources = filter_cols[0].multiselect(
@@ -2293,6 +2285,25 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
         alerts = alerts[
             alerts["situacao_comunicacao"].isin(selected_communication)
         ].copy()
+
+    filtered_alerts = timeline[
+        timeline["alerta_sem_comunicacao"].eq("SIM")
+    ]
+    cols = st.columns(3)
+    cols[0].metric(
+        "UCs monitoradas",
+        f"{timeline['uc'].nunique():,}".replace(",", "."),
+    )
+    cols[1].metric(
+        "Sem comunicação",
+        f"{filtered_alerts['uc'].nunique():,}".replace(",", "."),
+    )
+    cols[2].metric(
+        "Dados disponíveis até",
+        latest_measurement_date_label(timeline),
+    )
+    if filtered_alerts.empty:
+        st.success("Nenhuma UC nos filtros selecionados está sem comunicação.")
 
     timeline["ordem_grupo"] = timeline["grupo_uc"].map(
         {group: index for index, group in enumerate(group_order)}
