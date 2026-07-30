@@ -531,10 +531,13 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
 
 def title(kicker: str, heading: str, subtitle: str) -> None:
     heading_html = f'<div class="page-title">{heading}</div>' if heading else ""
+    subtitle_html = (
+        f'<div class="page-subtitle">{subtitle}</div>' if subtitle else ""
+    )
     st.markdown(
         f'<div class="page-kicker">{kicker}</div>'
         f'{heading_html}'
-        f'<div class="page-subtitle">{subtitle}</div>',
+        f'{subtitle_html}',
         unsafe_allow_html=True,
     )
 
@@ -2215,7 +2218,7 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
     title(
         "Continuidade dos dados",
         "Alertas de comunicação",
-        "UCs cuja última leitura ultrapassou o limite de comunicação da sua origem.",
+        "",
     )
     if not MEASUREMENT_ALERT_FILE.exists():
         st.error("O arquivo relatorio_alertas_por_uc.csv não foi encontrado.")
