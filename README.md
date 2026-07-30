@@ -66,8 +66,7 @@ Acesse `http://localhost:8501` e use o login fornecido pelo administrador.
 O atualizador escolhe automaticamente o relatório com a data final mais recente.
 Somente UCs que já existem em `base_consolidada_BI.csv` são atualizadas. A
 coluna `amostra` e todas as UCs extras do relatório são ignoradas. UCs da base
-que não apareçam no relatório permanecem inalteradas. Uma cópia de segurança
-local é criada em `data/backups/` antes de cada atualização.
+que não apareçam no relatório permanecem inalteradas.
 
 O processo sincroniza na base BI as colunas `DT_SITUACAO_UC`
 (`data_situacao`), `DT_MUD_TIT` (`max_data_tt`) e `MUD_TIT`. Esta última recebe
@@ -87,8 +86,8 @@ indicadores, gráficos e a tabela exclusivos do relatório mais recente. Em segu
 apresenta uma segunda visão com os totais históricos e seus próprios filtros,
 gráficos e tabela.
 
-Os relatórios MDM, backups e as antigas bases `base_consolidada_copel.csv` e
-`.xlsx` ficam fora do Git. Os arquivos de alertas publicados não incluem nome,
+Os relatórios MDM e as antigas bases `base_consolidada_copel.csv` e `.xlsx`
+ficam fora do Git. Os arquivos de alertas publicados não incluem nome,
 telefone ou e-mail. Se as bases antigas já foram publicadas, removê-las em um
 novo commit não apaga versões anteriores do histórico do Git; nesse caso, use um
 novo repositório ou faça uma limpeza controlada do histórico antes de torná-lo

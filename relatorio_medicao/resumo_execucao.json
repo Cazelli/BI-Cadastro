@@ -1,19 +1,19 @@
 {
   "ucs_medidores": 258,
-  "gaps": 559841,
-  "rejeitados": 4900730,
+  "gaps": 560887,
+  "rejeitados": 5311748,
   "fim_por_origem": {
     "HEXING": "2026-07-26 23:50:00",
-    "NANSEN": "2026-06-30 00:00:00"
+    "NANSEN": "2026-07-27 00:00:00"
   },
   "alertas": {
-    "alerta_sem_comunicacao": 65,
+    "alerta_sem_comunicacao": 28,
     "alerta_somente_energia_total": 0,
     "alerta_erro_parametrizacao_sem_mobiflex": 0,
     "alerta_descontinuidade": 255
   },
   "cadastro": "D:\\OneDrive\\Documentos\\GitHub\\Copel_continuidade_dados\\mdm-sandbox_clientes_novo-20260726-20260726.csv",
-  "arquivos_processados": 206,
-  "linhas_lidas": 20084937,
+  "arquivos_processados": 209,
+  "linhas_lidas": 21342783,
   "criterio_sem_comunicacao": "atraso maior que max(60 min, intervalo predominante x 3), comparado ao fim da própria origem"
 }
