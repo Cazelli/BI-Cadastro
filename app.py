@@ -2214,6 +2214,16 @@ def latest_measurement_date_label(report: pd.DataFrame) -> str:
     )
 
 
+def communication_delay_label(row: pd.Series) -> str:
+    if pd.isna(row["ultima_leitura"]):
+        return "Sem medição"
+    days = row["dias_sem_comunicacao"]
+    if pd.isna(days) or days < 1:
+        return "Menos de 1 dia"
+    complete_days = int(days)
+    return f"{complete_days} dia" if complete_days == 1 else f"{complete_days} dias"
+
+
 def communication_alerts_page(frame: pd.DataFrame) -> None:
     title(
         "Continuidade dos dados",
@@ -2230,7 +2240,7 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
     alerts = report[report["alerta_sem_comunicacao"].eq("SIM")].copy()
     alerts = alerts.sort_values("atraso_min", ascending=False)
 
-    filter_cols = st.columns(3)
+    filter_cols = st.columns(4)
     source_options = sorted(report["origem"].dropna().unique().tolist())
     selected_sources = filter_cols[0].multiselect(
         "Origem", source_options, default=source_options, key="communication_sources"
@@ -2295,6 +2305,38 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
             alerts["situacao_comunicacao"].isin(selected_communication)
         ].copy()
 
+    timeline["faixa_sem_comunicacao"] = timeline.apply(
+        communication_delay_label, axis=1
+    )
+    alerts["faixa_sem_comunicacao"] = alerts.apply(
+        communication_delay_label, axis=1
+    )
+
+    def delay_order(label: str) -> tuple[int, int]:
+        if label == "Menos de 1 dia":
+            return (0, 0)
+        if label == "Sem medição":
+            return (2, 0)
+        return (1, int(label.split()[0]))
+
+    delay_options = sorted(
+        timeline["faixa_sem_comunicacao"].unique().tolist(),
+        key=delay_order,
+    )
+    selected_delays = filter_cols[3].multiselect(
+        "Tempo sem comunicação",
+        delay_options,
+        default=delay_options,
+        key="communication_delay",
+    )
+    if selected_delays:
+        timeline = timeline[
+            timeline["faixa_sem_comunicacao"].isin(selected_delays)
+        ].copy()
+        alerts = alerts[
+            alerts["faixa_sem_comunicacao"].isin(selected_delays)
+        ].copy()
+
     filtered_alerts = timeline[
         timeline["alerta_sem_comunicacao"].eq("SIM")
     ]
@@ -2325,6 +2367,7 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
     timeline["UC"] = timeline["uc"].map(lambda value: f"UC {value}")
     timeline["Grupo"] = timeline["grupo_uc"]
     timeline["Origem"] = timeline["origem"]
+    timeline["Tempo sem comunicação"] = timeline["faixa_sem_comunicacao"]
     st.caption(
         f"{timeline['uc'].nunique():,} UCs exibidas — use a barra de rolagem da "
         "janela para consultar toda a linha do tempo.".replace(",", ".")
@@ -2350,6 +2393,7 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
         title="Período com dados por UC, agrupado pelo grupo experimental",
         hover_data={
             "Origem": True,
+            "Tempo sem comunicação": True,
             "primeira_leitura": True,
             "ultima_leitura": True,
             "dias_sem_comunicacao": ":.2f",
@@ -2422,12 +2466,14 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
 
     st.markdown("#### Detalhes dos alertas de comunicação")
     view = alerts[
-        ["uc", "grupo_uc", "origem", "situacao_comunicacao", "ultima_leitura",
-         "fim_dados_origem", "dias_sem_comunicacao",
+        ["uc", "grupo_uc", "origem", "situacao_comunicacao",
+         "faixa_sem_comunicacao", "ultima_leitura", "fim_dados_origem",
+         "dias_sem_comunicacao",
          "intervalo_predominante_min", "gaps", "intervalos_ausentes"]
     ].rename(columns={
         "uc": "UC", "grupo_uc": "Grupo", "origem": "Origem",
         "situacao_comunicacao": "Situação da comunicação",
+        "faixa_sem_comunicacao": "Tempo sem comunicação",
         "ultima_leitura": "Última leitura",
         "fim_dados_origem": "Fim dos dados da origem",
         "dias_sem_comunicacao": "Dias sem comunicação",
