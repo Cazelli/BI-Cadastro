@@ -2316,6 +2316,21 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
         categoryorder="array",
         categoryarray=timeline["UC"].tolist()[::-1],
     )
+    timeline_start = timeline["primeira_leitura"].min()
+    timeline_end = timeline["ultima_leitura"].max()
+    if pd.notna(timeline_start) and pd.notna(timeline_end):
+        for month_start in pd.date_range(
+            timeline_start.to_period("M").to_timestamp(),
+            timeline_end.to_period("M").to_timestamp(),
+            freq="MS",
+        ):
+            fig.add_vline(
+                x=month_start,
+                line_width=1,
+                line_dash="dash",
+                line_color="rgba(63, 68, 75, 0.35)",
+            )
+    fig.update_xaxes(dtick="M1", tickformat="%b/%Y")
     st.plotly_chart(
         chart_style(fig, max(500, len(timeline) * 28)),
         width="stretch",
