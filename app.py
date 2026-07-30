@@ -2336,6 +2336,17 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
                 ),
             )
     fig.update_xaxes(dtick="M1", tickformat="%b/%Y")
+    fig.update_layout(
+        xaxis2=dict(
+            overlaying="x",
+            matches="x",
+            side="top",
+            dtick="M1",
+            tickformat="%b/%Y",
+            showgrid=False,
+            title_text=None,
+        )
+    )
     with st.container(height=720, border=True):
         timeline_selection = st.plotly_chart(
             chart_style(fig, max(600, len(timeline) * 30)),
