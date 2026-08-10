@@ -552,6 +552,36 @@ def metric_calculation_help(
     label: str, reference_date: pd.Timestamp | None = None
 ) -> str:
     rules = {
+        "UCs monitoradas": (
+            "Quantidade de UCs distintas no relat\u00f3rio de medi\u00e7\u00e3o ap\u00f3s "
+            "a aplica\u00e7\u00e3o dos filtros selecionados."
+        ),
+        "Sem comunica\u00e7\u00e3o": (
+            "Quantidade de UCs filtradas cujo relat\u00f3rio marca "
+            "alerta_sem_comunicacao como SIM."
+        ),
+        "\u00daltima data de medi\u00e7\u00e3o dispon\u00edvel": (
+            "Data mais recente encontrada em ultima_leitura entre as UCs "
+            "exibidas pelos filtros de comunica\u00e7\u00e3o."
+        ),
+        "Disponibilidade geral": (
+            "Para a UC selecionada: 1 menos os intervalos ausentes divididos "
+            "pelos intervalos esperados entre a primeira e a \u00faltima leitura."
+        ),
+        "Grupo": "Grupo experimental da UC selecionada na base cadastral.",
+        "Registros recebidos": (
+            "Quantidade total de registros de medi\u00e7\u00e3o recebidos para a UC selecionada."
+        ),
+        "Intervalos ausentes": (
+            "Quantidade de intervalos esperados sem leitura para a UC selecionada."
+        ),
+        "Intervalo esperado": (
+            "Intervalo predominante, em minutos, entre as leituras da UC selecionada."
+        ),
+        "Dados dispon\u00edveis at\u00e9": (
+            "Data de ultima_leitura mais recente no conjunto de UCs abrangido "
+            "pelos filtros globais."
+        ),
         "UCs — Tratamento": "UCs do grupo Tratamento de acordo com os filtros ativos.",
         "UCs — Controle": "UCs do grupo Controle de acordo com os filtros ativos.",
         "UCs — Reserva": "UCs do grupo Reserva de acordo com os filtros ativos.",
@@ -2529,16 +2559,19 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
         timeline["alerta_sem_comunicacao"].eq("SIM")
     ]
     cols = st.columns(3)
-    cols[0].metric(
+    show_metric(
+        cols[0],
         "UCs monitoradas",
         f"{timeline['uc'].nunique():,}".replace(",", "."),
     )
-    cols[1].metric(
+    show_metric(
+        cols[1],
         "Sem comunicação",
         f"{filtered_alerts['uc'].nunique():,}".replace(",", "."),
     )
-    cols[2].metric(
-        "Ultima data de medição dispopnível",
+    show_metric(
+        cols[2],
+        "\u00daltima data de medi\u00e7\u00e3o dispon\u00edvel",
         latest_measurement_date_label(timeline),
     )
     if filtered_alerts.empty:
@@ -2815,12 +2848,13 @@ def measurement_availability_page(frame: pd.DataFrame) -> None:
     uc_row = report[report["uc"].eq(selected_uc)].iloc[0]
 
     metrics = st.columns(6)
-    metrics[0].metric("Disponibilidade geral", f"{uc_row['availability_overall']:.2%}")
-    metrics[1].metric("Grupo", uc_row["grupo_uc"])
-    metrics[2].metric("Registros recebidos", f"{int(uc_row['registros']):,}".replace(",", "."))
-    metrics[3].metric("Intervalos ausentes", f"{int(uc_row['intervalos_ausentes']):,}".replace(",", "."))
-    metrics[4].metric("Intervalo esperado", f"{int(uc_row['intervalo_predominante_min'])} min")
-    metrics[5].metric(
+    show_metric(metrics[0], "Disponibilidade geral", f"{uc_row['availability_overall']:.2%}")
+    show_metric(metrics[1], "Grupo", uc_row["grupo_uc"])
+    show_metric(metrics[2], "Registros recebidos", f"{int(uc_row['registros']):,}".replace(",", "."))
+    show_metric(metrics[3], "Intervalos ausentes", f"{int(uc_row['intervalos_ausentes']):,}".replace(",", "."))
+    show_metric(metrics[4], "Intervalo esperado", f"{int(uc_row['intervalo_predominante_min'])} min")
+    show_metric(
+        metrics[5],
         "Dados disponíveis até", latest_measurement_date_label(report)
     )
 
