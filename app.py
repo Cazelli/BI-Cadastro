@@ -421,6 +421,7 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
         "Navegação",
         [
             "Geral",
+            "UCs removidas",
             "UCs e localização",
             "Perfil dos veículos",
             "Infraestrutura de recarga",
@@ -477,14 +478,15 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
     )
 
     reference_frame = frame.copy()
-    reference_frame["SITUACAO_ATUAL"] = reference_frame[
-        "SITUACAO_INICIAL"
-    ].fillna(reference_frame["SITUACAO_ATUAL"])
-    removed_by_reference_date = (
-        reference_frame["DT_DISTRATO"].notna()
-        & reference_frame["DT_DISTRATO"].le(gd_reference_date)
-    )
-    reference_frame.loc[removed_by_reference_date, "SITUACAO_ATUAL"] = "Removido"
+    if page != "UCs removidas":
+        reference_frame["SITUACAO_ATUAL"] = reference_frame[
+            "SITUACAO_INICIAL"
+        ].fillna(reference_frame["SITUACAO_ATUAL"])
+        removed_by_reference_date = (
+            reference_frame["DT_DISTRATO"].notna()
+            & reference_frame["DT_DISTRATO"].le(gd_reference_date)
+        )
+        reference_frame.loc[removed_by_reference_date, "SITUACAO_ATUAL"] = "Removido"
 
     status_options = list(
         dict.fromkeys(
@@ -2100,6 +2102,200 @@ def update_report_page(frame: pd.DataFrame) -> None:
     render_alert_content(history, "history", "Histórico detalhado de alertas")
 
 
+def removed_ucs_page(frame: pd.DataFrame) -> None:
+    title(
+        "Acompanhamento cadastral",
+        "UCs removidas",
+        "Analise a origem, os motivos e a evolu\u00e7\u00e3o das remo\u00e7\u00f5es e exporte o recorte filtrado.",
+    )
+
+    removed = frame[
+        frame["SITUACAO_ATUAL"].eq("Removido") & frame["DT_DISTRATO"].notna()
+    ].copy()
+    if removed.empty:
+        st.warning("Nenhuma UC removida corresponde aos filtros globais selecionados.")
+        return
+
+    removed["Grupo de origem"] = (
+        removed["SITUACAO_INICIAL"].map(status_display_label).map(clean_label)
+    )
+    removed["Motivo da remo\u00e7\u00e3o"] = removed["MOTIV_DIST"].map(clean_label)
+    removed["Munic\u00edpio"] = removed["LOCAL"].map(clean_label)
+
+    st.markdown("#### Filtros do relat\u00f3rio")
+    filter_columns = st.columns(3)
+    selected_groups = filter_columns[0].multiselect(
+        "Grupo de origem",
+        sorted(removed["Grupo de origem"].unique()),
+        key="removed_groups",
+    )
+    selected_reasons = filter_columns[1].multiselect(
+        "Motivo da remo\u00e7\u00e3o",
+        sorted(removed["Motivo da remo\u00e7\u00e3o"].unique()),
+        key="removed_reasons",
+    )
+    selected_municipalities = filter_columns[2].multiselect(
+        "Munic\u00edpio",
+        sorted(removed["Munic\u00edpio"].unique()),
+        key="removed_municipalities",
+    )
+
+    minimum_date = removed["DT_DISTRATO"].min().date()
+    maximum_date = removed["DT_DISTRATO"].max().date()
+    selected_period = st.date_input(
+        "Per\u00edodo da remo\u00e7\u00e3o",
+        value=(minimum_date, maximum_date),
+        min_value=minimum_date,
+        max_value=maximum_date,
+        format="DD/MM/YYYY",
+        key="removed_period",
+    )
+
+    report = removed.copy()
+    if selected_groups:
+        report = report[report["Grupo de origem"].isin(selected_groups)]
+    if selected_reasons:
+        report = report[report["Motivo da remo\u00e7\u00e3o"].isin(selected_reasons)]
+    if selected_municipalities:
+        report = report[report["Munic\u00edpio"].isin(selected_municipalities)]
+    if isinstance(selected_period, (tuple, list)) and len(selected_period) == 2:
+        start_date, end_date = map(pd.Timestamp, selected_period)
+        report = report[report["DT_DISTRATO"].between(start_date, end_date)]
+
+    if report.empty:
+        st.warning("Nenhuma remo\u00e7\u00e3o corresponde aos filtros do relat\u00f3rio.")
+        return
+
+    total = len(report)
+    treatment = int(report["Grupo de origem"].eq("Tratamento").sum())
+    control = int(report["Grupo de origem"].eq("Controle").sum())
+    other_groups = total - treatment - control
+    latest_removal = report["DT_DISTRATO"].max()
+    metric_columns = st.columns(4)
+    metric_columns[0].metric("UCs removidas", f"{total:,}".replace(",", "."))
+    metric_columns[1].metric("Origem: Tratamento", treatment)
+    metric_columns[2].metric("Origem: Controle", control)
+    metric_columns[3].metric("\u00daltima remo\u00e7\u00e3o", latest_removal.strftime("%d/%m/%Y"))
+    if other_groups:
+        st.caption(f"{other_groups} UC(s) removida(s) vieram de outros grupos de origem.")
+
+    def render_donut(column: str, title_text: str, color_map: dict[str, str] | None = None) -> None:
+        summary = count_table(report, column, column)
+        figure = px.pie(
+            summary,
+            names=column,
+            values="UCs",
+            hole=0.62,
+            color=column,
+            color_discrete_map=color_map,
+        )
+        figure.update_traces(
+            textposition="outside",
+            texttemplate="%{label}<br><b>%{value}</b> (%{percent})",
+            sort=False,
+        )
+        figure.update_layout(title=title_text, showlegend=False)
+        figure.add_annotation(
+            text=f"<b>{int(summary['UCs'].sum())}</b><br>UCs",
+            showarrow=False,
+            font_size=17,
+        )
+        st.plotly_chart(
+            chart_style(figure, 450), width="stretch", config=PLOTLY_CONFIG
+        )
+
+    chart_columns = st.columns(2)
+    with chart_columns[0]:
+        render_donut(
+            "Grupo de origem",
+            "Remo\u00e7\u00f5es por grupo de origem",
+            {
+                "Tratamento": "#F5821E",
+                "Controle": "#FDB422",
+                "Reserva": "#69727D",
+            },
+        )
+    with chart_columns[1]:
+        render_donut("Motivo da remo\u00e7\u00e3o", "Remo\u00e7\u00f5es por motivo")
+
+    monthly = (
+        report.assign(MONTH=report["DT_DISTRATO"].dt.to_period("M").dt.to_timestamp())
+        .groupby("MONTH")
+        .size()
+        .reset_index(name="UCs")
+        .sort_values("MONTH")
+    )
+    monthly["Per\u00edodo"] = monthly["MONTH"].dt.strftime("%m/%Y")
+    monthly_chart = px.bar(
+        monthly,
+        x="Per\u00edodo",
+        y="UCs",
+        text="UCs",
+        title="Evolu\u00e7\u00e3o mensal das remo\u00e7\u00f5es",
+    )
+    monthly_chart.update_traces(marker_color="#F5821E", textposition="outside")
+    monthly_chart.update_layout(xaxis_title="", yaxis_title="UCs")
+    st.plotly_chart(
+        chart_style(monthly_chart, 380), width="stretch", config=PLOTLY_CONFIG
+    )
+
+    st.markdown("#### Detalhamento para exporta\u00e7\u00e3o")
+    report["Dias desde o in\u00edcio do projeto"] = (
+        report["DT_DISTRATO"] - PROJECT_START_DATE
+    ).dt.days
+    detail_columns = [
+        "NUM_UC",
+        "NUM_UC_ANEEL",
+        "Grupo de origem",
+        "DT_DISTRATO",
+        "Motivo da remo\u00e7\u00e3o",
+        "Munic\u00edpio",
+        "Dias desde o in\u00edcio do projeto",
+        "SITUACAO_UC",
+        "FINALIDADE",
+        "FABRI_VEIC",
+        "MODELO_VEIC",
+        "MOTOR_VEIC",
+        "IND_SOLICITACAO",
+    ]
+    detail_columns = [column for column in detail_columns if column in report.columns]
+    detail = report[detail_columns].copy().sort_values(
+        "DT_DISTRATO", ascending=False
+    )
+    detail = detail.rename(
+        columns={
+            "NUM_UC": "UC",
+            "NUM_UC_ANEEL": "UC ANEEL",
+            "DT_DISTRATO": "Data da remo\u00e7\u00e3o",
+            "SITUACAO_UC": "Situa\u00e7\u00e3o cadastral da UC",
+            "FINALIDADE": "Finalidade",
+            "FABRI_VEIC": "Fabricante do ve\u00edculo",
+            "MODELO_VEIC": "Modelo do ve\u00edculo",
+            "MOTOR_VEIC": "Motoriza\u00e7\u00e3o",
+            "IND_SOLICITACAO": "Indicador de solicita\u00e7\u00e3o",
+        }
+    )
+    for column in ["UC", "UC ANEEL"]:
+        if column in detail:
+            detail[column] = pd.to_numeric(detail[column], errors="coerce").astype(
+                "Int64"
+            ).astype("string").fillna("")
+    detail["Data da remo\u00e7\u00e3o"] = detail["Data da remo\u00e7\u00e3o"].dt.strftime(
+        "%d/%m/%Y"
+    )
+    st.caption(f"{len(detail)} UC(s) no recorte filtrado.")
+    st.dataframe(detail, width="stretch", hide_index=True, height=430)
+    st.download_button(
+        "Baixar relat\u00f3rio em CSV",
+        data=detail.to_csv(index=False, sep=";", encoding="utf-8-sig").encode(
+            "utf-8-sig"
+        ),
+        file_name="relatorio_ucs_removidas.csv",
+        mime="text/csv",
+        width="stretch",
+    )
+
+
 def quality_page(frame: pd.DataFrame) -> None:
     title("Governança", "Qualidade dos dados", "Compare o preenchimento dos campos analíticos e consulte UCs sem expor dados pessoais.")
     key_columns = ["NUM_UC", "SITUACAO_ATUAL", "LOCAL", "TIPO_FASE", "ETAPA", "DT_ATIVACAO", "FINALIDADE", "FABRI_VEIC", "MOTOR_VEIC", "STATUS_WALLBOX", "STATUS_PORTATIL", "TIPO_GD_GERA"]
@@ -2617,6 +2813,8 @@ if filtered_data.empty:
     empty_state()
 elif selected_page == "Geral":
     executive_page(filtered_data, gd_reference_date)
+elif selected_page == "UCs removidas":
+    removed_ucs_page(filtered_data)
 elif selected_page == "UCs e localização":
     uc_page(filtered_data)
 elif selected_page == "Perfil dos veículos":
