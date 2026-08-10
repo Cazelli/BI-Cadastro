@@ -2240,48 +2240,20 @@ def removed_ucs_page(frame: pd.DataFrame) -> None:
     )
 
     st.markdown("#### Detalhamento para exporta\u00e7\u00e3o")
-    report["Dias desde o in\u00edcio do projeto"] = (
-        report["DT_DISTRATO"] - PROJECT_START_DATE
-    ).dt.days
-    detail_columns = [
-        "NUM_UC",
-        "NUM_UC_ANEEL",
-        "Grupo de origem",
-        "DT_DISTRATO",
-        "Motivo da remo\u00e7\u00e3o",
-        "Munic\u00edpio",
-        "Dias desde o in\u00edcio do projeto",
-        "SITUACAO_UC",
-        "FINALIDADE",
-        "FABRI_VEIC",
-        "MODELO_VEIC",
-        "MOTOR_VEIC",
-        "IND_SOLICITACAO",
-    ]
-    detail_columns = [column for column in detail_columns if column in report.columns]
+    # Keep the same schema and column order as base_consolidada_BI.csv.
+    detail_columns = [column for column in frame.columns if column in report.columns]
     detail = report[detail_columns].copy().sort_values(
         "DT_DISTRATO", ascending=False
     )
-    detail = detail.rename(
-        columns={
-            "NUM_UC": "UC",
-            "NUM_UC_ANEEL": "UC ANEEL",
-            "DT_DISTRATO": "Data da remo\u00e7\u00e3o",
-            "SITUACAO_UC": "Situa\u00e7\u00e3o cadastral da UC",
-            "FINALIDADE": "Finalidade",
-            "FABRI_VEIC": "Fabricante do ve\u00edculo",
-            "MODELO_VEIC": "Modelo do ve\u00edculo",
-            "MOTOR_VEIC": "Motoriza\u00e7\u00e3o",
-            "IND_SOLICITACAO": "Indicador de solicita\u00e7\u00e3o",
-        }
-    )
-    for column in ["UC", "UC ANEEL"]:
+    for column in ["NUM_UC", "NUM_UC_ANEEL"]:
         if column in detail:
             detail[column] = pd.to_numeric(detail[column], errors="coerce").astype(
                 "Int64"
             ).astype("string").fillna("")
-    detail["Data da remo\u00e7\u00e3o"] = detail["Data da remo\u00e7\u00e3o"].dt.strftime(
-        "%d/%m/%Y"
+    for column in detail.select_dtypes(include=["datetime", "datetimetz"]).columns:
+        detail[column] = detail[column].dt.strftime("%Y-%m-%d").fillna("")
+    detail = detail.rename(
+        columns={"IND_SOLICITACAO": "IND_SOLICITA\u00c7AO"}
     )
     st.caption(f"{len(detail)} UC(s) no recorte filtrado.")
     st.dataframe(detail, width="stretch", hide_index=True, height=430)
