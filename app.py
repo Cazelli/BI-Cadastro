@@ -2701,6 +2701,92 @@ def measurement_availability_page(frame: pd.DataFrame) -> None:
             + 1
         )
     ).clip(0, 1)
+    st.markdown("#### Comparativo por UC")
+    metric_options = {
+        "Disponibilidade geral": ("availability_overall", "Disponibilidade"),
+        "Registros recebidos": ("registros", "Registros recebidos"),
+        "Intervalos ausentes": ("intervalos_ausentes", "Intervalos ausentes"),
+        "Dias/horas sem comunica\u00e7\u00e3o": ("atraso_min", "Horas sem comunica\u00e7\u00e3o"),
+    }
+    selected_metric_label = st.selectbox(
+        "Indicador do gr\u00e1fico",
+        list(metric_options),
+        key="availability_comparison_metric",
+    )
+    metric_column, axis_label = metric_options[selected_metric_label]
+    comparison = report.copy()
+    comparison["UC"] = comparison["uc"].map(lambda value: f"UC {value}")
+    comparison["Grupo"] = comparison["grupo_uc"]
+    comparison["Valor"] = pd.to_numeric(
+        comparison[metric_column], errors="coerce"
+    ).fillna(0)
+    if metric_column == "atraso_min":
+        comparison["Valor"] = comparison["Valor"] / 60
+        comparison["R\u00f3tulo"] = comparison["atraso_min"].map(
+            lambda value: (
+                "Sem medi\u00e7\u00e3o"
+                if pd.isna(value)
+                else (
+                    f"{value / 1_440:.1f} d"
+                    if value >= 1_440
+                    else f"{value / 60:.1f} h"
+                )
+            )
+        )
+    elif metric_column == "availability_overall":
+        comparison["R\u00f3tulo"] = comparison["Valor"].map(
+            lambda value: f"{value:.1%}"
+        )
+    else:
+        comparison["R\u00f3tulo"] = comparison["Valor"].round().astype(int).map(
+            lambda value: f"{value:,}".replace(",", ".")
+        )
+    comparison = comparison.sort_values(["Valor", "uc"], ascending=[True, True])
+    comparison_chart = px.bar(
+        comparison,
+        x="Valor",
+        y="UC",
+        orientation="h",
+        color="Grupo",
+        text="R\u00f3tulo",
+        color_discrete_map={
+            "Tratamento": "#F5821E",
+            "Controle": "#69727D",
+            "Reserva": "#6EBAE8",
+            "Reserva Extra": "#A8ADB4",
+        },
+        category_orders={
+            "Grupo": ["Tratamento", "Controle", "Reserva", "Reserva Extra"]
+        },
+        labels={"Valor": axis_label},
+        hover_data={
+            "uc": True,
+            "origem": True,
+            "R\u00f3tulo": True,
+            "Valor": False,
+        },
+        title=f"{selected_metric_label} por UC",
+    )
+    comparison_chart.update_yaxes(
+        categoryorder="array",
+        categoryarray=comparison["UC"].tolist(),
+        title="",
+    )
+    comparison_chart.update_traces(textposition="outside", cliponaxis=False)
+    if metric_column == "availability_overall":
+        comparison_chart.update_xaxes(tickformat=".0%", range=[0, 1.08])
+    st.caption(
+        f"{comparison['uc'].nunique():,} UCs exibidas; role a janela para consultar todas."
+        .replace(",", ".")
+    )
+    with st.container(height=720, border=True):
+        st.plotly_chart(
+            chart_style(comparison_chart, max(620, len(comparison) * 29)),
+            width="stretch",
+            config=PLOTLY_CONFIG,
+        )
+
+    st.markdown("#### An\u00e1lise individual")
     uc_options = report.sort_values(
         ["grupo_uc", "availability_overall", "uc"]
     )["uc"].tolist()
@@ -2721,6 +2807,54 @@ def measurement_availability_page(frame: pd.DataFrame) -> None:
     metrics[5].metric(
         "Dados disponíveis até", latest_measurement_date_label(report)
     )
+
+    timeline_segments = []
+    first_reading = uc_row["primeira_leitura"]
+    last_reading = uc_row["ultima_leitura"]
+    source_end = uc_row["fim_dados_origem"]
+    if pd.notna(first_reading) and pd.notna(last_reading):
+        timeline_segments.append(
+            {
+                "UC": f"UC {selected_uc}",
+                "In\u00edcio": first_reading,
+                "Fim": last_reading,
+                "Situa\u00e7\u00e3o": "Dados recebidos",
+            }
+        )
+        if pd.notna(source_end) and source_end > last_reading:
+            timeline_segments.append(
+                {
+                    "UC": f"UC {selected_uc}",
+                    "In\u00edcio": last_reading,
+                    "Fim": source_end,
+                    "Situa\u00e7\u00e3o": "Sem comunica\u00e7\u00e3o",
+                }
+            )
+    if timeline_segments:
+        selected_timeline = pd.DataFrame(timeline_segments)
+        timeline_chart = px.timeline(
+            selected_timeline,
+            x_start="In\u00edcio",
+            x_end="Fim",
+            y="UC",
+            color="Situa\u00e7\u00e3o",
+            color_discrete_map={
+                "Dados recebidos": "#F5821E",
+                "Sem comunica\u00e7\u00e3o": "#A83D2D",
+            },
+            title=f"Linha do tempo da comunica\u00e7\u00e3o â€” UC {selected_uc}",
+        )
+        timeline_chart.update_yaxes(title="")
+        timeline_chart.update_xaxes(title="")
+        st.plotly_chart(
+            chart_style(timeline_chart, 280),
+            width="stretch",
+            config=PLOTLY_CONFIG,
+        )
+    else:
+        st.info(
+            f"A UC {selected_uc} n\u00e3o possui medi\u00e7\u00f5es para exibir na linha do tempo."
+        )
 
     gaps = load_measurement_gaps(MEASUREMENT_GAPS_FILE.stat().st_mtime)
     gaps = gaps[gaps["uc"].eq(selected_uc)].copy()
