@@ -2858,7 +2858,7 @@ def measurement_availability_page(frame: pd.DataFrame) -> None:
                 "Dados recebidos": "#F5821E",
                 "Sem comunica\u00e7\u00e3o": "#A83D2D",
             },
-            title=f"Linha do tempo da comunica\u00e7\u00e3o â€” UC {selected_uc}",
+            title=f"Linha do tempo da comunicação” UC {selected_uc}",
         )
         timeline_chart.update_yaxes(title="")
         timeline_chart.update_xaxes(title="")
