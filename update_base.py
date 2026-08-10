@@ -20,6 +20,16 @@ REPORT_PATTERN = re.compile(
     r"^mdm-sandbox_clientes_novo-(\d{8})-(\d{8})\.csv$",
     re.IGNORECASE,
 )
+MOBIFLEX_REPORT_PATTERN = re.compile(
+    r"^Relat.rio_Cadastral_Mobiflex_(\d{2})-(\d{2})-(\d{2})\.csv$",
+    re.IGNORECASE,
+)
+MOBIFLEX_TARGET_COLUMNS = [
+    "SITUACAO_ATUAL",
+    "DT_DISTRATO",
+    "MOTIV_DIST",
+    "IND_SOLICITA\u00c7AO",
+]
 TITLE_CHANGE_START_DATE = pd.Timestamp("2026-03-01")
 TRACKING_COLUMNS = ["DT_SITUACAO_UC", "DT_MUD_TIT", "MUD_TIT"]
 PERSONAL_REPORT_COLUMNS = {"cliente", "nome", "celular", "email", "medidor"}
@@ -169,6 +179,21 @@ def newest_report() -> Path:
     return max(candidates)[2]
 
 
+def newest_mobiflex_report() -> Path:
+    candidates: list[tuple[datetime, Path]] = []
+    for path in DATA_DIR.glob("*Mobiflex*.csv"):
+        match = MOBIFLEX_REPORT_PATTERN.fullmatch(path.name)
+        if match:
+            report_date = datetime.strptime("-".join(match.groups()), "%y-%m-%d")
+            candidates.append((report_date, path))
+    if not candidates:
+        raise FileNotFoundError(
+            "Nenhum relat\u00f3rio data/Relat\u00f3rio_Cadastral_Mobiflex_YY-MM-DD.csv "
+            "encontrado."
+        )
+    return max(candidates, key=lambda item: item[0])[1]
+
+
 def read_summary() -> dict:
     if not SUMMARY_FILE.exists():
         return {}
@@ -179,6 +204,61 @@ def validate_columns(frame: pd.DataFrame, required: set[str], label: str) -> Non
     missing = sorted(required.difference(frame.columns))
     if missing:
         raise ValueError(f"Colunas ausentes em {label}: {', '.join(missing)}")
+
+
+def update_from_mobiflex(
+    base: pd.DataFrame,
+    base_index: dict[str, int],
+    report: Path,
+    changed_ucs: set[str],
+) -> dict[str, int]:
+    incoming = pd.read_csv(
+        report,
+        sep=";",
+        dtype=str,
+        keep_default_na=False,
+        encoding="utf-8-sig",
+    )
+    incoming.columns = [text(column) for column in incoming.columns]
+    validate_columns(incoming, {"UC", "DATA", "Motivo"}, report.name)
+
+    incoming["UC"] = incoming["UC"].map(identifier)
+    if incoming["UC"].eq("").any():
+        raise ValueError(f"Existem UCs sem identificador em {report.name}.")
+
+    # If a UC has multiple removal events, its most recent dated row wins.
+    incoming["_DT_DISTRATO"] = incoming["DATA"].map(iso_date)
+    incoming = incoming.sort_values("_DT_DISTRATO", kind="stable").drop_duplicates(
+        subset="UC", keep="last"
+    )
+
+    matched_ucs = 0
+    extra_ucs = 0
+    for _, source_row in incoming.iterrows():
+        uc = source_row["UC"]
+        if uc not in base_index:
+            extra_ucs += 1
+            continue
+
+        matched_ucs += 1
+        index = base_index[uc]
+        updates = {
+            "SITUACAO_ATUAL": "Removido",
+            "DT_DISTRATO": source_row["_DT_DISTRATO"],
+            "MOTIV_DIST": text(source_row["Motivo"]),
+            # Only UCs explicitly present in Mobiflex receive this value.
+            "IND_SOLICITA\u00c7AO": "N",
+        }
+        for column, new_value in updates.items():
+            if text(base.at[index, column]) != new_value:
+                base.at[index, column] = new_value
+                changed_ucs.add(uc)
+
+    return {
+        "linhas": int(len(incoming)),
+        "ucs_correspondentes": matched_ucs,
+        "ucs_extras_ignoradas": extra_ucs,
+    }
 
 
 def atomic_csv(frame: pd.DataFrame, destination: Path, sep: str = ",") -> None:
@@ -370,7 +450,9 @@ def change_detail(field: str, new: str) -> tuple[str, str]:
     return "Alteração cadastral", "Valor cadastral alterado no último relatório."
 
 
-def process_report(report: Path, force: bool = False) -> dict:
+def process_report(
+    report: Path, force: bool = False, mobiflex_report: Path | None = None
+) -> dict:
     if not BASE_FILE.exists():
         raise FileNotFoundError(f"Base consolidada não encontrada: {BASE_FILE}")
 
@@ -391,15 +473,32 @@ def process_report(report: Path, force: bool = False) -> dict:
         incoming = incoming.drop(columns=removed_personal_columns)
         atomic_csv(incoming, report, sep=";")
 
+    mobiflex_report = mobiflex_report or newest_mobiflex_report()
+    if not mobiflex_report.exists():
+        raise FileNotFoundError(f"Relat\u00f3rio Mobiflex n\u00e3o encontrado: {mobiflex_report}")
+
     previous_summary = read_summary()
-    if previous_summary.get("arquivo_origem") == report.name and not force:
+    if (
+        previous_summary.get("arquivo_origem") == report.name
+        and previous_summary.get("arquivo_mobiflex") == mobiflex_report.name
+        and not force
+    ):
         print(f"Relatório já processado e higienizado: {report.name}")
         return previous_summary
 
     for column in TRACKING_COLUMNS:
         if column not in base.columns:
             base[column] = ""
-    validate_columns(base, {"NUM_UC", "SITUACAO_INICIAL", *TARGET_NORMALIZERS}, "base")
+    validate_columns(
+        base,
+        {
+            "NUM_UC",
+            "SITUACAO_INICIAL",
+            *TARGET_NORMALIZERS,
+            *MOBIFLEX_TARGET_COLUMNS,
+        },
+        "base",
+    )
     required_sources = set(FIELD_MAP).difference(OPTIONAL_SOURCE_COLUMNS)
     validate_columns(incoming, {"uc", *required_sources}, report.name)
 
@@ -518,6 +617,10 @@ def process_report(report: Path, force: bool = False) -> dict:
                     current_report_date,
                 )
 
+    mobiflex_counts = update_from_mobiflex(
+        base, base_index, mobiflex_report, changed_ucs
+    )
+
     missing_update_ucs = set(base_index).difference(matched_uc_ids)
     for uc in sorted(missing_update_ucs, key=lambda value: (len(value), value)):
         index = base_index[uc]
@@ -544,6 +647,7 @@ def process_report(report: Path, force: bool = False) -> dict:
     filename_match = REPORT_PATTERN.fullmatch(report.name)
     summary = {
         "arquivo_origem": report.name,
+        "arquivo_mobiflex": mobiflex_report.name,
         "periodo_inicio": filename_match.group(1) if filename_match else "",
         "periodo_fim": filename_match.group(2) if filename_match else "",
         "processado_em": datetime.now().astimezone().isoformat(timespec="seconds"),
@@ -556,6 +660,9 @@ def process_report(report: Path, force: bool = False) -> dict:
         "eventos_historicos": history_count,
         "total_base": int(len(base)),
         "colunas_pessoais_removidas_relatorio": removed_personal_columns,
+        "mobiflex_ucs": mobiflex_counts["linhas"],
+        "mobiflex_ucs_correspondentes": mobiflex_counts["ucs_correspondentes"],
+        "mobiflex_ucs_extras_ignoradas": mobiflex_counts["ucs_extras_ignoradas"],
     }
     atomic_json(summary, SUMMARY_FILE)
     return summary
@@ -575,6 +682,14 @@ def main() -> None:
         action="store_true",
         help="Reprocessa o relatório mesmo se ele já constar como a última atualização.",
     )
+    parser.add_argument(
+        "--mobiflex-input",
+        type=Path,
+        help=(
+            "Relat\u00f3rio cadastral Mobiflex espec\u00edfico. Por padr\u00e3o, usa o "
+            "arquivo Mobiflex datado mais recente em data/."
+        ),
+    )
     args = parser.parse_args()
     report = args.input.resolve() if args.input else newest_report()
     if not report.exists() or not REPORT_PATTERN.fullmatch(report.name):
@@ -582,7 +697,12 @@ def main() -> None:
             "O relatório deve existir e seguir o nome "
             "mdm-sandbox_clientes_novo-YYYYMMDD-YYYYMMDD.csv."
         )
-    summary = process_report(report, force=args.force)
+    mobiflex_report = (
+        args.mobiflex_input.resolve() if args.mobiflex_input else newest_mobiflex_report()
+    )
+    summary = process_report(
+        report, force=args.force, mobiflex_report=mobiflex_report
+    )
     print(json.dumps(summary, ensure_ascii=False, indent=2))
 
 
