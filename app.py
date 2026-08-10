@@ -421,7 +421,6 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
         "Navegação",
         [
             "Geral",
-            "UCs removidas",
             "UCs e localização",
             "Perfil dos veículos",
             "Infraestrutura de recarga",
@@ -430,6 +429,7 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
             "Alertas de comunicação",
             "Disponibilidade de medição",
             "Qualidade dos dados",
+            "UCs removidas",
         ],
         label_visibility="collapsed",
     )
