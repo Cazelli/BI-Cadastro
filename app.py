@@ -2708,13 +2708,25 @@ def measurement_availability_page(frame: pd.DataFrame) -> None:
         "Intervalos ausentes": ("intervalos_ausentes", "Intervalos ausentes"),
         "Dias/horas sem comunica\u00e7\u00e3o": ("atraso_min", "Horas sem comunica\u00e7\u00e3o"),
     }
-    selected_metric_label = st.selectbox(
+    comparison_groups = ["Tratamento", "Controle", "Reserva"]
+    comparison_controls = st.columns([1, 2])
+    selected_metric_label = comparison_controls[0].selectbox(
         "Indicador do gr\u00e1fico",
         list(metric_options),
         key="availability_comparison_metric",
     )
+    selected_comparison_groups = comparison_controls[1].pills(
+        "Grupos exibidos",
+        comparison_groups,
+        default=comparison_groups,
+        selection_mode="multi",
+        key="availability_comparison_groups",
+    )
     metric_column, axis_label = metric_options[selected_metric_label]
-    comparison = report.copy()
+    selected_comparison_groups = selected_comparison_groups or comparison_groups
+    comparison = report[
+        report["grupo_uc"].isin(selected_comparison_groups)
+    ].copy()
     comparison["UC"] = comparison["uc"].map(lambda value: f"UC {value}")
     comparison["Grupo"] = comparison["grupo_uc"]
     comparison["Valor"] = pd.to_numeric(
@@ -2741,7 +2753,10 @@ def measurement_availability_page(frame: pd.DataFrame) -> None:
         comparison["R\u00f3tulo"] = comparison["Valor"].round().astype(int).map(
             lambda value: f"{value:,}".replace(",", ".")
         )
-    comparison = comparison.sort_values(["Valor", "uc"], ascending=[True, True])
+    ascending_metric = metric_column in {"availability_overall", "registros"}
+    comparison = comparison.sort_values(
+        ["Valor", "uc"], ascending=[ascending_metric, True]
+    )
     comparison_chart = px.bar(
         comparison,
         x="Valor",
@@ -2753,10 +2768,9 @@ def measurement_availability_page(frame: pd.DataFrame) -> None:
             "Tratamento": "#F5821E",
             "Controle": "#69727D",
             "Reserva": "#6EBAE8",
-            "Reserva Extra": "#A8ADB4",
         },
         category_orders={
-            "Grupo": ["Tratamento", "Controle", "Reserva", "Reserva Extra"]
+            "Grupo": comparison_groups
         },
         labels={"Valor": axis_label},
         hover_data={
@@ -2769,7 +2783,9 @@ def measurement_availability_page(frame: pd.DataFrame) -> None:
     )
     comparison_chart.update_yaxes(
         categoryorder="array",
-        categoryarray=comparison["UC"].tolist(),
+        # Plotly defines category arrays bottom-to-top; reverse it so the
+        # dataframe's first (lowest/highest, depending on the metric) is on top.
+        categoryarray=comparison["UC"].tolist()[::-1],
         title="",
     )
     comparison_chart.update_traces(textposition="outside", cliponaxis=False)
