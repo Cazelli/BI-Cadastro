@@ -2795,7 +2795,7 @@ def measurement_availability_page(frame: pd.DataFrame) -> None:
         f"{comparison['uc'].nunique():,} UCs exibidas; role a janela para consultar todas."
         .replace(",", ".")
     )
-    with st.container(height=720, border=True):
+    with st.container(height=432, border=True):
         st.plotly_chart(
             chart_style(comparison_chart, max(620, len(comparison) * 29)),
             width="stretch",
@@ -2858,10 +2858,50 @@ def measurement_availability_page(frame: pd.DataFrame) -> None:
                 "Dados recebidos": "#F5821E",
                 "Sem comunica\u00e7\u00e3o": "#A83D2D",
             },
-            title=f"Linha do tempo da comunicação” UC {selected_uc}",
+            title=f"Linha do tempo de comunica\u00e7\u00e3o da UC {selected_uc}",
         )
         timeline_chart.update_yaxes(title="")
-        timeline_chart.update_xaxes(title="")
+        timeline_end = selected_timeline["Fim"].max()
+        january_start = pd.Timestamp(year=first_reading.year, month=1, day=1)
+        month_starts = pd.date_range(
+            january_start,
+            timeline_end.to_period("M").to_timestamp(),
+            freq="MS",
+        )
+        for month_start in month_starts:
+            timeline_chart.add_vline(
+                x=month_start,
+                line_width=2 if month_start.month == 3 else 1,
+                line_dash="dash",
+                line_color=(
+                    "#D62728"
+                    if month_start.month == 3
+                    else "rgba(63, 68, 75, 0.35)"
+                ),
+            )
+        month_labels = [
+            f"{MONTH_NAMES[month.month][:3]}/{month.year}"
+            for month in month_starts
+        ]
+        timeline_chart.update_xaxes(
+            title="",
+            tickmode="array",
+            tickvals=month_starts,
+            ticktext=month_labels,
+        )
+        timeline_chart.update_layout(
+            xaxis2=dict(
+                anchor="y",
+                overlaying="x",
+                matches="x",
+                side="top",
+                tickmode="array",
+                tickvals=month_starts,
+                ticktext=month_labels,
+                showgrid=False,
+                title_text=None,
+            )
+        )
         st.plotly_chart(
             chart_style(timeline_chart, 280),
             width="stretch",
