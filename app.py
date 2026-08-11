@@ -2717,9 +2717,37 @@ def measurement_availability_page(frame: pd.DataFrame) -> None:
         st.error("Os arquivos de alertas e detalhe de gaps não foram encontrados.")
         return
 
+    source_key = "measurement_availability_source"
+    if st.session_state.get(source_key) not in {"NANSEN", "HEXING"}:
+        st.session_state[source_key] = "NANSEN"
+
+    source_buttons = st.columns(2)
+    for column, source, label in zip(
+        source_buttons,
+        ("NANSEN", "HEXING"),
+        ("Nansen", "Hexing"),
+    ):
+        if column.button(
+            label,
+            key=f"measurement_source_{source.lower()}",
+            type=(
+                "primary"
+                if st.session_state[source_key] == source
+                else "secondary"
+            ),
+            width="stretch",
+        ):
+            if st.session_state[source_key] != source:
+                st.session_state[source_key] = source
+                st.rerun()
+
+    selected_source = st.session_state[source_key]
     report = measurement_scope(
         frame, load_measurement_alerts(MEASUREMENT_ALERT_FILE.stat().st_mtime)
     )
+    report = report[
+        report["origem"].astype(str).str.upper().eq(selected_source)
+    ].copy()
     if report.empty:
         empty_state()
         return
@@ -2751,7 +2779,7 @@ def measurement_availability_page(frame: pd.DataFrame) -> None:
     selected_comparison_groups = comparison_controls[1].pills(
         "Grupos exibidos",
         comparison_groups,
-        default=comparison_groups,
+        default=["Tratamento", "Controle"],
         selection_mode="multi",
         key="availability_comparison_groups",
     )
@@ -2947,7 +2975,10 @@ def measurement_availability_page(frame: pd.DataFrame) -> None:
         )
 
     gaps = load_measurement_gaps(MEASUREMENT_GAPS_FILE.stat().st_mtime)
-    gaps = gaps[gaps["uc"].eq(selected_uc)].copy()
+    gaps = gaps[
+        gaps["origem"].astype(str).str.upper().eq(selected_source)
+        & gaps["uc"].eq(selected_uc)
+    ].copy()
     gaps["mes"] = gaps["inicio_gap"].dt.to_period("M").dt.to_timestamp()
     missing = gaps.groupby("mes", as_index=False)["intervalos_ausentes"].sum()
 
