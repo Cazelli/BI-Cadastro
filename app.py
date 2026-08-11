@@ -2751,8 +2751,8 @@ def measurement_availability_page(frame: pd.DataFrame) -> None:
     selected_source_label = comparison_controls[1].pills(
         "Origem",
         ["Nansen", "Hexing"],
-        default="Nansen",
-        selection_mode="single",
+        default=["Nansen", "Hexing"],
+        selection_mode="multi",
         key="measurement_availability_source_filter",
     )
     selected_comparison_groups = comparison_controls[2].pills(
@@ -2762,9 +2762,12 @@ def measurement_availability_page(frame: pd.DataFrame) -> None:
         selection_mode="multi",
         key="availability_comparison_groups",
     )
-    selected_source = (selected_source_label or "Nansen").upper()
+    selected_sources = {
+        source.upper()
+        for source in (selected_source_label or ["Nansen", "Hexing"])
+    }
     report = report[
-        report["origem"].astype(str).str.upper().eq(selected_source)
+        report["origem"].astype(str).str.upper().isin(selected_sources)
     ].copy()
     if report.empty:
         empty_state()
@@ -2962,7 +2965,7 @@ def measurement_availability_page(frame: pd.DataFrame) -> None:
 
     gaps = load_measurement_gaps(MEASUREMENT_GAPS_FILE.stat().st_mtime)
     gaps = gaps[
-        gaps["origem"].astype(str).str.upper().eq(selected_source)
+        gaps["origem"].astype(str).str.upper().isin(selected_sources)
         & gaps["uc"].eq(selected_uc)
     ].copy()
     gaps["mes"] = gaps["inicio_gap"].dt.to_period("M").dt.to_timestamp()
