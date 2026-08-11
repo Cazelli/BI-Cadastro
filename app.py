@@ -2717,37 +2717,9 @@ def measurement_availability_page(frame: pd.DataFrame) -> None:
         st.error("Os arquivos de alertas e detalhe de gaps não foram encontrados.")
         return
 
-    source_key = "measurement_availability_source"
-    if st.session_state.get(source_key) not in {"NANSEN", "HEXING"}:
-        st.session_state[source_key] = "NANSEN"
-
-    source_buttons = st.columns(2)
-    for column, source, label in zip(
-        source_buttons,
-        ("NANSEN", "HEXING"),
-        ("Nansen", "Hexing"),
-    ):
-        if column.button(
-            label,
-            key=f"measurement_source_{source.lower()}",
-            type=(
-                "primary"
-                if st.session_state[source_key] == source
-                else "secondary"
-            ),
-            width="stretch",
-        ):
-            if st.session_state[source_key] != source:
-                st.session_state[source_key] = source
-                st.rerun()
-
-    selected_source = st.session_state[source_key]
     report = measurement_scope(
         frame, load_measurement_alerts(MEASUREMENT_ALERT_FILE.stat().st_mtime)
     )
-    report = report[
-        report["origem"].astype(str).str.upper().eq(selected_source)
-    ].copy()
     if report.empty:
         empty_state()
         return
@@ -2770,19 +2742,33 @@ def measurement_availability_page(frame: pd.DataFrame) -> None:
         "Dias/horas sem comunica\u00e7\u00e3o": ("atraso_min", "Horas sem comunica\u00e7\u00e3o"),
     }
     comparison_groups = ["Tratamento", "Controle", "Reserva"]
-    comparison_controls = st.columns([1, 2])
+    comparison_controls = st.columns([1, 1, 2])
     selected_metric_label = comparison_controls[0].selectbox(
         "Indicador do gr\u00e1fico",
         list(metric_options),
         key="availability_comparison_metric",
     )
-    selected_comparison_groups = comparison_controls[1].pills(
+    selected_source_label = comparison_controls[1].pills(
+        "Origem",
+        ["Nansen", "Hexing"],
+        default="Nansen",
+        selection_mode="single",
+        key="measurement_availability_source_filter",
+    )
+    selected_comparison_groups = comparison_controls[2].pills(
         "Grupos exibidos",
         comparison_groups,
         default=["Tratamento", "Controle"],
         selection_mode="multi",
         key="availability_comparison_groups",
     )
+    selected_source = (selected_source_label or "Nansen").upper()
+    report = report[
+        report["origem"].astype(str).str.upper().eq(selected_source)
+    ].copy()
+    if report.empty:
+        empty_state()
+        return
     metric_column, axis_label = metric_options[selected_metric_label]
     selected_comparison_groups = selected_comparison_groups or comparison_groups
     comparison = report[
