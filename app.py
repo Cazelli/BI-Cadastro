@@ -2863,7 +2863,7 @@ def measurement_availability_page(frame: pd.DataFrame) -> None:
     )
     uc_row = report[report["uc"].eq(selected_uc)].iloc[0]
 
-    metrics = st.columns(6)
+    metrics = [*st.columns(3), *st.columns(3)]
     show_metric(metrics[0], "Disponibilidade geral", f"{uc_row['availability_overall']:.2%}")
     show_metric(metrics[1], "Grupo", uc_row["grupo_uc"])
     show_metric(metrics[2], "Registros recebidos", f"{int(uc_row['registros']):,}".replace(",", "."))
