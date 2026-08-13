@@ -341,6 +341,9 @@ def load_measurement_gaps(file_mtime: float) -> pd.DataFrame:
     frame["intervalos_ausentes"] = pd.to_numeric(
         frame["intervalos_ausentes"], errors="coerce"
     ).fillna(0)
+    frame["duracao_min"] = pd.to_numeric(
+        frame["duracao_min"], errors="coerce"
+    ).fillna(0)
     return frame
 
 
@@ -2612,7 +2615,7 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
             "ultima_leitura": "Última leitura",
         },
         custom_data=["uc"],
-        title="Período com dados por UC, agrupado pelo grupo experimental",
+        title="Período com dados por UC; lacunas internas em vermelho",
         hover_data={
             "Origem": True,
             "Faixa de dias sem comunicação": True,
@@ -2622,6 +2625,40 @@ def communication_alerts_page(frame: pd.DataFrame) -> None:
             "gaps": ":.0f",
         },
     )
+    if MEASUREMENT_GAPS_FILE.exists() and not timeline.empty:
+        overview_gaps = load_measurement_gaps(
+            MEASUREMENT_GAPS_FILE.stat().st_mtime
+        )
+        overview_gaps = overview_gaps[
+            overview_gaps["uc"].isin(set(timeline["uc"]))
+            & overview_gaps["origem"].isin(set(timeline["origem"]))
+            & overview_gaps["duracao_min"].ge(60)
+        ].copy()
+        if not overview_gaps.empty:
+            overview_gaps["UC"] = overview_gaps["uc"].map(
+                lambda value: f"UC {value}"
+            )
+            gap_chart = px.timeline(
+                overview_gaps,
+                x_start="inicio_gap",
+                x_end="fim_gap",
+                y="UC",
+                custom_data=["uc", "duracao_min", "intervalos_ausentes"],
+            )
+            for trace in gap_chart.data:
+                trace.update(
+                    marker_color="#A83D2D",
+                    name="Lacuna sem dados (≥ 1 h)",
+                    legendgroup="lacunas",
+                    showlegend=True,
+                    hovertemplate=(
+                        "UC %{customdata[0]}<br>"
+                        "Início: %{base|%d/%m/%Y %H:%M}<br>"
+                        "Duração: %{customdata[1]:,.0f} min<br>"
+                        "Intervalos ausentes: %{customdata[2]:,.0f}<extra></extra>"
+                    ),
+                )
+                fig.add_trace(trace)
     fig.update_yaxes(
         categoryorder="array",
         categoryarray=timeline["UC"].tolist()[::-1],
@@ -2892,6 +2929,11 @@ def measurement_availability_page(frame: pd.DataFrame) -> None:
     first_reading = uc_row["primeira_leitura"]
     last_reading = uc_row["ultima_leitura"]
     source_end = uc_row["fim_dados_origem"]
+    gaps = load_measurement_gaps(MEASUREMENT_GAPS_FILE.stat().st_mtime)
+    gaps = gaps[
+        gaps["origem"].astype(str).str.upper().isin(selected_sources)
+        & gaps["uc"].eq(selected_uc)
+    ].copy()
     if pd.notna(first_reading) and pd.notna(last_reading):
         timeline_segments.append(
             {
@@ -2910,6 +2952,18 @@ def measurement_availability_page(frame: pd.DataFrame) -> None:
                     "Situa\u00e7\u00e3o": "Sem comunica\u00e7\u00e3o",
                 }
             )
+        for gap in gaps.itertuples(index=False):
+            gap_start = max(gap.inicio_gap, first_reading)
+            gap_end = min(gap.fim_gap, last_reading)
+            if pd.notna(gap_start) and pd.notna(gap_end) and gap_end > gap_start:
+                timeline_segments.append(
+                    {
+                        "UC": f"UC {selected_uc}",
+                        "Início": gap_start,
+                        "Fim": gap_end,
+                        "Situação": "Lacuna sem dados",
+                    }
+                )
     if timeline_segments:
         selected_timeline = pd.DataFrame(timeline_segments)
         timeline_chart = px.timeline(
@@ -2921,6 +2975,7 @@ def measurement_availability_page(frame: pd.DataFrame) -> None:
             color_discrete_map={
                 "Dados recebidos": "#F5821E",
                 "Sem comunica\u00e7\u00e3o": "#A83D2D",
+                "Lacuna sem dados": "#A83D2D",
             },
             title=f"Linha do tempo de comunica\u00e7\u00e3o da UC {selected_uc}",
         )
@@ -2976,19 +3031,34 @@ def measurement_availability_page(frame: pd.DataFrame) -> None:
             f"A UC {selected_uc} n\u00e3o possui medi\u00e7\u00f5es para exibir na linha do tempo."
         )
 
-    gaps = load_measurement_gaps(MEASUREMENT_GAPS_FILE.stat().st_mtime)
-    gaps = gaps[
-        gaps["origem"].astype(str).str.upper().isin(selected_sources)
-        & gaps["uc"].eq(selected_uc)
-    ].copy()
     gaps["mes"] = gaps["inicio_gap"].dt.to_period("M").dt.to_timestamp()
-    missing = gaps.groupby("mes", as_index=False)["intervalos_ausentes"].sum()
 
     start = uc_row["primeira_leitura"].to_period("M").to_timestamp()
     end = uc_row["ultima_leitura"].to_period("M").to_timestamp()
     monthly = pd.DataFrame({"mes": pd.date_range(start, end, freq="MS")})
-    monthly = monthly.merge(missing, on="mes", how="left").fillna({"intervalos_ausentes": 0})
     month_end = monthly["mes"] + pd.offsets.MonthEnd(1) + pd.Timedelta(days=1)
+    monthly["intervalos_ausentes"] = [
+        sum(
+            float(gap.ausentes) * max(
+                0.0,
+                (
+                    min(gap.fim, period_end) - max(gap.inicio, period_start)
+                ).total_seconds() / 60,
+            ) / float(gap.duracao)
+            for gap in gaps.rename(
+                columns={
+                    "inicio_gap": "inicio",
+                    "fim_gap": "fim",
+                    "duracao_min": "duracao",
+                    "intervalos_ausentes": "ausentes",
+                }
+            ).itertuples(index=False)
+            if gap.duracao > 0
+            and gap.fim > period_start
+            and gap.inicio < period_end
+        )
+        for period_start, period_end in zip(monthly["mes"], month_end)
+    ]
     observed_start = monthly["mes"].clip(lower=uc_row["primeira_leitura"])
     observed_end = month_end.clip(upper=uc_row["ultima_leitura"] + pd.Timedelta(minutes=float(uc_row["intervalo_predominante_min"])))
     monthly["intervalos_esperados"] = (
