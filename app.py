@@ -2716,9 +2716,23 @@ def measurement_availability_page(frame: pd.DataFrame) -> None:
         st.error("Os arquivos de alertas e detalhe de gaps não foram encontrados.")
         return
 
+    active_frame = frame[
+        ~frame["SITUACAO_ATUAL"]
+        .astype("string")
+        .str.strip()
+        .str.startswith("Removido", na=False)
+    ].copy()
     report = measurement_scope(
-        frame, load_measurement_alerts(MEASUREMENT_ALERT_FILE.stat().st_mtime)
+        active_frame,
+        load_measurement_alerts(MEASUREMENT_ALERT_FILE.stat().st_mtime),
     )
+    active_ucs = set(
+        active_frame["NUM_UC"]
+        .dropna()
+        .astype(str)
+        .str.replace(r"\.0$", "", regex=True)
+    )
+    report = report[report["uc"].isin(active_ucs)].copy()
     if report.empty:
         empty_state()
         return
