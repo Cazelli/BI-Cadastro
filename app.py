@@ -3078,6 +3078,14 @@ def measurement_availability_page(frame: pd.DataFrame) -> None:
         labels={"mes": "Mês", "disponibilidade": "Disponibilidade"},
         title=f"Disponibilidade mensal — UC {selected_uc}",
     )
+    fig.update_xaxes(
+        tickmode="array",
+        tickvals=monthly["mes"],
+        ticktext=[
+            f"{MONTH_NAMES[month.month][:3]}/{month.year}"
+            for month in monthly["mes"]
+        ],
+    )
     fig.update_yaxes(tickformat=".0%", range=[0, 1.08])
     fig.update_traces(marker_color="#F5821E", textposition="outside")
     st.plotly_chart(chart_style(fig, 430), width="stretch", config=PLOTLY_CONFIG)
