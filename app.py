@@ -428,7 +428,6 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
             "Atualizações e alertas",
             "Alertas de comunicação",
             "Disponibilidade de medição",
-            "Qualidade dos dados",
             "UCs removidas",
         ],
         label_visibility="collapsed",
@@ -3045,5 +3044,3 @@ elif selected_page == "Alertas de comunicação":
     communication_alerts_page(filtered_data)
 elif selected_page == "Disponibilidade de medição":
     measurement_availability_page(filtered_data)
-else:
-    quality_page(filtered_data)
