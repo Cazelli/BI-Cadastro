@@ -1,2 +1,7 @@
 ﻿DATA_ALERTA,NUM_UC,GRUPO_UC,TIPO_ALERTA,CAMPO,VALOR_ANTERIOR,VALOR_NOVO,DETALHE,ARQUIVO_ORIGEM
-2026-08-06,105667226,Reserva,Sem atualização,PRESENCA_NO_RELATORIO,Presente na base,Ausente no relatório,A UC não recebeu dados no último relatório processado.,mdm-sandbox_clientes_novo-20260806-20260806.csv
+2026-08-12,68646844,Tratamento,Mudança de Titularidade,MUD_TIT,,2026-08-12,Nova mudança de titularidade identificada no relatório.,mdm-sandbox_clientes_novo-20260813-20260813.csv
+2026-08-13,68646844,Tratamento,Alteração GD,GD_BENE_INIC,2022-05-01,,Informação de geração distribuída alterada.,mdm-sandbox_clientes_novo-20260813-20260813.csv
+2026-09-01,68646844,Tratamento,Alteração GD,DATA_INICIO_GD,2022-04-01,2026-09-01,Informação de geração distribuída alterada.,mdm-sandbox_clientes_novo-20260813-20260813.csv
+2026-08-10,95519190,Controle,Desligamento,SITUACAO_UC,LG,DS,A situação da UC mudou para desligada (DS).,mdm-sandbox_clientes_novo-20260813-20260813.csv
+2024-08-01,102006288,Reserva,Alteração GD,GD_BENE_INIC,2026-05-01,2024-08-01,Informação de geração distribuída alterada.,mdm-sandbox_clientes_novo-20260813-20260813.csv
+2026-08-13,105667226,Reserva,Sem atualização,PRESENCA_NO_RELATORIO,Presente na base,Ausente no relatório,A UC não recebeu dados no último relatório processado.,mdm-sandbox_clientes_novo-20260813-20260813.csv
