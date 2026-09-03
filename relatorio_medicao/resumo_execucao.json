@@ -1,21 +1,21 @@
 {
   "ucs_medidores": 258,
-  "gaps": 926138,
+  "gaps": 1022846,
   "rejeitados": 5491893,
   "fim_por_origem": {
-    "HEXING": "2026-08-20 23:50:00",
+    "HEXING": "2026-08-31 23:50:00",
     "NANSEN": "2026-08-06 00:00:00"
   },
   "alertas": {
-    "alerta_sem_comunicacao": 23,
+    "alerta_sem_comunicacao": 40,
     "alerta_somente_energia_total": 0,
     "alerta_erro_parametrizacao_sem_mobiflex": 0,
-    "alerta_descontinuidade": 255
+    "alerta_descontinuidade": 257
   },
   "cadastro": "D:\\OneDrive\\Documentos\\GitHub\\Copel_continuidade_dados\\mdm-sandbox_clientes_novo-20260726-20260726.csv",
-  "arquivos_encontrados": 232,
-  "arquivos_incorporados": 7,
-  "arquivos_sem_alteracao": 225,
-  "linhas_lidas": 156786,
+  "arquivos_encontrados": 238,
+  "arquivos_incorporados": 6,
+  "arquivos_sem_alteracao": 232,
+  "linhas_lidas": 166771,
   "criterio_sem_comunicacao": "atraso maior que max(60 min, intervalo predominante x 3), comparado ao fim da própria origem"
 }
