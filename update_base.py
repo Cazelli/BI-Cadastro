@@ -700,9 +700,30 @@ def main() -> None:
     mobiflex_report = (
         args.mobiflex_input.resolve() if args.mobiflex_input else newest_mobiflex_report()
     )
-    summary = process_report(
-        report, force=args.force, mobiflex_report=mobiflex_report
-    )
+    try:
+        # Reading one byte up front gives a useful error for OneDrive placeholders
+        # whose metadata is available locally but whose contents are not hydrated.
+        for label, path in (
+            ("base consolidada", BASE_FILE),
+            ("relatorio MDM", report),
+            ("relatorio Mobiflex", mobiflex_report),
+        ):
+            try:
+                with path.open("rb") as handle:
+                    handle.read(1)
+            except OSError as exc:
+                raise OSError(f"Nao foi possivel ler o {label}: {path}") from exc
+
+        summary = process_report(
+            report, force=args.force, mobiflex_report=mobiflex_report
+        )
+    except OSError as exc:
+        parser.exit(
+            1,
+            f"Erro: {exc}\n"
+            "Se o arquivo estiver no OneDrive, baixe-o novamente ou marque "
+            "'Sempre manter neste dispositivo' antes de executar a atualizacao.\n",
+        )
     print(json.dumps(summary, ensure_ascii=False, indent=2))
 
 
