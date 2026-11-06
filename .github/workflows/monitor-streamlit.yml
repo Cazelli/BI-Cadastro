@@ -15,7 +15,8 @@ concurrency:
 
 jobs:
   monitor:
-    runs-on: ubuntu-latest
+    # Playwright 1.53 supports Ubuntu 24.04; keep the runner OS pinned.
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
 
     steps:
