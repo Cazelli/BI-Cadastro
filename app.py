@@ -2141,6 +2141,17 @@ def removed_ucs_page(frame: pd.DataFrame) -> None:
         "Analise a origem, os motivos e a evolu\u00e7\u00e3o das remo\u00e7\u00f5es e exporte o recorte filtrado.",
     )
 
+    review_file = UPDATE_SUMMARY_FILE.with_name("remocoes_pendentes_confirmacao.csv")
+    if review_file.exists():
+        pending = pd.read_csv(review_file, dtype=str, keep_default_na=False)
+        if not pending.empty:
+            st.warning(
+                f"{len(pending)} UC(s) removida(s) ausente(s) da lista corrigida. "
+                "Aguardando confirmacao individual para restaurar a situacao anterior."
+            )
+            with st.expander("Remocoes pendentes de confirmacao", expanded=True):
+                st.dataframe(pending, hide_index=True, width="stretch")
+
     removed = frame[
         frame["SITUACAO_ATUAL"].eq("Removido") & frame["DT_DISTRATO"].notna()
     ].copy()

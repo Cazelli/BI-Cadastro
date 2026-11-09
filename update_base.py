@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 from datetime import datetime
@@ -16,6 +17,8 @@ BASE_FILE = ROOT / "base_consolidada_BI.csv"
 ALERT_FILE = DATA_DIR / "ultima_atualizacao_alertas.csv"
 HISTORY_FILE = DATA_DIR / "historico_alertas.csv"
 SUMMARY_FILE = DATA_DIR / "ultima_atualizacao_resumo.json"
+REMOVAL_FILE = DATA_DIR / "relatorio_ucs_removidas.xlsx"
+REMOVAL_REVIEW_FILE = DATA_DIR / "remocoes_pendentes_confirmacao.csv"
 REPORT_PATTERN = re.compile(
     r"^mdm-sandbox_clientes_novo-(\d{8})-(\d{8})\.csv$",
     re.IGNORECASE,
@@ -180,6 +183,8 @@ def newest_report() -> Path:
 
 
 def newest_mobiflex_report() -> Path:
+    if REMOVAL_FILE.exists():
+        return REMOVAL_FILE
     candidates: list[tuple[datetime, Path]] = []
     for path in DATA_DIR.glob("*Mobiflex*.csv"):
         match = MOBIFLEX_REPORT_PATTERN.fullmatch(path.name)
@@ -212,19 +217,35 @@ def update_from_mobiflex(
     report: Path,
     changed_ucs: set[str],
 ) -> dict[str, int]:
-    incoming = pd.read_csv(
-        report,
-        sep=";",
-        dtype=str,
-        keep_default_na=False,
-        encoding="utf-8-sig",
-    )
+    if report.suffix.lower() == ".xlsx":
+        incoming = pd.read_excel(report, dtype=str, keep_default_na=False)
+        incoming = incoming.rename(columns={
+            "NUM_UC": "UC", "DT_DISTRATO": "DATA", "MOTIV_DIST": "Motivo"
+        })
+    else:
+        incoming = pd.read_csv(
+            report, sep=";", dtype=str, keep_default_na=False, encoding="utf-8-sig"
+        )
     incoming.columns = [text(column) for column in incoming.columns]
     validate_columns(incoming, {"UC", "DATA", "Motivo"}, report.name)
 
     incoming["UC"] = incoming["UC"].map(identifier)
     if incoming["UC"].eq("").any():
         raise ValueError(f"Existem UCs sem identificador em {report.name}.")
+
+    if report.suffix.lower() == ".xlsx":
+        if incoming["UC"].duplicated().any():
+            raise ValueError("UCs duplicadas na lista corrigida de remocoes.")
+        if incoming["DATA"].map(text).eq("").any() or incoming["Motivo"].map(text).eq("").any():
+            raise ValueError("Remocoes precisam de data e motivo.")
+        unknown = set(incoming["UC"]).difference(base_index)
+        if unknown:
+            raise ValueError(f"UCs removidas ausentes da base: {sorted(unknown)}")
+        pending = base[
+            base["SITUACAO_ATUAL"].eq("Removido")
+            & ~base["NUM_UC"].isin(incoming["UC"])
+        ][["NUM_UC", "SITUACAO_INICIAL", "DT_DISTRATO", "MOTIV_DIST"]].copy()
+        atomic_csv(pending, REMOVAL_REVIEW_FILE)
 
     # If a UC has multiple removal events, its most recent dated row wins.
     incoming["_DT_DISTRATO"] = incoming["DATA"].map(iso_date)
@@ -477,10 +498,12 @@ def process_report(
     if not mobiflex_report.exists():
         raise FileNotFoundError(f"Relat\u00f3rio Mobiflex n\u00e3o encontrado: {mobiflex_report}")
 
+    removal_digest = hashlib.sha256(mobiflex_report.read_bytes()).hexdigest()
     previous_summary = read_summary()
     if (
         previous_summary.get("arquivo_origem") == report.name
         and previous_summary.get("arquivo_mobiflex") == mobiflex_report.name
+        and previous_summary.get("remocoes_sha256") == removal_digest
         and not force
     ):
         print(f"Relatório já processado e higienizado: {report.name}")
@@ -648,6 +671,7 @@ def process_report(
     summary = {
         "arquivo_origem": report.name,
         "arquivo_mobiflex": mobiflex_report.name,
+        "remocoes_sha256": removal_digest,
         "periodo_inicio": filename_match.group(1) if filename_match else "",
         "periodo_fim": filename_match.group(2) if filename_match else "",
         "processado_em": datetime.now().astimezone().isoformat(timespec="seconds"),

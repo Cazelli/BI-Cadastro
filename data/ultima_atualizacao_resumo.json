@@ -1,25 +1,20 @@
 {
   "arquivo_origem": "mdm-sandbox_clientes_novo-20261102-20261102.csv",
-  "arquivo_mobiflex": "Relatório_Cadastral_Mobiflex_26-08-06.csv",
+  "arquivo_mobiflex": "relatorio_ucs_removidas.xlsx",
+  "remocoes_sha256": "c6928d60de47f8dee6e2f5c0cd5e437498c74e378afe8ed6be8f316515829d02",
   "periodo_inicio": "20261102",
   "periodo_fim": "20261102",
-  "processado_em": "2026-11-06T07:35:57-03:00",
+  "processado_em": "2026-11-09T14:14:28-03:00",
   "ucs_no_relatorio": 253,
   "ucs_correspondentes": 237,
   "ucs_extras_ignoradas": 16,
   "ucs_sem_atualizacao": 1,
-  "ucs_alteradas": 16,
-  "alertas": 23,
+  "ucs_alteradas": 2,
+  "alertas": 1,
   "eventos_historicos": 185,
   "total_base": 238,
-  "colunas_pessoais_removidas_relatorio": [
-    "celular",
-    "cliente",
-    "email",
-    "medidor",
-    "nome"
-  ],
-  "mobiflex_ucs": 10,
-  "mobiflex_ucs_correspondentes": 10,
+  "colunas_pessoais_removidas_relatorio": [],
+  "mobiflex_ucs": 13,
+  "mobiflex_ucs_correspondentes": 13,
   "mobiflex_ucs_extras_ignoradas": 0
 }
