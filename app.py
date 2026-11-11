@@ -208,10 +208,16 @@ def render_data_disclaimer() -> None:
     formatted_date = (
         f"{report_date:%d-%m-%Y}" if report_date is not None else "não identificada"
     )
+    gd_manifest = Path(__file__).with_name("data") / "gd_manifesto.json"
+    gd_text = ""
+    baseline_text = "Amostra Final - Tarifa Mobiflex - 21.07.2026"
+    if gd_manifest.exists():
+        gd_summary = json.loads(gd_manifest.read_text(encoding="utf-8"))
+        gd_text = f" · GD/BEN/UC: {gd_summary.get('data_gd', 'não identificada')}"
+        baseline_text = gd_summary.get("arquivo_baseline", baseline_text)
     st.markdown(
         '<div class="data-disclaimer">'
-        f"Dados atualizados à partir do relatório feito em {formatted_date}, "
-        "e no arquivo Amostra Final - Tarifa Mobiflex - 14.07.2026"
+        f"MDM: {formatted_date}{gd_text} · Baseline auditada: {baseline_text}"
         "</div>",
         unsafe_allow_html=True,
     )
@@ -248,7 +254,8 @@ def login_screen() -> None:
 @st.cache_data(show_spinner="Carregando base de UCs...")
 def load_data(file_mtime: float) -> pd.DataFrame:
     del file_mtime  # Included only to invalidate the cache when the CSV changes.
-    frame = pd.read_csv(DATA_FILE, encoding="utf-8-sig", low_memory=False)
+    frame = pd.read_csv(DATA_FILE, encoding="utf-8-sig", low_memory=False,
+                        dtype={"NUM_UC": "string", "NUM_UC_ANEEL": "string"})
     frame.columns = [
         str(column)
         .strip()
@@ -383,7 +390,7 @@ def alert_period_label(value: object) -> str:
     date = pd.to_datetime(value, errors="coerce")
     if pd.isna(date):
         return "Sem data"
-    if date.normalize() < EXPERIMENT_START_DATE:
+    if date.normalize() < pd.Timestamp("2026-01-01"):
         return "Inicial"
     month = MONTH_NAMES[date.month]
     return month if date.year == EXPERIMENT_START_DATE.year else f"{month}/{date.year}"
@@ -595,7 +602,7 @@ def metric_calculation_help(
         "Mudanças de Titularidade": "Quantidade distinta de UCs com mudança de titularidade.",
         "Mudança de Classe": "Quantidade distinta de UCs com mudança de Classe e/ou Subgrupo.",
         "Tarifas Especiais Ativadas": "Quantidade distinta de UCs que passaram a ter tarifa social ou tarifa branca.",
-        "Alterações GD": "Quantidade distinta de UCs que viraram beneficiárias ou geradoras de geração distribuída.",
+        "Alterações GD": "UCs com mudança de perfil GD, potência, classificação ou vínculos no período selecionado.",
     }
     if label in rules:
         return rules[label]
@@ -731,6 +738,22 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
     )
     valid_initial_gd = gd_started_before_project & ~same_benefit_start_and_end
     valid_filtered_gd = gd_started_before_reference & ~same_benefit_start_and_end
+    gd_manifest = Path(__file__).with_name("data") / "gd_manifesto.json"
+    if gd_manifest.exists():
+        from gd_dashboard import load_gd
+        gd_files = ("gd_atual.csv", "gd_snapshots.csv", "gd_vinculos.csv", "gd_historico_2026.csv", "gd_qualidade.csv", "gd_auditoria_baseline.csv", "gd_manifesto.json")
+        gd_dir = gd_manifest.parent
+        gd_frames, _ = load_gd(tuple((gd_dir / filename).stat().st_mtime_ns for filename in gd_files))
+        def gd_at_reference(reference):
+            snapshots = gd_frames["gd_snapshots"]
+            eligible = snapshots[snapshots["DATA_REFERENCIA"].le(reference.strftime("%Y-%m-%d"))]
+            if eligible.empty:
+                return pd.Series(False, index=frame.index)
+            position = eligible[eligible["DATA_REFERENCIA"].eq(eligible["DATA_REFERENCIA"].max())]
+            with_gd = set(position.loc[position["GD_GERADORA"].eq("S") | position["GD_BENEFICIARIA"].eq("S"), "NUM_UC"])
+            return frame["NUM_UC"].astype(str).isin(with_gd)
+        valid_initial_gd = gd_at_reference(PROJECT_START_DATE - pd.Timedelta(days=1))
+        valid_filtered_gd = gd_at_reference(gd_reference_date)
     active_initial_gd = int(
         (frame["SITUACAO_INICIAL"].eq("Ativo") & valid_initial_gd).sum()
     )
@@ -1674,12 +1697,15 @@ def charging_page(frame: pd.DataFrame) -> None:
         st.info("Nenhum local de recarga informado.")
 
 
-def gd_page(frame: pd.DataFrame) -> None:
+def gd_page(frame: pd.DataFrame, reference_date: pd.Timestamp | None = None) -> None:
     title(
         "Energia",
         "Geração distribuída",
         "Compare a composição e os vínculos de GD entre Tratamento e Controle.",
     )
+    from gd_dashboard import render
+    if render(frame, reference_date or PROJECT_START_DATE, chart_style, PLOTLY_CONFIG):
+        return
     status_labels = {"Ativo": "Tratamento", "Controle": "Controle"}
     population = frame[frame["SITUACAO_ATUAL"].isin(status_labels)].copy()
     if population.empty:
@@ -1824,7 +1850,6 @@ def update_report_page(frame: pd.DataFrame) -> None:
             {
                 "Desconexão": "Desligamento",
                 "Corte": "Desligamento",
-                "Fora do padrão": "Mudança de Classe",
                 "Tarifa ativada": "Tarifa Especial Ativada",
             }
         )
@@ -1917,6 +1942,21 @@ def update_report_page(frame: pd.DataFrame) -> None:
             if selected_types
             else alerts.copy()
         )
+        if "BASE_DATA" in view:
+            evidence_filters = st.columns(2)
+            chosen_basis = evidence_filters[0].multiselect(
+                "Base da data", sorted(view["BASE_DATA"].unique()), key=f"date_basis_{section_key}"
+            )
+            chosen_nature = evidence_filters[1].multiselect(
+                "Natureza do registro", sorted(view["NATUREZA"].unique()), key=f"nature_{section_key}"
+            )
+            if chosen_basis:
+                view = view[view["BASE_DATA"].isin(chosen_basis)]
+            if chosen_nature:
+                view = view[view["NATUREZA"].isin(chosen_nature)]
+        if view.empty:
+            st.info("Nenhum registro corresponde aos filtros.")
+            return
 
         left, right = st.columns([0.8, 1.4])
         by_group = (
@@ -2075,6 +2115,10 @@ def update_report_page(frame: pd.DataFrame) -> None:
                 "VALOR_ANTERIOR",
                 "VALOR_NOVO",
                 "DETALHE",
+                *[column for column in (
+                    "BASE_DATA", "DATA_EFETIVA", "OBSERVACAO_ANTERIOR", "OBSERVACAO_ATUAL",
+                    "NATUREZA", "STATUS_QUALIDADE", "ARQUIVO_ANTERIOR", "ARQUIVO_ORIGEM"
+                ) if column in detail_view],
             ]
         ].rename(
             columns={
@@ -2093,15 +2137,24 @@ def update_report_page(frame: pd.DataFrame) -> None:
             f"{len(detail):,} registro(s) exibido(s).".replace(",", ".")
         )
         st.dataframe(detail, width="stretch", hide_index=True, height=420)
+        st.download_button(
+            "Baixar alertas filtrados", detail.to_csv(index=False, sep=";").encode("utf-8-sig"),
+            f"alertas_{section_key}.csv", "text/csv", key=f"alerts_download_{section_key}"
+        )
 
     st.markdown("### Última atualização")
-    st.caption("Indicadores e alertas gerados exclusivamente pelo relatório mais recente.")
+    st.caption("Última observação de cada fonte: MDM e GD podem ter datas diferentes. Condições persistentes são identificadas separadamente das mudanças.")
+    if summary.get("data_gd"):
+        st.caption(f"GD/BEN/UC: {summary['data_gd']} · Histórico cadastral: 2026 inteiro.")
     render_metrics(latest)
     render_alert_content(latest, "latest", "Detalhamento da última atualização")
 
     st.divider()
     st.markdown("### Histórico acumulado")
-    st.caption("Totais e eventos registrados desde 01/03/2026.")
+    st.caption("Mudanças em 2026 reconstruídas a partir dos arquivos Cadastro. Correções de baseline e condições persistentes não entram como novas mudanças.")
+    history_scope = st.radio("Abrangência do histórico", ["Todo o ano de 2026", "Experimento: desde 01/03/2026"], horizontal=True)
+    if history_scope.startswith("Experimento"):
+        history = history[history["DATA_ALERTA"].ge(EXPERIMENT_START_DATE)]
     history_end_candidates = [EXPERIMENT_START_DATE]
     if pd.notna(end):
         history_end_candidates.append(end)
@@ -2109,7 +2162,7 @@ def update_report_page(frame: pd.DataFrame) -> None:
         history_end_candidates.append(history["DATA_ALERTA"].max())
     history_end = max(history_end_candidates)
     month_starts = pd.date_range(
-        EXPERIMENT_START_DATE.replace(day=1),
+        pd.Timestamp("2026-01-01"),
         history_end.replace(day=1),
         freq="MS",
     )
@@ -2123,7 +2176,7 @@ def update_report_page(frame: pd.DataFrame) -> None:
         period_options,
         selection_mode="multi",
         help=(
-            "Inicial considera registros até 28/02/2026. Março considera de 01/03 "
+            "Janeiro e fevereiro estão disponíveis no ano completo. Março considera de 01/03 "
             "a 31/03. Os demais meses são completos; seleções múltiplas são combinadas."
         ),
     )
@@ -3140,7 +3193,7 @@ elif selected_page == "Perfil dos veículos":
 elif selected_page == "Infraestrutura de recarga":
     charging_page(filtered_data)
 elif selected_page == "Geração distribuída":
-    gd_page(filtered_data)
+    gd_page(filtered_data, gd_reference_date)
 elif selected_page == "Atualizações e alertas":
     update_report_page(filtered_data)
 elif selected_page == "Alertas de comunicação":

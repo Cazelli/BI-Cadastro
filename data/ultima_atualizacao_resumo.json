@@ -1,20 +1,1404 @@
 {
   "arquivo_origem": "mdm-sandbox_clientes_novo-20261102-20261102.csv",
-  "arquivo_mobiflex": "relatorio_ucs_removidas.xlsx",
-  "remocoes_sha256": "c6928d60de47f8dee6e2f5c0cd5e437498c74e378afe8ed6be8f316515829d02",
   "periodo_inicio": "20261102",
   "periodo_fim": "20261102",
-  "processado_em": "2026-11-09T14:14:28-03:00",
-  "ucs_no_relatorio": 253,
-  "ucs_correspondentes": 237,
-  "ucs_extras_ignoradas": 16,
-  "ucs_sem_atualizacao": 1,
-  "ucs_alteradas": 2,
-  "alertas": 1,
-  "eventos_historicos": 185,
+  "data_gd": "2026-10-30",
+  "data_ultimo_arquivo_gd": "2026-10-30",
+  "lote_gd_incompleto": false,
   "total_base": 238,
-  "colunas_pessoais_removidas_relatorio": [],
-  "mobiflex_ucs": 13,
-  "mobiflex_ucs_correspondentes": 13,
-  "mobiflex_ucs_extras_ignoradas": 0
+  "eventos_historicos": 259,
+  "alertas": 1,
+  "eventos_gd_2026": 227,
+  "ucs_revisao_gd": 6,
+  "divergencias_baseline": 15,
+  "ucs_corrigidas_baseline": 9,
+  "ucs_revisao_baseline": 4,
+  "campos_complementados_baseline": 11,
+  "campos_sem_informacao_amostra": 107,
+  "arquivo_baseline": "Amostra Final - Tarifa Mobiflex - 21.07.2026.xlsx",
+  "arquivo_mobiflex": "relatorio_ucs_removidas.xlsx",
+  "ucs_sem_atualizacao": 1,
+  "unidade_potencia": "kW",
+  "regra_inicio_geradora": "DTA_SOL_ACES_KCG",
+  "regra_inicio_beneficiaria": "DTA_INC_XBG",
+  "fontes": [
+    {
+      "arquivo": "2026-10-22-consulta_BEN.csv",
+      "data": "2026-10-22",
+      "tipo": "BEN",
+      "sha256": "41b15553dec0076c2f2e41170db092b3f140d6db2b0268ebb4d57ffd3edafe0a",
+      "status": "COMPLETO"
+    },
+    {
+      "arquivo": "2026-10-22-consulta_GD.csv",
+      "data": "2026-10-22",
+      "tipo": "GD",
+      "sha256": "e8ff3516806a8f5c5c28c76103732f2a9ec62679af22a21d224dd7252ac3dd99",
+      "status": "COMPLETO"
+    },
+    {
+      "arquivo": "2026-10-22-consulta_UC.csv",
+      "data": "2026-10-22",
+      "tipo": "UC",
+      "sha256": "7fb964ffd1e3dbca9b127645dab67d1e42da443226cdf517a5a19797043fbe6b",
+      "status": "COMPLETO"
+    },
+    {
+      "arquivo": "2026-10-29-consulta_BEN.csv",
+      "data": "2026-10-29",
+      "tipo": "BEN",
+      "sha256": "3280eb436f3bad5df207ac43813f1f46fee4a715f03ce510cad59e153fb1882d",
+      "status": "COMPLETO"
+    },
+    {
+      "arquivo": "2026-10-29-consulta_GD.csv",
+      "data": "2026-10-29",
+      "tipo": "GD",
+      "sha256": "3f15ef88959872e76ffe579b2d839501939cf2ab5edf8fb85a1bf97f0275d7da",
+      "status": "COMPLETO"
+    },
+    {
+      "arquivo": "2026-10-29-consulta_UC.csv",
+      "data": "2026-10-29",
+      "tipo": "UC",
+      "sha256": "cb769c5119f4733de16a1f7d317bad84f9a61e70d53f63272df8f6b828a1a082",
+      "status": "COMPLETO"
+    },
+    {
+      "arquivo": "2026-10-30-consulta_BEN.csv",
+      "data": "2026-10-30",
+      "tipo": "BEN",
+      "sha256": "9d6d143f47a8e99617e595b83b16026870c46f1d7f82f8e29abc19db50e2f388",
+      "status": "COMPLETO"
+    },
+    {
+      "arquivo": "2026-10-30-consulta_GD.csv",
+      "data": "2026-10-30",
+      "tipo": "GD",
+      "sha256": "fcda10c7f655f4068398040c9c9946fbe665097bf90771a803c34a4c8b4035d1",
+      "status": "COMPLETO"
+    },
+    {
+      "arquivo": "2026-10-30-consulta_UC.csv",
+      "data": "2026-10-30",
+      "tipo": "UC",
+      "sha256": "505daadea1b298ee92356c65aa3277638d570618a1c2214ac2b627e29c7742a4",
+      "status": "COMPLETO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260330-20260330-ucs_sem_dados.csv",
+      "data": "2026-03-30",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260330-20260330.csv",
+      "data": "2026-03-30",
+      "tipo": "MDM",
+      "sha256": "eb56f0db910e1f9344871f167fd0b09e5959dc5c67e2d54c15bfb61e1c02830d",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260331-20260331-ucs_sem_dados.csv",
+      "data": "2026-03-31",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260331-20260331.csv",
+      "data": "2026-03-31",
+      "tipo": "MDM",
+      "sha256": "035c7fe11519c8018c116dd964d310b940f4ec3a7712466be8fc95db7204063c",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260402-20260402-ucs_sem_dados.csv",
+      "data": "2026-04-02",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260402-20260402.csv",
+      "data": "2026-04-02",
+      "tipo": "MDM",
+      "sha256": "c9ec4a847880461a9ab481f4cc3a7a7f10ec3fd5294aa720374da70581b3a42f",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260403-20260403-ucs_sem_dados.csv",
+      "data": "2026-04-03",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260403-20260403.csv",
+      "data": "2026-04-03",
+      "tipo": "MDM",
+      "sha256": "c9ec4a847880461a9ab481f4cc3a7a7f10ec3fd5294aa720374da70581b3a42f",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260404-20260404-ucs_sem_dados.csv",
+      "data": "2026-04-04",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260404-20260404.csv",
+      "data": "2026-04-04",
+      "tipo": "MDM",
+      "sha256": "c9ec4a847880461a9ab481f4cc3a7a7f10ec3fd5294aa720374da70581b3a42f",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260405-20260405-ucs_sem_dados.csv",
+      "data": "2026-04-05",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260405-20260405.csv",
+      "data": "2026-04-05",
+      "tipo": "MDM",
+      "sha256": "5b36281eb7daa4c1990b3177bc403f01c7f0a9eb35d22933f87bba82382052b8",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260406-20260406-ucs_sem_dados.csv",
+      "data": "2026-04-06",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260406-20260406.csv",
+      "data": "2026-04-06",
+      "tipo": "MDM",
+      "sha256": "46ecd0f13e3728f612122c400442c575af27cd0cf68824f0c25f2393fd6965e0",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260407-20260407-ucs_sem_dados.csv",
+      "data": "2026-04-07",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260407-20260407.csv",
+      "data": "2026-04-07",
+      "tipo": "MDM",
+      "sha256": "8d3b7d32c7e7196b229f4b26db1612de2b4a8536c743c44238def7d136923182",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260408-20260408-ucs_sem_dados.csv",
+      "data": "2026-04-08",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260408-20260408.csv",
+      "data": "2026-04-08",
+      "tipo": "MDM",
+      "sha256": "fa16db50581c6d56f081cdb55814e4735a5e519bc9f57b6f62e7764e14ea2423",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260409-20260409-ucs_sem_dados.csv",
+      "data": "2026-04-09",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260409-20260409.csv",
+      "data": "2026-04-09",
+      "tipo": "MDM",
+      "sha256": "f7fbccc3bc248917a41b612a2e6e27eac68609a2bc610e7ed04038c2c0dc6e26",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260410-20260410-ucs_sem_dados.csv",
+      "data": "2026-04-10",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260410-20260410.csv",
+      "data": "2026-04-10",
+      "tipo": "MDM",
+      "sha256": "564ef9e5c1d9fc84a3962a7847e179f0e38110d05bd69400a6f64ff5df96b726",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260411-20260411-ucs_sem_dados.csv",
+      "data": "2026-04-11",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260411-20260411.csv",
+      "data": "2026-04-11",
+      "tipo": "MDM",
+      "sha256": "25a4d2fa038a8053f84fbd9ead656c1ca37efd667c7b463d89837d21f5608353",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260412-20260412-ucs_sem_dados.csv",
+      "data": "2026-04-12",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260412-20260412.csv",
+      "data": "2026-04-12",
+      "tipo": "MDM",
+      "sha256": "e1afa3737d9fa124bae9b3f3dbc9113a5c4bc1708a2d60c82556c1431ed3772c",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260413-20260413-ucs_sem_dados.csv",
+      "data": "2026-04-13",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260413-20260413.csv",
+      "data": "2026-04-13",
+      "tipo": "MDM",
+      "sha256": "e404484fffea5010daa7a953eeb411ee97f9ef577a61e9bb21ac10237affa302",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260414-20260416-ucs_sem_dados.csv",
+      "data": "2026-04-16",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260414-20260416.csv",
+      "data": "2026-04-16",
+      "tipo": "MDM",
+      "sha256": "cd8c9f00f7f1d941ca50d1e5c91139c0e27f3d03e97e093fc130c348c012c454",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260417-20260419-ucs_sem_dados.csv",
+      "data": "2026-04-19",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260417-20260419.csv",
+      "data": "2026-04-19",
+      "tipo": "MDM",
+      "sha256": "36793531724421cbd97f820667134d6b0b3cf53b866111600703b798d61be8c2",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260420-20260420-ucs_sem_dados.csv",
+      "data": "2026-04-20",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260420-20260420.csv",
+      "data": "2026-04-20",
+      "tipo": "MDM",
+      "sha256": "36793531724421cbd97f820667134d6b0b3cf53b866111600703b798d61be8c2",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260421-20260421-ucs_sem_dados.csv",
+      "data": "2026-04-21",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260421-20260421.csv",
+      "data": "2026-04-21",
+      "tipo": "MDM",
+      "sha256": "55668a9baa5cf75037edb16eca50732bf6cf272c2859701ec2d8238b44d101b1",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260422-20260422-ucs_sem_dados.csv",
+      "data": "2026-04-22",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260422-20260422.csv",
+      "data": "2026-04-22",
+      "tipo": "MDM",
+      "sha256": "6288b02b9cc0f5e0987f7bf4e308f69d3c3c6e643f505af9de58bdf296b2794f",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260423-20260423-ucs_sem_dados.csv",
+      "data": "2026-04-23",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260423-20260423.csv",
+      "data": "2026-04-23",
+      "tipo": "MDM",
+      "sha256": "fcede207e4afe5619041d9382f7d4725ae7c0dcf4974a3987776596bac3a9a76",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260424-20260424-ucs_sem_dados.csv",
+      "data": "2026-04-24",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260424-20260424.csv",
+      "data": "2026-04-24",
+      "tipo": "MDM",
+      "sha256": "fcede207e4afe5619041d9382f7d4725ae7c0dcf4974a3987776596bac3a9a76",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260425-20260425-ucs_sem_dados.csv",
+      "data": "2026-04-25",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260425-20260425.csv",
+      "data": "2026-04-25",
+      "tipo": "MDM",
+      "sha256": "fcede207e4afe5619041d9382f7d4725ae7c0dcf4974a3987776596bac3a9a76",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260426-20260428-ucs_sem_dados.csv",
+      "data": "2026-04-28",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260426-20260428.csv",
+      "data": "2026-04-28",
+      "tipo": "MDM",
+      "sha256": "21eb3898159fe32b31203fb311c137cab35d4fda715effb4b6dbabd0b62e2001",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260429-20260429-ucs_sem_dados.csv",
+      "data": "2026-04-29",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260429-20260429.csv",
+      "data": "2026-04-29",
+      "tipo": "MDM",
+      "sha256": "f91ef8b9ba1fbcdefaa6688e8a9e4b3234b78a8001d32e8b1a03232ef990da0f",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260430-20260430-ucs_sem_dados.csv",
+      "data": "2026-04-30",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260430-20260430.csv",
+      "data": "2026-04-30",
+      "tipo": "MDM",
+      "sha256": "281fc3f9b892376ed60cf80a923753285b0ae5024731632dbb82f7dfb040a059",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260501-20260501-ucs_sem_dados.csv",
+      "data": "2026-05-01",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260501-20260501.csv",
+      "data": "2026-05-01",
+      "tipo": "MDM",
+      "sha256": "b48be9df030d7b7fa03b0137e6ddd1114c426e1bdb6e57d8d07ca2e5c0d1fb36",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260502-20260502-ucs_sem_dados.csv",
+      "data": "2026-05-02",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260502-20260502.csv",
+      "data": "2026-05-02",
+      "tipo": "MDM",
+      "sha256": "73be5fac98dea9093677265398f892d6f9c892913f88a720f6258eb3717115c3",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260503-20260503-ucs_sem_dados.csv",
+      "data": "2026-05-03",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260503-20260503.csv",
+      "data": "2026-05-03",
+      "tipo": "MDM",
+      "sha256": "737e4ba29fa5e71c1923eff34a35644d42eb271b202ab681fd551a50675e56e5",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260504-20260504-ucs_sem_dados.csv",
+      "data": "2026-05-04",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260504-20260504.csv",
+      "data": "2026-05-04",
+      "tipo": "MDM",
+      "sha256": "290986dd41b1e9c4a161fb284a32da606555d3a6996a8e5b053ff034f95d0883",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260505-20260505-ucs_sem_dados.csv",
+      "data": "2026-05-05",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260505-20260505.csv",
+      "data": "2026-05-05",
+      "tipo": "MDM",
+      "sha256": "b3fcdd8737c92ad4d7371859990d798f89fb6c479a1f258fd1789cef056ea6cc",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260506-20260506-ucs_sem_dados.csv",
+      "data": "2026-05-06",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260506-20260506.csv",
+      "data": "2026-05-06",
+      "tipo": "MDM",
+      "sha256": "178428280103b118dcfeac72eae8c2a7619f4e82d4f374b56b1e0cc9145379a7",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260507-20260507-ucs_sem_dados.csv",
+      "data": "2026-05-07",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260507-20260507.csv",
+      "data": "2026-05-07",
+      "tipo": "MDM",
+      "sha256": "f8afca1a135a43e34be4e7d4d412337d97c7c0fb615bf003c08ff6dc110a2c2f",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260508-20260508-ucs_sem_dados.csv",
+      "data": "2026-05-08",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260508-20260508.csv",
+      "data": "2026-05-08",
+      "tipo": "MDM",
+      "sha256": "f6506c40207c31d84328fcf31b0353f831fbf5b01776279148fd4aa2b719249d",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260509-20260509-ucs_sem_dados.csv",
+      "data": "2026-05-09",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260509-20260509.csv",
+      "data": "2026-05-09",
+      "tipo": "MDM",
+      "sha256": "f6506c40207c31d84328fcf31b0353f831fbf5b01776279148fd4aa2b719249d",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260510-20260510-ucs_sem_dados.csv",
+      "data": "2026-05-10",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260510-20260510.csv",
+      "data": "2026-05-10",
+      "tipo": "MDM",
+      "sha256": "714178bb03c16324ae0a87b9f2f66ef927187add20e865506af17b99df8e20da",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260511-20260511-ucs_sem_dados.csv",
+      "data": "2026-05-11",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260511-20260511.csv",
+      "data": "2026-05-11",
+      "tipo": "MDM",
+      "sha256": "d80fcca3ae9877e0d2cd53cbef40e08c37ec86785b930144f873225641fee32d",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260512-20260512-ucs_sem_dados.csv",
+      "data": "2026-05-12",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260512-20260512.csv",
+      "data": "2026-05-12",
+      "tipo": "MDM",
+      "sha256": "b7af8f92fdae04f43963c722887d423b05ccfcfee5f11191818d8be2c2f4d95d",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260513-20260513-ucs_sem_dados.csv",
+      "data": "2026-05-13",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260513-20260513.csv",
+      "data": "2026-05-13",
+      "tipo": "MDM",
+      "sha256": "739584648f1f76d69e20f96ad07471a029800bddc7f05b12f223d5e69c0b6943",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260522-20260522-ucs_sem_dados.csv",
+      "data": "2026-05-22",
+      "tipo": "MDM",
+      "sha256": "b628ecfb27e50130c5bf7db90f2f692d54dfe210510362ca2c37f3e89da34262",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260522-20260522.csv",
+      "data": "2026-05-22",
+      "tipo": "MDM",
+      "sha256": "b086ce3626f063bc57ee5a7c4fc38e039d29d894e3660bb08fab015b49deda67",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260523-20260523-ucs_sem_dados.csv",
+      "data": "2026-05-23",
+      "tipo": "MDM",
+      "sha256": "b628ecfb27e50130c5bf7db90f2f692d54dfe210510362ca2c37f3e89da34262",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260523-20260523.csv",
+      "data": "2026-05-23",
+      "tipo": "MDM",
+      "sha256": "b086ce3626f063bc57ee5a7c4fc38e039d29d894e3660bb08fab015b49deda67",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260524-20260524-ucs_sem_dados.csv",
+      "data": "2026-05-24",
+      "tipo": "MDM",
+      "sha256": "1e8a209817509cd56e793847303c834eef965ec910849886acd89bcef8346b00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260524-20260524.csv",
+      "data": "2026-05-24",
+      "tipo": "MDM",
+      "sha256": "3ad9312c135b34a2d264c3f98b9fcb0abfab04c77e8a5cad127271f57c9d9358",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260525-20260526-ucs_sem_dados.csv",
+      "data": "2026-05-26",
+      "tipo": "MDM",
+      "sha256": "cef35d4c683a1bf54e40acd3787f5b7981037b55ca8418ba69f61e66650406e5",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260525-20260526.csv",
+      "data": "2026-05-26",
+      "tipo": "MDM",
+      "sha256": "209f7a450b6d63488c8b3dd0c24b732b144429b3517453e0d395a19bd912b821",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260527-20260527-ucs_sem_dados.csv",
+      "data": "2026-05-27",
+      "tipo": "MDM",
+      "sha256": "cef35d4c683a1bf54e40acd3787f5b7981037b55ca8418ba69f61e66650406e5",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260527-20260527.csv",
+      "data": "2026-05-27",
+      "tipo": "MDM",
+      "sha256": "b4c60421f96cc71e8159715128215bd30720c506169819bc3b3aa3361cba17c1",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260528-20260601-ucs_sem_dados.csv",
+      "data": "2026-06-01",
+      "tipo": "MDM",
+      "sha256": "cef35d4c683a1bf54e40acd3787f5b7981037b55ca8418ba69f61e66650406e5",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260528-20260601.csv",
+      "data": "2026-06-01",
+      "tipo": "MDM",
+      "sha256": "981e09090ec5c1f4d4457a6471b0eb2cb5adc0d826438d99585d65640a283732",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260602-20260602-ucs_sem_dados.csv",
+      "data": "2026-06-02",
+      "tipo": "MDM",
+      "sha256": "cef35d4c683a1bf54e40acd3787f5b7981037b55ca8418ba69f61e66650406e5",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260602-20260602.csv",
+      "data": "2026-06-02",
+      "tipo": "MDM",
+      "sha256": "35b3649a53b1598e5218b389ee08acd5f763665edb62ac911e3b4f43cfc223fe",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260603-20260603-ucs_sem_dados.csv",
+      "data": "2026-06-03",
+      "tipo": "MDM",
+      "sha256": "cef35d4c683a1bf54e40acd3787f5b7981037b55ca8418ba69f61e66650406e5",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260603-20260603.csv",
+      "data": "2026-06-03",
+      "tipo": "MDM",
+      "sha256": "8eabcc6c25fadb4af08333723244053aa4135354e3f77eeec472090e70aa628c",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260604-20260604-ucs_sem_dados.csv",
+      "data": "2026-06-04",
+      "tipo": "MDM",
+      "sha256": "cef35d4c683a1bf54e40acd3787f5b7981037b55ca8418ba69f61e66650406e5",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260604-20260604.csv",
+      "data": "2026-06-04",
+      "tipo": "MDM",
+      "sha256": "765df8ba94efc0d234d6d3180bc6ec943b000a366131445d6b1c5f6c01624885",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260605-20260605-ucs_sem_dados.csv",
+      "data": "2026-06-05",
+      "tipo": "MDM",
+      "sha256": "cef35d4c683a1bf54e40acd3787f5b7981037b55ca8418ba69f61e66650406e5",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260605-20260605.csv",
+      "data": "2026-06-05",
+      "tipo": "MDM",
+      "sha256": "a0b0616a1c89a615e363d74673933cc17736a3b79464fa93f564d383b6ad3847",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260606-20260606-ucs_sem_dados.csv",
+      "data": "2026-06-06",
+      "tipo": "MDM",
+      "sha256": "cef35d4c683a1bf54e40acd3787f5b7981037b55ca8418ba69f61e66650406e5",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260606-20260606.csv",
+      "data": "2026-06-06",
+      "tipo": "MDM",
+      "sha256": "a0b0616a1c89a615e363d74673933cc17736a3b79464fa93f564d383b6ad3847",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260607-20260607-ucs_sem_dados.csv",
+      "data": "2026-06-07",
+      "tipo": "MDM",
+      "sha256": "cef35d4c683a1bf54e40acd3787f5b7981037b55ca8418ba69f61e66650406e5",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260607-20260607.csv",
+      "data": "2026-06-07",
+      "tipo": "MDM",
+      "sha256": "7c1354651926d4de89d4df89b4ed3c6825055f66d1d2652341162ba1f2d174bc",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260608-20260608.csv",
+      "data": "2026-06-08",
+      "tipo": "MDM",
+      "sha256": "54443fdf2bb8a499c8fd50763c45f7257da5c5773fed63faebd4ef0e6e0a99e1",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260609-20260609.csv",
+      "data": "2026-06-09",
+      "tipo": "MDM",
+      "sha256": "ccd953a2087add9998bb4d17dd0114c24a488ff0d5e9adb3e4ef06ebc9318c43",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260611-202606011.csv",
+      "data": "2026-06-11",
+      "tipo": "MDM",
+      "sha256": "0e4fac29cbcbad87e3ca443c6f3b702f26000b4067e1f4f513807dc5aa952bbe",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260619-20260620.csv",
+      "data": "2026-06-20",
+      "tipo": "MDM",
+      "sha256": "d9d0c1d4892e283866536d1917844c291d6c27451d5e97ddb2a3f12de03185ae",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260620-20260620.csv",
+      "data": "2026-06-20",
+      "tipo": "MDM",
+      "sha256": "d9d0c1d4892e283866536d1917844c291d6c27451d5e97ddb2a3f12de03185ae",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260620-20260630.csv",
+      "data": "2026-06-30",
+      "tipo": "MDM",
+      "sha256": "d9d0c1d4892e283866536d1917844c291d6c27451d5e97ddb2a3f12de03185ae",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes-20260630-20260630.csv",
+      "data": "2026-06-30",
+      "tipo": "MDM",
+      "sha256": "d9d0c1d4892e283866536d1917844c291d6c27451d5e97ddb2a3f12de03185ae",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260701-20260701.csv",
+      "data": "2026-07-01",
+      "tipo": "MDM",
+      "sha256": "618d8fe2c18712bf3de49b0bcc73f8a0b977392851aa8c07b91d27234b85ddbf",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260702-20260702.csv",
+      "data": "2026-07-02",
+      "tipo": "MDM",
+      "sha256": "3f83495e1f5d2f19ea25709458a2637e8c2eee0064664fcf01983ea326935ce0",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260703-20260703.csv",
+      "data": "2026-07-03",
+      "tipo": "MDM",
+      "sha256": "4b2476f91d54b2baa2ade4276a53013d16489f49c2a41ea0558f9676b39c7554",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260704-20260704.csv",
+      "data": "2026-07-04",
+      "tipo": "MDM",
+      "sha256": "4b2476f91d54b2baa2ade4276a53013d16489f49c2a41ea0558f9676b39c7554",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260705-20260705.csv",
+      "data": "2026-07-05",
+      "tipo": "MDM",
+      "sha256": "4b2476f91d54b2baa2ade4276a53013d16489f49c2a41ea0558f9676b39c7554",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260706-20260706.csv",
+      "data": "2026-07-06",
+      "tipo": "MDM",
+      "sha256": "8a462e7c6e72639f82f1577d6029dc6fc26774d7434ed870eb33b31601e3d389",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260707-20260707.csv",
+      "data": "2026-07-07",
+      "tipo": "MDM",
+      "sha256": "7bac67a9588ef339f238ea861ff15a9c71460125d1199da9cf72edea31c2e3df",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260708-20260708.csv",
+      "data": "2026-07-08",
+      "tipo": "MDM",
+      "sha256": "2f3ae52aea2e2964b5e69b44ac5e60d422b6f1094699b6b2f7092381ff109a54",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260709-20260709.csv",
+      "data": "2026-07-09",
+      "tipo": "MDM",
+      "sha256": "7f3325676b8ea24988f055128c0b48d639b535f5b278d0e2790b4c39624cbe00",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260710-20260712.csv",
+      "data": "2026-07-12",
+      "tipo": "MDM",
+      "sha256": "9fc8e2bb260608ce7e7f62d7b0fb2bb6f0f38e6c99b876aca925f16cde0d9bee",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260713-20260713.csv",
+      "data": "2026-07-13",
+      "tipo": "MDM",
+      "sha256": "4318925e913d9ec6fd1d25de50fd15c12caec24d54fa5af242b696cd8f79960c",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260714-20260714.csv",
+      "data": "2026-07-14",
+      "tipo": "MDM",
+      "sha256": "a174a26063618f4b21691a375c1574954f91c0b7a6ee9837ea7e5311c1c6baf9",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260715-20260715.csv",
+      "data": "2026-07-15",
+      "tipo": "MDM",
+      "sha256": "fa888350abe58c16a9ba2e090b26e13376ff4809d2e2338d50d593033aab75da",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260716-20260716.csv",
+      "data": "2026-07-16",
+      "tipo": "MDM",
+      "sha256": "ea3ae1b6b0a17eea548b2e02d7d6ca489d4484a2d7f8b7413aace5ceac631c6c",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260717-20260717.csv",
+      "data": "2026-07-17",
+      "tipo": "MDM",
+      "sha256": "bfc23e41202a8258653d3c8f67fd386287c58b0c1caf3a93faa0031e5f0b9bfd",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260718-20260718.csv",
+      "data": "2026-07-18",
+      "tipo": "MDM",
+      "sha256": "bfc23e41202a8258653d3c8f67fd386287c58b0c1caf3a93faa0031e5f0b9bfd",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260719-20260719.csv",
+      "data": "2026-07-19",
+      "tipo": "MDM",
+      "sha256": "c21b3fba74636c4a0c3790c2e08353cc7fac7125f72a0a2c16a4bc776774ecdc",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260720-20260720.csv",
+      "data": "2026-07-20",
+      "tipo": "MDM",
+      "sha256": "157157a9d13b55513cfb8e963bcb37f72ee8ea668d367ab52c0ce5a8a9c07359",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260721-20260721.csv",
+      "data": "2026-07-21",
+      "tipo": "MDM",
+      "sha256": "e72e9d1eac02458575561e1927a501676418963ee6d00e5463928bb68189fb4a",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260722-20260722.csv",
+      "data": "2026-07-22",
+      "tipo": "MDM",
+      "sha256": "96d17aba6cd693c90965c3cf183b388582c3a9a8534ac7a036f03190a5079ed0",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260723-20260723.csv",
+      "data": "2026-07-23",
+      "tipo": "MDM",
+      "sha256": "bd2109b39c33fe6430ddbeff78a7b7e50273ddf14b6b8d5d183921e596262817",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260724-20260724.csv",
+      "data": "2026-07-24",
+      "tipo": "MDM",
+      "sha256": "0a6b0cee5270d865cf4908753887eb4ecb79d5c0c931f3d9a05c5d6b748adb09",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260725-20260725.csv",
+      "data": "2026-07-25",
+      "tipo": "MDM",
+      "sha256": "6af7188df9cc73a0b8ba3e911fb9799957b0ceab1bbab78d2f2468746b874bc1",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260726-20260726.csv",
+      "data": "2026-07-26",
+      "tipo": "MDM",
+      "sha256": "94fd37715b80b51ce3e9c479af2f2fbc82e24b1b4e54580cc2b74ecd569a554c",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260727-20260727.csv",
+      "data": "2026-07-27",
+      "tipo": "MDM",
+      "sha256": "48a130ce98c7f2c1f59c03e40a200bd572e7accc815a618094ba46b011a94bc7",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260728-20260728.csv",
+      "data": "2026-07-28",
+      "tipo": "MDM",
+      "sha256": "05df30acaf750c0d75f2f6a97e14e1767943f833d68b12fa220b3036153ce1ca",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260729-20260729.csv",
+      "data": "2026-07-29",
+      "tipo": "MDM",
+      "sha256": "e9a5f2352eaf4f06deb6db655c6da02640adb4c0e3006debaa8955d44bee3693",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260730-20260730.csv",
+      "data": "2026-07-30",
+      "tipo": "MDM",
+      "sha256": "02351c39a5a1429ad82d2d9d5049f68281718be7f627a37f3e181b802801495c",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260731-20260731.csv",
+      "data": "2026-07-31",
+      "tipo": "MDM",
+      "sha256": "6c69df7888e8e5e22dcc086bd615cafcb91f5df5388fca8dc855a93714f954fd",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260801-20260803.csv",
+      "data": "2026-08-03",
+      "tipo": "MDM",
+      "sha256": "7992918c00626877fe7a8e308fbe1e8bd6a37b5431e6be0c3fdff618847d6868",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260804-20260804.csv",
+      "data": "2026-08-04",
+      "tipo": "MDM",
+      "sha256": "52cd454dbec35093f436d87a22bf05577438d66f6a1deff3ab1a436aa22a2fa5",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260805-20260805.csv",
+      "data": "2026-08-05",
+      "tipo": "MDM",
+      "sha256": "841ee80c4114d5e68a61f2e65b89347c5c7051f3ef13ad99e9a841f2438ae632",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260806-20260806.csv",
+      "data": "2026-08-06",
+      "tipo": "MDM",
+      "sha256": "913efa61919de9f7ae4c7ce7d5f97d1190578749fcbc75c7ec9a976a049048b8",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260807-20260807.csv",
+      "data": "2026-08-07",
+      "tipo": "MDM",
+      "sha256": "3c19e39ef0e6451feea60433286e1ec5fa2462da2e118835aee3a6c26e4f720b",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260808-20260809.csv",
+      "data": "2026-08-09",
+      "tipo": "MDM",
+      "sha256": "d5a0c6f9f986c3b47003df9d0ab6ee443dd30f966b142f3f320e65dc3c02902c",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260810-20260811.csv",
+      "data": "2026-08-11",
+      "tipo": "MDM",
+      "sha256": "4a65eac8ca516fbb8adbe3cf5d7f4145775b5ceaf961b8b9baf9c179c4c51062",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260812-20260812.csv",
+      "data": "2026-08-12",
+      "tipo": "MDM",
+      "sha256": "7b6cc84693a962f3a5c7cf9331c38a1945a75c374d456503944381911e1466a2",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260813-20260813.csv",
+      "data": "2026-08-13",
+      "tipo": "MDM",
+      "sha256": "0def8f675d47ed09b900bbec1116eee30f812785964b5b481ff7923dee24c110",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260814-20260814.csv",
+      "data": "2026-08-14",
+      "tipo": "MDM",
+      "sha256": "0def8f675d47ed09b900bbec1116eee30f812785964b5b481ff7923dee24c110",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260815-20260815.csv",
+      "data": "2026-08-15",
+      "tipo": "MDM",
+      "sha256": "0def8f675d47ed09b900bbec1116eee30f812785964b5b481ff7923dee24c110",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260816-20260816.csv",
+      "data": "2026-08-16",
+      "tipo": "MDM",
+      "sha256": "0def8f675d47ed09b900bbec1116eee30f812785964b5b481ff7923dee24c110",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260817-20260817.csv",
+      "data": "2026-08-17",
+      "tipo": "MDM",
+      "sha256": "4de5c32b721d0f953fcdad891f3649004e142dc6892d51e4f7b31996d241124d",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260818-20260818.csv",
+      "data": "2026-08-18",
+      "tipo": "MDM",
+      "sha256": "4cfb75818a1323e4cb313b06982e35125a597e615c52d408e75aa2849f12d305",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260819-20260819.csv",
+      "data": "2026-08-19",
+      "tipo": "MDM",
+      "sha256": "0238f11908d925c85abd7ea37318dda8d4039b3431cf4f595d672ca5bb6f6480",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260820-20260820.csv",
+      "data": "2026-08-20",
+      "tipo": "MDM",
+      "sha256": "b11d1760b55201a42cf310be200b690f32bca2aa7cb526b07d7a3e80909aeb66",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260821-20260821.csv",
+      "data": "2026-08-21",
+      "tipo": "MDM",
+      "sha256": "2d369094c7e31af7634974d42b4483b01c690433c63146073fa97297ffd9296c",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260822-20260822.csv",
+      "data": "2026-08-22",
+      "tipo": "MDM",
+      "sha256": "c82cf9c2c239259d25089be3aaa96d348e517a6a0fb1481c11e8e1a63885836b",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260823-20260823.csv",
+      "data": "2026-08-23",
+      "tipo": "MDM",
+      "sha256": "c82cf9c2c239259d25089be3aaa96d348e517a6a0fb1481c11e8e1a63885836b",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260824-20260824.csv",
+      "data": "2026-08-24",
+      "tipo": "MDM",
+      "sha256": "41e5ae175b9183e87fa8533d34dcdb8a755d57b1629fb9dd08ec9b020080f644",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260825-20260825.csv",
+      "data": "2026-08-25",
+      "tipo": "MDM",
+      "sha256": "793791b798242dc8f86df61dc84211789098dc68c6a73afdcadee37bfbcfe741",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260826-20260831.csv",
+      "data": "2026-08-31",
+      "tipo": "MDM",
+      "sha256": "da17aeac3a39efae4ed2e49cbf6c302dad912267cb3e93c250cc03496b9d9c25",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260901-20260901.csv",
+      "data": "2026-09-01",
+      "tipo": "MDM",
+      "sha256": "7db222fb5adae1bd1d55fbbdd3dec79db71ad3270e4c18041b0ee08716c79529",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260902-20260902.csv",
+      "data": "2026-09-02",
+      "tipo": "MDM",
+      "sha256": "ea75cba2ef53e0e026f3dd8cc4212e8268e3d3dedd93e84b02039ba27d07d2f7",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260903-20260903.csv",
+      "data": "2026-09-03",
+      "tipo": "MDM",
+      "sha256": "f1b71eccca98fd7fd3820c0eae0b25b05dde58d3710c71a7803d17a06171a608",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260904-20260904.csv",
+      "data": "2026-09-04",
+      "tipo": "MDM",
+      "sha256": "efecf39c73b78a20e81485ef7fd548d9c56b7e1c6fc71e243f0924959ef41ebb",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260905-20260905.csv",
+      "data": "2026-09-05",
+      "tipo": "MDM",
+      "sha256": "ec7387fcc95c63ead0e39bbe9eba83d0b4b54dcdbd1256157b7eeae77de9dc3c",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260906-20260906.csv",
+      "data": "2026-09-06",
+      "tipo": "MDM",
+      "sha256": "ec7387fcc95c63ead0e39bbe9eba83d0b4b54dcdbd1256157b7eeae77de9dc3c",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260907-20260907.csv",
+      "data": "2026-09-07",
+      "tipo": "MDM",
+      "sha256": "055ca9b5738ca9f6494ad5d23d6783e52975aca7c3b61c9b983c0123fd79e7fb",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260908-20260908.csv",
+      "data": "2026-09-08",
+      "tipo": "MDM",
+      "sha256": "b79c0699ce42ae710f8130df35d9bbafefac471a7e33696d6f071cbd71214317",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260909-20260909.csv",
+      "data": "2026-09-09",
+      "tipo": "MDM",
+      "sha256": "b2234406c29419c9b1245ede5abba694b546a65c4d3d0e41b2876117d87f440b",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260910-20260910.csv",
+      "data": "2026-09-10",
+      "tipo": "MDM",
+      "sha256": "53ae544332ecb239e834670f4013218b4b3fe1c66d71c3da1d5d4e2bb98ce8c8",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260911-20260911.csv",
+      "data": "2026-09-11",
+      "tipo": "MDM",
+      "sha256": "11e4d9bacd4856cb6af10a2b04f7c2446dff61d8d9c6a1034368a6a46190f8a0",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260912-20260913.csv",
+      "data": "2026-09-13",
+      "tipo": "MDM",
+      "sha256": "eb740226bd9078f64d86ac9c379ca08eee947d6b40ecea97af14641edf26322f",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20260914-20260914.csv",
+      "data": "2026-09-14",
+      "tipo": "MDM",
+      "sha256": "88c96389c2887b414cb774d76a9930e1bde0107b556e8211742bbdd55b93f0ec",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20261019-20261019.csv",
+      "data": "2026-10-19",
+      "tipo": "MDM",
+      "sha256": "8d6338b598735f9e4af08d4c66d48831ad45dc4bc9ccb4337b9227f47110d3e9",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20261012-20261020.csv",
+      "data": "2026-10-20",
+      "tipo": "MDM",
+      "sha256": "357aa10b0ebfbd1aa50d810fb7d80923db96b4a8c994d2633d8c529a1d814038",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20261021-20261021.csv",
+      "data": "2026-10-21",
+      "tipo": "MDM",
+      "sha256": "fbfa61fc6d6b06a6c68ebf6abc0483dc17e4e0b1cb8158b975db9c94530e3ed9",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20261022-20261022.csv",
+      "data": "2026-10-22",
+      "tipo": "MDM",
+      "sha256": "777358e7e4f47f259a2ad4e427bd64075832b5f377ff766622967370d9c9fa74",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20261023-20261023.csv",
+      "data": "2026-10-23",
+      "tipo": "MDM",
+      "sha256": "e1dee94b231c19e72f5ca28d2b6002b661b57c4a2d4b038b1517991fd06a85af",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20261024-20261024.csv",
+      "data": "2026-10-24",
+      "tipo": "MDM",
+      "sha256": "985a7965db20d334f648d286f888f84da9e488e0a08931215f4808a7e2282b9d",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20261025-20261025.csv",
+      "data": "2026-10-25",
+      "tipo": "MDM",
+      "sha256": "6c30553bcebc32f6d848378c61b62ea09868dcbeb7d40105d220211e582e0055",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20261026-20261026.csv",
+      "data": "2026-10-26",
+      "tipo": "MDM",
+      "sha256": "e99f228950a7bf3f408a245ce146e80ebdd01ddc186ab41efa26effad5773b54",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20261027-20261027.csv",
+      "data": "2026-10-27",
+      "tipo": "MDM",
+      "sha256": "4b3171ead946537442898b13fb2b70f367ddb7e4b8b6c013c986a68dd48ca8cc",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20261028-20261029.csv",
+      "data": "2026-10-29",
+      "tipo": "MDM",
+      "sha256": "775037e92d2f9ce3dc0234765c11bfee16ecb4ae46bd399f3561389e0f9a45bb",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20261030-20261030.csv",
+      "data": "2026-10-30",
+      "tipo": "MDM",
+      "sha256": "1e3874c9fb3479a33ff29b8a3a2577e8f3d5fea4869b20e0a3c9488167c4eca2",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20261031-20261031.csv",
+      "data": "2026-10-31",
+      "tipo": "MDM",
+      "sha256": "0bde3918a65fdeb99a47690d0c2a924e52b5eecc8310eae7d80428d8c1f7cc7a",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20261101-20261101.csv",
+      "data": "2026-11-01",
+      "tipo": "MDM",
+      "sha256": "0bde3918a65fdeb99a47690d0c2a924e52b5eecc8310eae7d80428d8c1f7cc7a",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "mdm-sandbox_clientes_novo-20261102-20261102.csv",
+      "data": "2026-11-02",
+      "tipo": "MDM",
+      "sha256": "acbea8988a2728a63dcb4430d9d377045a6c9a918e79422fb7612fbb41a7fe56",
+      "status": "INCLUIDO"
+    },
+    {
+      "arquivo": "Amostra Final - Tarifa Mobiflex - 21.07.2026.xlsx",
+      "data": "2025-12-31",
+      "tipo": "AMOSTRA",
+      "sha256": "e5b3c3914b7d4dd54af6bf6a6233636bf85e10336a23dafd35102338e80ca1f8",
+      "status": "AUDITORIA"
+    },
+    {
+      "arquivo": "gd_report_exclusions.json",
+      "data": "",
+      "tipo": "EXCLUSOES",
+      "sha256": "6a3bcdf664b2bd191a167f875e49edc44c6bfaa3d927cb3b02fc262b4b6863f3",
+      "status": "APLICADO"
+    }
+  ],
+  "historico_inicio": "2026-01-01",
+  "experimento_inicio": "2026-03-01",
+  "regra_ausencia": "Ausência não comprova encerramento; nenhuma exclusão automática.",
+  "baseline_limite": "Classificação/potência retrospectivas conforme primeiro export GD; sem histórico de vigência destes campos.",
+  "celulas_alteradas_base_completa": 5639,
+  "ucs_base_completa_atualizadas": 238
 }

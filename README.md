@@ -50,6 +50,80 @@ Acesse `http://localhost:8501` e use o login fornecido pelo administrador.
 
 ## Atualizar a base
 
+### Fluxo integrado Cadastro / GD / duas bases
+
+O comando `python update_base.py` agora reconstrói o histórico a partir de
+`../Cadastro`, gera a posição GD mais recente e atualiza **as duas bases**:
+`base_consolidada_BI.csv`, sem dados pessoais diretos, e
+`../base_consolidada_copel.xlsx`, mantendo os dados privados e campos de projeto.
+Também gera `../Cadastro/gd_report_atual/Relatorio_GD_Atual.xlsx` e suas tabelas CSV.
+O escopo permanece exatamente nas UCs já presentes no BI; vínculos externos são
+contexto e não acrescentam UCs à população. As demais linhas da base completa
+permanecem preservadas.
+
+Na pasta Copel, prepare o ambiente e execute:
+
+```powershell
+python -m venv .cadastro-venv
+.\.cadastro-venv\Scripts\python.exe -m pip install -r BI-Cadastro/requirements.txt
+.\.cadastro-venv\Scripts\python.exe BI-Cadastro/update_base.py --dry-run
+.\.cadastro-venv\Scripts\python.exe BI-Cadastro/update_base.py
+```
+
+`atualizar_base_consolidada_copel.py` e `Cadastro/build_gd_report.py` chamam o
+mesmo fluxo. A execução com `--dry-run` prepara os resultados em
+`data/backups/pipeline-staging`, sem substituir as bases. Antes da substituição,
+as saídas existentes são copiadas para `data/backups/<data-hora>`; em falha na
+substituição, o fluxo restaura as saídas já alteradas. Não faça commit dessa pasta.
+
+Novas exportações completas devem ficar em `../Cadastro/DADOS_GD_GERAL`:
+`YYYY-MM-DD-consulta_GD.csv`, `YYYY-MM-DD-consulta_BEN.csv` e
+`YYYY-MM-DD-consulta_UC.csv`. Lotes incompletos são sinalizados; a posição atual
+continua no último lote completo. Os arquivos MDM históricos ficam em Cadastro;
+arquivos MDM em `data/` complementam datas não presentes nessa pasta. O export
+anual sem data confiável é excluído e a correção conhecida de `202606011` é mantida.
+Fontes originais não são higienizadas nem regravadas pelo novo fluxo.
+
+A baseline usa `Amostra Final - Tarifa Mobiflex - 21.07.2026.xlsx` como referência
+de 31/12/2025, auditada contra o primeiro export completo de GD. A fonte GD tem
+precedência; divergências ficam em `gd_auditoria_baseline.csv`. Datas cadastradas
+permitem reconstrução retrospectiva, mas potência e classificação não têm vigência
+histórica própria: sua condição em 2025 não pode ser certificada apenas pelo
+export de outubro. Correções de baseline não são novas entradas em 2026.
+
+Na amostra real, `GD2` do Grupo Experimental e `Qual GD (GDI, GDII, GDI/GDII)`
+do Grupo Controle e Reservas são declarações de tipo, sem distinguir UC geradora
+de beneficiária. `0`/`Sem GD` indicam ausência declarada; `?` e vazios permanecem
+desconhecidos. A coluna `Se tem ou Não GD` contém identificadores de UC e não é
+usada como indicador. A auditoria registra aba, linha, coluna e valor original,
+inclusive as composições GDI/GDII. Ausência de informação não conta como erro.
+Uma geradora sem data de solicitação aparece como primeira observação no export;
+sua presença em 2025 não é presumida.
+
+Regras aprovadas: início geradora = `DTA_SOL_ACES_KCG`; início beneficiária =
+`DTA_INC_XBG`; potência em kW. A maior potência conflitante é adotada com
+`REVISAO_MANUAL=S` e motivo em `STATUS_QUALIDADE`. Linhas GDI/GDII são deduplicadas
+por registro e `PCT_DIS_KCD` divide a potência; `PCT_RAT_XBG` é rateio de créditos.
+Ausência no export não comprova encerramento. Benefício próprio só existe quando
+registrado na fonte. Potência externa associada não deve ser somada entre UCs.
+
+As saídas `gd_atual`, `gd_snapshots`, `gd_vinculos`, `gd_historico_2026`,
+`gd_qualidade`, `gd_auditoria_baseline` e `gd_manifesto` alimentam a página GD.
+`historico_alertas.csv` inclui todo 2026, com filtro do experimento desde março.
+Alertas identificam data cadastrada, data observada, intervalo de observações,
+arquivos anterior/atual, reconstruções e condições persistentes. A primeira
+observação de um campo não é uma mudança, exceto evento explicitamente datado.
+MDM e GD mostram suas datas separadamente.
+
+Teste as regras e o fluxo completo com:
+
+```powershell
+.\.cadastro-venv\Scripts\python.exe -m unittest discover -s BI-Cadastro -p test_cadastro_pipeline.py -v
+```
+
+O procedimento abaixo descreve o atualizador legado, mantido apenas como
+referência. Para novas atualizações, use o fluxo integrado acima.
+
 1. Coloque o novo relatório na pasta `data` com o nome
    `mdm-sandbox_clientes_novo-YYYYMMDD-YYYYMMDD.csv`.
 2. Execute:

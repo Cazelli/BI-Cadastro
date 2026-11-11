@@ -752,4 +752,6 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    # One entry point now updates both consolidated bases and replays Cadastro.
+    from cadastro_pipeline import main as pipeline_main
+    pipeline_main()
