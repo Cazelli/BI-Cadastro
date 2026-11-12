@@ -372,6 +372,39 @@ gd_dashboard.render(frame, pd.Timestamp('2026-10-29'), lambda fig, height: fig.u
         app.radio[0].set_value("Data de referência da barra lateral").run(timeout=30)
         self.assertEqual(list(app.exception), [])
 
+    def test_gd_page_refreshes_a_cached_legacy_module(self):
+        import importlib
+        import gd_dashboard
+        from streamlit.testing.v1 import AppTest
+        self.addCleanup(importlib.reload, gd_dashboard)
+        source = Path(__file__).with_name("app.py").read_text(encoding="utf-8")
+        source = source.split("\ninject_css()\n", 1)[0]
+        source = source.replace("Path(__file__)", f"Path({str(Path(__file__).with_name('app.py'))!r})")
+        source += f'''
+import gd_dashboard
+gd_dashboard.LAYOUT_VERSION = "legacy"
+gd_dashboard.render = lambda *args: st.metric("Potência própria", "999")
+dashboard = load_gd_dashboard()
+assert dashboard.LAYOUT_VERSION == GD_LAYOUT_VERSION
+original_data = dashboard.DATA
+dashboard.DATA = Path({str(self.folder)!r})
+try:
+    gd_page(pd.DataFrame([
+        dict(NUM_UC='101', SITUACAO_INICIAL='Ativo', SITUACAO_ATUAL='Ativo'),
+        dict(NUM_UC='202', SITUACAO_INICIAL='Controle', SITUACAO_ATUAL='Controle')]),
+        pd.Timestamp('2026-10-29'))
+finally:
+    dashboard.DATA = original_data
+'''
+        app = AppTest.from_string(source).run(timeout=30)
+        self.assertEqual(list(app.exception), [])
+        self.assertEqual(len(app.metric), 8)
+        self.assertEqual(app.metric[4].label, "Potência média (kW)")
+        self.assertNotIn("Potência própria", [metric.label for metric in app.metric])
+        self.assertEqual(app.multiselect(key="gd_groups").options, ["Tratamento", "Controle", "Reserva"])
+        self.assertEqual(app.multiselect(key="gd_types").options, ["GDI", "GDII", "GDI/GDII"])
+        self.assertTrue(any("GD-2026.11.11.2" in caption.value for caption in app.caption))
+
     def test_power_averages_use_own_capacity_and_positive_classification_portions(self):
         from gd_dashboard import own_power, average_power_by_type, type_category
         frame = pd.DataFrame([

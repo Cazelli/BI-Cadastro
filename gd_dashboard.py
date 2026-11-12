@@ -8,6 +8,7 @@ import plotly.express as px
 import streamlit as st
 
 DATA = Path(__file__).with_name("data")
+LAYOUT_VERSION = "GD-2026.11.11.2"
 
 
 @st.cache_data
@@ -138,6 +139,7 @@ def render(frame, reference_date, chart_style, plotly_config):
     current["Grupo"] = current["SITUACAO_ATUAL"].replace({"Ativo": "Tratamento"})
     current["Grupo de origem"] = current.get("SITUACAO_INICIAL", current["SITUACAO_ATUAL"]).replace({"Ativo": "Tratamento"})
     current["Tipo de GD"] = current.apply(type_category, axis=1) if not current.empty else pd.Series(index=current.index, dtype=str)
+    st.caption(f"Versão do painel: {LAYOUT_VERSION}")
     filters = st.columns(2)
     selected_groups = filters[0].multiselect("Grupo", ["Tratamento", "Controle", "Reserva"],
         default=["Tratamento", "Controle", "Reserva"], key="gd_groups",

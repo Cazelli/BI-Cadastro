@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import hmac
+import importlib
 import json
 import mimetypes
 from pathlib import Path
@@ -22,6 +23,7 @@ UPDATE_ALERT_FILE = Path(__file__).with_name("data") / "ultima_atualizacao_alert
 UPDATE_HISTORY_FILE = Path(__file__).with_name("data") / "historico_alertas.csv"
 UPDATE_SUMMARY_FILE = Path(__file__).with_name("data") / "ultima_atualizacao_resumo.json"
 GD_MANIFEST_FILE = Path(__file__).with_name("data") / "gd_manifesto.json"
+GD_LAYOUT_VERSION = "GD-2026.11.11.2"
 MEASUREMENT_DIR = Path(__file__).with_name("relatorio_medicao")
 MEASUREMENT_ALERT_FILE = MEASUREMENT_DIR / "relatorio_alertas_por_uc.csv"
 MEASUREMENT_GAPS_FILE = MEASUREMENT_DIR / "detalhe_gaps.csv"
@@ -53,6 +55,17 @@ PLOTLY_CONFIG = {
 }
 
 st.set_page_config(page_title=APP_TITLE, page_icon="⚡", layout="wide")
+
+
+def load_gd_dashboard():
+    """Refresh a GD module retained by a running server after an update."""
+    module = importlib.import_module("gd_dashboard")
+    if getattr(module, "LAYOUT_VERSION", None) != GD_LAYOUT_VERSION:
+        importlib.invalidate_caches()
+        module = importlib.reload(module)
+    if module.LAYOUT_VERSION != GD_LAYOUT_VERSION:
+        raise RuntimeError("Os arquivos app.py e gd_dashboard.py precisam ser atualizados juntos.")
+    return module
 
 
 def inject_css() -> None:
@@ -755,7 +768,7 @@ def executive_page(frame: pd.DataFrame, gd_reference_date: pd.Timestamp) -> None
     valid_filtered_gd = gd_started_before_reference & ~same_benefit_start_and_end
     gd_manifest = Path(__file__).with_name("data") / "gd_manifesto.json"
     if gd_manifest.exists():
-        from gd_dashboard import load_gd
+        load_gd = load_gd_dashboard().load_gd
         gd_files = ("gd_atual.csv", "gd_snapshots.csv", "gd_vinculos.csv", "gd_historico_2026.csv", "gd_qualidade.csv", "gd_auditoria_baseline.csv", "gd_manifesto.json")
         gd_dir = gd_manifest.parent
         gd_frames, _ = load_gd(tuple((gd_dir / filename).stat().st_mtime_ns for filename in gd_files))
@@ -1716,9 +1729,9 @@ def gd_page(frame: pd.DataFrame, reference_date: pd.Timestamp | None = None) -> 
     title(
         "Energia",
         "Geração distribuída",
-        "Compare a composição e os vínculos de GD entre Tratamento e Controle.",
+        "Compare a composição e os vínculos de GD entre Tratamento, Controle e Reserva.",
     )
-    from gd_dashboard import render
+    render = load_gd_dashboard().render
     if render(frame, reference_date or PROJECT_START_DATE, chart_style, PLOTLY_CONFIG):
         return
     status_labels = {"Ativo": "Tratamento", "Controle": "Controle"}
