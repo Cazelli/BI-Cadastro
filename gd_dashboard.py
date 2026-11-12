@@ -1,6 +1,7 @@
 """Streamlit views for the generated, privacy-filtered Cadastro/GD datasets."""
 from pathlib import Path
 import json
+import re
 
 import pandas as pd
 import plotly.express as px
@@ -21,6 +22,60 @@ def load_gd(mtimes):
 def download(frame, name, key):
     st.download_button("Baixar CSV", frame.to_csv(index=False, sep=";").encode("utf-8-sig"),
                        name, "text/csv", key=key)
+
+
+def type_category(row):
+    if row["GD_GERADORA"] == "S":
+        value = row["TIPO_GD_GERA"]
+    elif row["GD_BENEFICIARIA"] == "S":
+        value = row["TIPO_GD_BENE"]
+    else:
+        return "Sem GD identificada"
+    types = set(re.findall(r"\bGDII?\b", str(value).upper()))
+    return "GDI/GDII" if types == {"GDI", "GDII"} else next(iter(types)) if len(types) == 1 else "Não informado"
+
+
+def own_power(current):
+    generators = current[current["GD_GERADORA"].eq("S")].drop_duplicates("NUM_UC").set_index("NUM_UC")
+    power = pd.to_numeric(generators["POTENCIA_INSTALADA_KW"], errors="coerce")
+    return power[power.ge(0)].dropna()
+
+
+def average_power_by_type(current):
+    generators = current[current["GD_GERADORA"].eq("S")].drop_duplicates("NUM_UC")
+    result = []
+    for label, column in [("GDI", "POTENCIA_GDI_KW"), ("GDII", "POTENCIA_GDII_KW"),
+                          ("Outros", "POTENCIA_OUTROS_KW"), ("Sem classificação", "POTENCIA_SEM_CLASSIFICACAO_KW")]:
+        values = pd.to_numeric(generators[column], errors="coerce")
+        values = values[values.gt(0)].dropna()
+        if not values.empty:
+            result.append({"Classificação": label, "Potência média (kW)": values.mean(), "UCs geradoras": len(values)})
+    return pd.DataFrame(result, columns=["Classificação", "Potência média (kW)", "UCs geradoras"])
+
+
+def power_label(value):
+    return "—" if pd.isna(value) else f"{value:,.2f}"
+
+
+def render_cards(current):
+    generator = current["GD_GERADORA"].eq("S")
+    beneficiary = current["GD_BENEFICIARIA"].eq("S")
+    count = lambda mask: current.loc[mask, "NUM_UC"].nunique()
+    cards = st.columns(4)
+    cards[0].metric("UCs geradoras", count(generator), help="UCs distintas com geração própria na posição e nos filtros selecionados. Inclui as que também são beneficiárias.")
+    cards[1].metric("UCs beneficiárias", count(beneficiary), help="UCs distintas com vínculo de beneficiária no BEN, incluindo vínculo com a própria UC e rateio cadastrado de 0%. Inclui as que também geram; não comprova recebimento de créditos.")
+    cards[2].metric("UCs geradoras e beneficiárias", count(generator & beneficiary), help="UCs que têm geração própria e também um vínculo de beneficiária, com a própria geração ou com outra UC geradora. É a interseção dos dois primeiros cards.")
+    cards[3].metric("UCs para revisão", count(current["REVISAO_MANUAL"].eq("S")), help="UCs com informações pendentes ou exceções que exigem revisão manual, na posição e nos filtros selecionados.")
+    power = own_power(current)
+    extra = st.columns(4)
+    extra[0].metric("Potência média (kW)", power_label(power.mean()), help="Média aritmética da potência própria por UC geradora com valor conhecido. Cada UC entra uma vez. Beneficiárias sem geração própria e potências externas associadas não entram; valores ausentes não viram zero.")
+    extra[1].metric("Potência máxima (kW)", power_label(power.max()), help="Maior potência própria de uma única UC geradora no recorte. A UC aparece abaixo. Usa a potência consolidada, incluindo as exceções aprovadas e sinalizadas.")
+    extra[2].metric("Potência mínima (kW)", power_label(power.min()), help="Menor potência própria conhecida entre as UCs geradoras do recorte. Valores ausentes são excluídos; uma potência conhecida de zero é mantida.")
+    extra[3].metric("Total de UCs com GD", count(generator | beneficiary), help="UCs geradoras ou beneficiárias, contadas uma única vez. Uma UC com os dois perfis não é duplicada: geradoras + beneficiárias − geradoras e beneficiárias.")
+    if not power.empty:
+        for card, value in ((extra[1], power.max()), (extra[2], power.min())):
+            ucs = sorted(power[power.eq(value)].index.astype(str))
+            card.caption("UC(s): " + ", ".join(ucs[:4]) + (f" e mais {len(ucs) - 4}" if len(ucs) > 4 else ""))
 
 
 def history_view(history, key="gd"):
@@ -64,7 +119,8 @@ def render(frame, reference_date, chart_style, plotly_config):
     st.caption(f"GD/BEN/UC: {manifest['data_gd']} · MDM: {manifest['periodo_fim']} · Potência em kW · População: UCs da base BI")
     if manifest.get("lote_gd_incompleto"):
         st.warning(f"O lote de {manifest['data_ultimo_arquivo_gd']} está incompleto. A posição atual usa o último lote completo, de {manifest['data_gd']}.")
-    mode = st.radio("Posição de GD", ["Último export completo", "Data de referência da barra lateral"], horizontal=True)
+    mode = st.radio("Posição de GD", ["Último export completo", "Data de referência da barra lateral"], horizontal=True,
+                    key="gd_position_mode")
     current = frames["gd_atual"]
     if mode.startswith("Data"):
         snapshots = frames["gd_snapshots"]
@@ -76,34 +132,45 @@ def render(frame, reference_date, chart_style, plotly_config):
         current = eligible[eligible["DATA_REFERENCIA"].eq(snapshot_date)]
         st.caption(f"Última posição disponível até a referência: {snapshot_date}. {manifest['baseline_limite']}")
     current = current[current["NUM_UC"].isin(scope)].copy()
+    groups = frame[["NUM_UC", "SITUACAO_ATUAL", *(["SITUACAO_INICIAL"] if "SITUACAO_INICIAL" in frame else [])]].copy()
+    groups["NUM_UC"] = groups["NUM_UC"].astype(str)
+    current = current.merge(groups, on="NUM_UC", how="left", validate="one_to_one")
+    current["Grupo"] = current["SITUACAO_ATUAL"].replace({"Ativo": "Tratamento"})
+    current["Grupo de origem"] = current.get("SITUACAO_INICIAL", current["SITUACAO_ATUAL"]).replace({"Ativo": "Tratamento"})
+    current["Tipo de GD"] = current.apply(type_category, axis=1) if not current.empty else pd.Series(index=current.index, dtype=str)
+    filters = st.columns(2)
+    selected_groups = filters[0].multiselect("Grupo", ["Tratamento", "Controle", "Reserva"],
+        default=["Tratamento", "Controle", "Reserva"], key="gd_groups",
+        help="Grupo de origem da UC. UCs removidas continuam no seu grupo original e aparecem como Removido no gráfico de situação. Seleção vazia inclui todos os grupos.")
+    selected_types = filters[1].multiselect("Tipo de GD", ["GDI", "GDII", "GDI/GDII"], key="gd_types",
+        placeholder="Todos os tipos",
+        help="GDI e GDII selecionam tipos exclusivos; GDI/GDII seleciona UCs com os dois tipos. Para geradoras, considera a GD própria; para UCs apenas beneficiárias, os tipos das geradoras vinculadas. Vazio inclui todos, inclusive tipo desconhecido e UCs sem GD.")
+    if selected_groups:
+        current = current[current["Grupo de origem"].isin(selected_groups)].copy()
+    if selected_types:
+        current = current[current["Tipo de GD"].isin(selected_types)].copy()
+    scope = set(current["NUM_UC"])
     history = frames["gd_historico_2026"]
     history = history[history["NUM_UC"].isin(scope)]
-    cards = st.columns(4)
-    cards[0].metric("UCs geradoras", int(current["GD_GERADORA"].eq("S").sum()))
-    cards[1].metric("UCs beneficiárias", int(current["GD_BENEFICIARIA"].eq("S").sum()))
-    installed = pd.to_numeric(current["POTENCIA_INSTALADA_KW"], errors="coerce").sum()
-    cards[2].metric("Potência própria (kW)", f"{installed:,.2f}", help="Uma potência por UC geradora. Por padrão, conflitos usam o maior valor. A exceção aprovada para 93911335 soma as potências ativas e mantém revisão; consulte REGRA_POTENCIA_GD. Valores desconhecidos não entram no total.")
-    cards[3].metric("UCs para revisão", int(current["REVISAO_MANUAL"].eq("S").sum()))
-    entries = history[history["CAMPO"].isin(["GD_GERADORA", "GD_BENEFICIARIA"]) & history["VALOR_NOVO"].eq("S")]
-    dated = entries[entries["BASE_DATA"].isin(["Data cadastrada", "Reconstrução por data cadastrada"])]
-    extra = st.columns(3)
-    extra[0].metric("UCs com entrada GD datada em 2026", dated["NUM_UC"].nunique(), help="Data de solicitação para geradoras; data de inclusão para beneficiárias, conforme regra acordada. Não certifica comissionamento.")
-    extra[1].metric("UCs com entrada GD por observação", entries[~entries.index.isin(dated.index)]["NUM_UC"].nunique())
-    extra[2].metric("Mudanças de potência em 2026", int(history["CAMPO"].eq("POTENCIA_INSTALADA_KW").sum()))
+    render_cards(current)
+    if current.empty:
+        st.info("Nenhuma UC corresponde aos filtros de grupo e tipo de GD selecionados.")
+        return True
     tabs = st.tabs(["Posição e potência", "Histórico 2026", "Consulta por UC", "Qualidade e baseline"])
     with tabs[0]:
-        groups = frame[["NUM_UC", "SITUACAO_ATUAL"]].copy()
-        groups["NUM_UC"] = groups["NUM_UC"].astype(str)
-        display = current.merge(groups, on="NUM_UC", how="left")
-        display["Grupo"] = display["SITUACAO_ATUAL"].replace({"Ativo": "Tratamento"})
+        display = current.copy()
         chart = display.groupby(["Grupo", "PERFIL_GD"]).size().reset_index(name="UCs")
         fig = px.bar(chart, x="Grupo", y="UCs", color="PERFIL_GD", barmode="group", text="UCs", labels={"PERFIL_GD": "Perfil GD"}, color_discrete_sequence=["#F5821E", "#FDB422", "#69727D", "#3F444B"])
         st.plotly_chart(chart_style(fig, 400), width="stretch", config=plotly_config)
-        powers = pd.DataFrame({"Classificação": ["GDI", "GDII", "Outros", "Sem classificação"],
-            "kW": [pd.to_numeric(current[c], errors="coerce").sum() for c in ["POTENCIA_GDI_KW", "POTENCIA_GDII_KW", "POTENCIA_OUTROS_KW", "POTENCIA_SEM_CLASSIFICACAO_KW"]]})
-        fig = px.bar(powers, x="Classificação", y="kW", text_auto=".2f", color="Classificação", color_discrete_sequence=["#F5821E", "#FDB422", "#69727D", "#3F444B"])
-        st.plotly_chart(chart_style(fig, 350), width="stretch", config=plotly_config)
-        st.caption("GDI/GDII usa PCT_DIS_KCD. PCT_RAT_XBG representa rateio de créditos. Potência externa associada é contexto cadastral e não deve ser somada entre beneficiárias; não representa energia em kWh.")
+        powers = average_power_by_type(current)
+        if powers.empty:
+            st.info("Nenhuma potência própria de UC geradora conhecida para comparar por classificação.")
+        else:
+            fig = px.bar(powers, x="Classificação", y="Potência média (kW)", text_auto=".2f", color="Classificação",
+                         hover_data=["UCs geradoras"], title="Potência média por tipo de GD",
+                         color_discrete_sequence=["#F5821E", "#FDB422", "#69727D", "#3F444B"])
+            st.plotly_chart(chart_style(fig, 350), width="stretch", config=plotly_config)
+        st.caption("Média da parcela de potência entre UCs geradoras que possuem essa classificação com valor maior que zero. Uma UC GDI/GDII participa de cada tipo com sua respectiva parcela. Potência de geradores externos vinculados a beneficiárias não entra nas médias.")
         review_only = st.checkbox("Mostrar somente UCs para revisão", key="gd_current_review")
         table = display[display["REVISAO_MANUAL"].eq("S")] if review_only else display
         st.dataframe(table, width="stretch", hide_index=True)

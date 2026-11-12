@@ -21,6 +21,7 @@ PARANA_BOUNDARY_FILE = ASSET_DIR / "parana_contorno.geojson"
 UPDATE_ALERT_FILE = Path(__file__).with_name("data") / "ultima_atualizacao_alertas.csv"
 UPDATE_HISTORY_FILE = Path(__file__).with_name("data") / "historico_alertas.csv"
 UPDATE_SUMMARY_FILE = Path(__file__).with_name("data") / "ultima_atualizacao_resumo.json"
+GD_MANIFEST_FILE = Path(__file__).with_name("data") / "gd_manifesto.json"
 MEASUREMENT_DIR = Path(__file__).with_name("relatorio_medicao")
 MEASUREMENT_ALERT_FILE = MEASUREMENT_DIR / "relatorio_alertas_por_uc.csv"
 MEASUREMENT_GAPS_FILE = MEASUREMENT_DIR / "detalhe_gaps.csv"
@@ -213,11 +214,11 @@ def render_data_disclaimer() -> None:
     baseline_text = "Amostra Final - Tarifa Mobiflex - 21.07.2026"
     if gd_manifest.exists():
         gd_summary = json.loads(gd_manifest.read_text(encoding="utf-8"))
-        gd_text = f" · GD/BEN/UC: {gd_summary.get('data_gd', 'não identificada')}"
+        gd_text = f" · GD/BEN: {gd_summary.get('data_gd', 'não identificada')}"
         baseline_text = gd_summary.get("arquivo_baseline", baseline_text)
     st.markdown(
         '<div class="data-disclaimer">'
-        f"MDM: {formatted_date}{gd_text} · Baseline auditada: {baseline_text}"
+        f"Cadastro: {formatted_date}{gd_text} · Base: {baseline_text}"
         "</div>",
         unsafe_allow_html=True,
     )
@@ -486,6 +487,17 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
         args=(period_dates,),
     )
 
+    status_reference_date = gd_reference_date
+    if (
+        page == "Geração distribuída"
+        and st.session_state.get("gd_position_mode", "Último export completo") == "Último export completo"
+        and GD_MANIFEST_FILE.exists()
+    ):
+        gd_summary = json.loads(GD_MANIFEST_FILE.read_text(encoding="utf-8"))
+        latest_gd_date = pd.to_datetime(gd_summary.get("data_gd"), errors="coerce")
+        if pd.notna(latest_gd_date):
+            status_reference_date = latest_gd_date
+
     reference_frame = frame.copy()
     if page != "UCs removidas":
         reference_frame["SITUACAO_ATUAL"] = reference_frame[
@@ -493,9 +505,12 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
         ].fillna(reference_frame["SITUACAO_ATUAL"])
         removed_by_reference_date = (
             reference_frame["DT_DISTRATO"].notna()
-            & reference_frame["DT_DISTRATO"].le(gd_reference_date)
+            & reference_frame["DT_DISTRATO"].le(status_reference_date)
         )
         reference_frame.loc[removed_by_reference_date, "SITUACAO_ATUAL"] = "Removido"
+
+    if page == "Geração distribuída":
+        st.sidebar.caption(f"Situação das UCs em {status_reference_date:%d/%m/%Y}, conforme a posição de GD selecionada.")
 
     status_options = list(
         dict.fromkeys(
@@ -508,7 +523,7 @@ def sidebar_filters(frame: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestam
         "SITUACAO_ATUAL": st.sidebar.multiselect(
             "Situação atual",
             status_options,
-            help="Situação calculada conforme a data de referência e o DT_DISTRATO.",
+            help="Situação calculada pelo DT_DISTRATO. Na página GD, usa a data da posição de GD selecionada; nas demais páginas, a data de referência.",
         ),
         "LOCAL": st.sidebar.multiselect(
             "Município", options_for(reference_frame, "LOCAL")

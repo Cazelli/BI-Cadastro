@@ -133,6 +133,24 @@ Alertas identificam data cadastrada, data observada, intervalo de observações,
 arquivos anterior/atual, reconstruções e condições persistentes. A primeira
 observação de um campo não é uma mudança, exceto evento explicitamente datado.
 MDM e GD mostram suas datas separadamente.
+Na página GD, `Último export completo` usa a data desse export também para
+calcular a situação das UCs e os grupos do gráfico. O modo histórico usa a data
+escolhida na barra lateral. Remoção do experimento não encerra a GD da UC.
+
+Os filtros locais de GD permitem combinar Tratamento/Controle/Reserva e tipos
+exclusivos GDI, GDII ou mistos GDI/GDII. O grupo é o de origem: UCs removidas
+continuam disponíveis no grupo original. Para geradoras, o tipo é da GD própria;
+para UCs apenas beneficiárias, vem das geradoras vinculadas. Todos os grupos são
+selecionados inicialmente; seleção vazia inclui todos. O recorte vale para cards,
+gráficos, consultas, histórico e downloads.
+
+Os oito cards mostram geradoras, beneficiárias, a interseção desses perfis,
+revisão, potência média/máxima/mínima e a união de UCs com GD. Cada card tem ajuda
+com a regra de cálculo. As estatísticas de potência usam valores conhecidos da
+geração própria, uma vez por UC, incluindo exceções sinalizadas; potência de
+geradores externos não entra. Sem valor conhecido, o card mostra `—`. O gráfico
+usa a média da parcela de potência por classificação, entre geradoras que têm
+essa parcela positiva; uma UC mista participa de GDI e GDII com suas parcelas.
 
 Teste as regras e o fluxo completo com:
 

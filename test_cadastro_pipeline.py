@@ -372,6 +372,80 @@ gd_dashboard.render(frame, pd.Timestamp('2026-10-29'), lambda fig, height: fig.u
         app.radio[0].set_value("Data de referência da barra lateral").run(timeout=30)
         self.assertEqual(list(app.exception), [])
 
+    def test_power_averages_use_own_capacity_and_positive_classification_portions(self):
+        from gd_dashboard import own_power, average_power_by_type, type_category
+        frame = pd.DataFrame([
+            dict(NUM_UC="101", GD_GERADORA="S", POTENCIA_INSTALADA_KW="10", POTENCIA_GDI_KW="10", POTENCIA_GDII_KW="0", POTENCIA_OUTROS_KW="", POTENCIA_SEM_CLASSIFICACAO_KW=""),
+            dict(NUM_UC="303", GD_GERADORA="S", POTENCIA_INSTALADA_KW="20", POTENCIA_GDI_KW="12", POTENCIA_GDII_KW="8", POTENCIA_OUTROS_KW="0", POTENCIA_SEM_CLASSIFICACAO_KW="0"),
+            dict(NUM_UC="404", GD_GERADORA="S", POTENCIA_INSTALADA_KW="30", POTENCIA_GDI_KW="0", POTENCIA_GDII_KW="30", POTENCIA_OUTROS_KW="0", POTENCIA_SEM_CLASSIFICACAO_KW="0"),
+            dict(NUM_UC="606", GD_GERADORA="S", POTENCIA_INSTALADA_KW="", POTENCIA_GDI_KW="", POTENCIA_GDII_KW="", POTENCIA_OUTROS_KW="", POTENCIA_SEM_CLASSIFICACAO_KW=""),
+            dict(NUM_UC="202", GD_GERADORA="N", POTENCIA_INSTALADA_KW="", POTENCIA_GDI_KW="", POTENCIA_GDII_KW="", POTENCIA_OUTROS_KW="", POTENCIA_SEM_CLASSIFICACAO_KW="", POTENCIA_EXTERNA_ASSOCIADA_KW="300"),
+        ])
+        self.assertEqual(own_power(frame).mean(), 20)
+        powers = average_power_by_type(frame).set_index("Classificação")
+        self.assertEqual(powers.at["GDI", "Potência média (kW)"], 11)
+        self.assertEqual(powers.at["GDII", "Potência média (kW)"], 19)
+        self.assertEqual(powers.at["GDI", "UCs geradoras"], 2)
+        self.assertEqual(type_category(dict(GD_GERADORA="S", GD_BENEFICIARIA="S", TIPO_GD_GERA="GDII", TIPO_GD_BENE="GDI")), "GDII")
+        self.assertEqual(type_category(dict(GD_GERADORA="N", GD_BENEFICIARIA="S", TIPO_GD_GERA="", TIPO_GD_BENE="GDI | GDII")), "GDI/GDII")
+
+    def test_gd_group_type_filters_update_all_eight_cards_and_handle_unknown_power(self):
+        from streamlit.testing.v1 import AppTest
+        gd = {"101": [generator()],
+              "303": [{**generator(power="20", typ="GDI", percentage="60"), "COD_UN_CONS_UEE": "303"},
+                      {**generator(power="20", typ="GDII", percentage="40"), "COD_UN_CONS_UEE": "303"}],
+              "404": [{**generator(power="30", typ="GDII"), "COD_UN_CONS_UEE": "404"}],
+              "606": [{**generator(power="", typ="GDII"), "COD_UN_CONS_UEE": "606"}]}
+        pairs = {("101", "202"): [beneficiary()], ("303", "303"): [beneficiary(gen="303", ben="303", power="20")]}
+        links = enrich_links(link_states(pairs, "2026-10-29", "BEN.csv", "2026-10-29"), gd, "2026-10-29")
+        states = make_states({"101", "202", "303", "404", "505", "606"}, gd, links, "2026-10-29", "2026-10-29", "GD.csv", "BEN.csv")
+        for name in ("gd_atual.csv", "gd_snapshots.csv"):
+            write_rows(self.folder / name, states.values())
+        write_rows(self.folder / "gd_vinculos.csv", links.values())
+        script = f'''
+from pathlib import Path
+import pandas as pd
+import gd_dashboard
+gd_dashboard.DATA = Path({str(self.folder)!r})
+frame = pd.DataFrame([
+ dict(NUM_UC='101', SITUACAO_INICIAL='Ativo', SITUACAO_ATUAL='Ativo'),
+ dict(NUM_UC='202', SITUACAO_INICIAL='Controle', SITUACAO_ATUAL='Controle'),
+ dict(NUM_UC='303', SITUACAO_INICIAL='Reserva', SITUACAO_ATUAL='Reserva'),
+ dict(NUM_UC='404', SITUACAO_INICIAL='Ativo', SITUACAO_ATUAL='Removido'),
+ dict(NUM_UC='505', SITUACAO_INICIAL='Controle', SITUACAO_ATUAL='Controle'),
+ dict(NUM_UC='606', SITUACAO_INICIAL='Controle', SITUACAO_ATUAL='Controle')])
+gd_dashboard.render(frame, pd.Timestamp('2026-10-29'), lambda fig, height: fig.update_layout(height=height), {{}})
+'''
+        app = AppTest.from_string(script).run(timeout=30)
+        labels = ["UCs geradoras", "UCs beneficiárias", "UCs geradoras e beneficiárias", "UCs para revisão",
+                  "Potência média (kW)", "Potência máxima (kW)", "Potência mínima (kW)", "Total de UCs com GD"]
+        self.assertEqual(list(app.exception), [])
+        self.assertEqual([metric.label for metric in app.metric], labels)
+        self.assertEqual([metric.value for metric in app.metric], ["4", "2", "1", "1", "20.00", "30.00", "10.00", "5"])
+        self.assertTrue(all(metric.proto.help for metric in app.metric))
+        app.multiselect(key="gd_groups").set_value(["Tratamento", "Controle"]).run(timeout=30)
+        self.assertEqual(list(app.exception), [])
+        self.assertEqual(app.metric[0].value, "3")
+        self.assertEqual(app.metric[-1].value, "4")
+        table = next(d.value for d in app.dataframe if "Grupo" in d.value.columns)
+        self.assertIn("404", set(table.NUM_UC))
+        app.multiselect(key="gd_types").set_value(["GDI"]).run(timeout=30)
+        self.assertEqual(list(app.exception), [])
+        self.assertEqual([metric.value for metric in app.metric], ["1", "1", "0", "0", "10.00", "10.00", "10.00", "2"])
+        app.multiselect(key="gd_groups").set_value(["Controle"])
+        app.multiselect(key="gd_types").set_value(["GDII"]).run(timeout=30)
+        self.assertEqual(list(app.exception), [])
+        self.assertEqual(app.metric[4].value, "—")
+        self.assertEqual(app.metric[-1].value, "1")
+        app.multiselect(key="gd_types").set_value(["GDI/GDII"]).run(timeout=30)
+        self.assertEqual(list(app.exception), [])
+        self.assertEqual(app.metric[-1].value, "0")
+        app.multiselect(key="gd_groups").set_value(["Reserva"]).run(timeout=30)
+        self.assertEqual(list(app.exception), [])
+        self.assertEqual([metric.value for metric in app.metric], ["1", "1", "1", "0", "20.00", "20.00", "20.00", "1"])
+        uc_picker = next(widget for widget in app.selectbox if widget.label == "UC")
+        self.assertEqual(uc_picker.options, ["303"])
+
     def test_alerts_show_evidence_and_january_february_filters(self):
         from streamlit.testing.v1 import AppTest
         source = Path(__file__).with_name("app.py").read_text(encoding="utf-8")
@@ -390,6 +464,37 @@ update_report_page(pd.DataFrame([dict(NUM_UC='101'), dict(NUM_UC='202')]))
         self.assertIn("Fevereiro", app.pills[0].options)
         app.radio[0].set_value("Experimento: desde 01/03/2026").run(timeout=30)
         self.assertEqual(list(app.exception), [])
+
+    def test_gd_latest_grouping_uses_export_date_and_historical_mode_uses_reference(self):
+        from streamlit.testing.v1 import AppTest
+        source = Path(__file__).with_name("app.py").read_text(encoding="utf-8")
+        source = source.split("\ninject_css()\n", 1)[0]
+        source = source.replace("Path(__file__)", f"Path({str(Path(__file__).with_name('app.py'))!r})")
+        source += f'''
+GD_MANIFEST_FILE = Path({str(self.folder / 'gd_manifesto.json')!r})
+frame = pd.DataFrame([dict(NUM_UC='101', SITUACAO_INICIAL='Ativo', SITUACAO_ATUAL='Removido',
+    DT_DISTRATO=pd.Timestamp('2026-06-01'), LOCAL='CURITIBA', FINALIDADE='Pessoal', FABRI_VEIC='BYD')])
+filtered, page, reference = sidebar_filters(frame)
+if page == 'Geração distribuída':
+    st.radio('Posição de GD', ['Último export completo', 'Data de referência da barra lateral'], key='gd_position_mode')
+st.dataframe(filtered[['NUM_UC', 'SITUACAO_ATUAL']])
+'''
+        app = AppTest.from_string(source).run(timeout=30)
+        app.sidebar.radio[0].set_value("Geração distribuída").run(timeout=30)
+        self.assertEqual(list(app.exception), [])
+        self.assertEqual(app.dataframe[0].value["SITUACAO_ATUAL"].tolist(), ["Removido"])
+        self.assertEqual(str(app.sidebar.date_input[0].value), "2026-03-01")
+        mode = next(radio for radio in app.radio if radio.label == "Posição de GD")
+        mode.set_value("Data de referência da barra lateral").run(timeout=30)
+        self.assertEqual(list(app.exception), [])
+        self.assertEqual(app.dataframe[0].value["SITUACAO_ATUAL"].tolist(), ["Ativo"])
+        app.sidebar.date_input[0].set_value(pd.Timestamp("2026-06-01").date()).run(timeout=30)
+        self.assertEqual(list(app.exception), [])
+        self.assertEqual(app.dataframe[0].value["SITUACAO_ATUAL"].tolist(), ["Removido"])
+        app.sidebar.date_input[0].set_value(pd.Timestamp("2026-03-01").date()).run(timeout=30)
+        app.sidebar.radio[0].set_value("Geral").run(timeout=30)
+        self.assertEqual(list(app.exception), [])
+        self.assertEqual(app.dataframe[0].value["SITUACAO_ATUAL"].tolist(), ["Ativo"])
 
 
 if __name__ == "__main__":
