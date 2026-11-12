@@ -82,7 +82,7 @@ def render(frame, reference_date, chart_style, plotly_config):
     cards[0].metric("UCs geradoras", int(current["GD_GERADORA"].eq("S").sum()))
     cards[1].metric("UCs beneficiárias", int(current["GD_BENEFICIARIA"].eq("S").sum()))
     installed = pd.to_numeric(current["POTENCIA_INSTALADA_KW"], errors="coerce").sum()
-    cards[2].metric("Potência própria (kW)", f"{installed:,.2f}", help="Uma potência por UC geradora; conflitos usam o maior valor e recebem flag de revisão. Valores desconhecidos não entram no total.")
+    cards[2].metric("Potência própria (kW)", f"{installed:,.2f}", help="Uma potência por UC geradora. Por padrão, conflitos usam o maior valor. A exceção aprovada para 93911335 soma as potências ativas e mantém revisão; consulte REGRA_POTENCIA_GD. Valores desconhecidos não entram no total.")
     cards[3].metric("UCs para revisão", int(current["REVISAO_MANUAL"].eq("S").sum()))
     entries = history[history["CAMPO"].isin(["GD_GERADORA", "GD_BENEFICIARIA"]) & history["VALOR_NOVO"].eq("S")]
     dated = entries[entries["BASE_DATA"].isin(["Data cadastrada", "Reconstrução por data cadastrada"])]

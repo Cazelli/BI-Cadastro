@@ -104,8 +104,27 @@ Regras aprovadas: início geradora = `DTA_SOL_ACES_KCG`; início beneficiária =
 `DTA_INC_XBG`; potência em kW. A maior potência conflitante é adotada com
 `REVISAO_MANUAL=S` e motivo em `STATUS_QUALIDADE`. Linhas GDI/GDII são deduplicadas
 por registro e `PCT_DIS_KCD` divide a potência; `PCT_RAT_XBG` é rateio de créditos.
+Cada parcela é `potência total ativa × PCT_DIS_KCD / 100`, inclusive quando os
+percentuais foram truncados na fonte. Exemplo: UC 105145530, 10 kW com 67% GDI
+e 33% GDII, resulta em 6,7 kW GDI e 3,3 kW GDII. A potência de registros encerrados
+não é somada nem usada para ajustar retroativamente as parcelas calculadas.
+Registros ativos distintos com a mesma potência conhecida e a mesma classificação,
+subtipo e distribuição percentual válida são unificados para a análise: uma só
+potência e classificação, sem alerta de multiplicidade. Os IDs ficam preservados
+em `REGISTROS_GD_ATIVOS`, com a decisão em `TRATAMENTO_REGISTROS_GD`; os vínculos
+também identificam os registros do gerador relacionado. Diferenças de potência,
+tipo, subtipo ou percentuais, e informações incompletas, continuam para revisão.
 Ausência no export não comprova encerramento. Benefício próprio só existe quando
 registrado na fonte. Potência externa associada não deve ser somada entre UCs.
+
+Exceção aprovada para a UC **93911335**: somar as potências ativas distintas após
+consolidar registros equivalentes. As parcelas GDI/GDII vêm da potência e dos
+percentuais de cada registro ativo. No export atual: 4 kW GDI + 6,25 kW GDII =
+10,25 kW; percentuais agregados de 39,024390% e 60,975610%, respectivamente.
+Manter revisão manual: trata-se de possível inconsistência cadastral, não de
+correção da fonte. `REGRA_POTENCIA_GD`, `OBSERVACAO_EXCECAO_GD` e o manifesto
+identificam a decisão; `PCT_POTENCIA_*` guarda os percentuais derivados com seis
+casas decimais. O padrão para as demais UCs continua sendo a maior potência.
 
 As saídas `gd_atual`, `gd_snapshots`, `gd_vinculos`, `gd_historico_2026`,
 `gd_qualidade`, `gd_auditoria_baseline` e `gd_manifesto` alimentam a página GD.

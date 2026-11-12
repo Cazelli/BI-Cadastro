@@ -32,6 +32,9 @@ MDM_PATTERN = re.compile(r"-(\d{8})-(\d{8})(?:-ucs_sem_dados)?\.csv$")
 ANNUAL = "mdm-sandbox_clientes_novo-20260101-20261231.csv"
 CORRECTED = "mdm-sandbox_clientes_novo-20260611-202606011.csv"
 ZERO = Decimal(0)
+POWER_SUM_EXCEPTIONS = {
+    "93911335": "Exceção aprovada pelo usuário: somar potências ativas distintas; possível inconsistência cadastral, manter revisão manual."
+}
 GD_COLUMNS = {
     "GD": {"COD_UN_CONS_UEE", "NUM_SEQ_KCG", "QTD_POT_GER_KCG", "DTA_SOL_ACES_KCG",
            "DTA_FIM_VIGN_KCG", "COD_TIPO_CSS_GER_KCD", "PCT_DIS_KCD"},
@@ -218,9 +221,25 @@ def generator_state(rows, reference, include_undated=True):
     powers = {number(r["QTD_POT_GER_KCG"]) for r in active} - {None}
     power = max(powers) if powers else None
     flags = []
+    registration_ids = sorted({r["NUM_SEQ_KCG"] for r in active})
+    signatures = set()
+    signatures_valid = True
+    for registration in registration_ids:
+        records = [r for r in active if r["NUM_SEQ_KCG"] == registration]
+        record_powers = {number(r["QTD_POT_GER_KCG"]) for r in records}
+        classification = frozenset((r["COD_TIPO_CSS_GER_KCD"], r.get("COD_SUB_TIPO_CSS_GER_KCD", ""), number(r["PCT_DIS_KCD"]))
+                                   for r in records)
+        valid = (len(record_powers) == 1 and None not in record_powers
+                 and all(typ and pct is not None and pct <= 100 for typ, subtype, pct in classification)
+                 and sum((pct for typ, subtype, pct in classification), ZERO) == 100)
+        if valid:
+            signatures.add((next(iter(record_powers)), classification))
+        else:
+            signatures_valid = False
+    equivalent_registrations = len(registration_ids) > 1 and signatures_valid and len(signatures) == 1
     if len(powers) > 1:
         flags.append("POTENCIAS_CONFLITANTES_MAIOR_ADOTADA")
-    if len({r["NUM_SEQ_KCG"] for r in active}) > 1:
+    if len(registration_ids) > 1 and not equivalent_registrations:
         flags.append("MULTIPLOS_REGISTROS_ATIVOS")
     if active and power is None:
         flags.append("POTENCIA_DESCONHECIDA")
@@ -246,11 +265,36 @@ def generator_state(rows, reference, include_undated=True):
             split["SEM_CLASSIFICACAO"] = power
             if active:
                 flags.append("CLASSIFICACAO_AMBIGUA")
+    power_rule = "MAIOR_POTENCIA_ATIVA" if active else "SEM_REGISTRO_ATIVO"
+    ucs = {text(row.get("COD_UN_CONS_UEE")) for row in rows}
+    exception = POWER_SUM_EXCEPTIONS.get(next(iter(ucs))) if len(ucs) == 1 else None
+    sum_applied = False
+    if exception and active:
+        flags.append("EXCECAO_SOMA_POTENCIAS_ATIVAS_REVISAO_MANUAL")
+        if signatures_valid:
+            # Consolidate equivalent entries before summing active powers;
+            # classification rows never multiply a registration's capacity.
+            power = sum((record_power for record_power, classification in signatures), ZERO)
+            split = dict.fromkeys(("GDI", "GDII", "OUTROS", "SEM_CLASSIFICACAO"), ZERO)
+            for record_power, classification in signatures:
+                for typ, subtype, pct in classification:
+                    split[typ if typ in {"GDI", "GDII"} else "OUTROS"] += record_power * pct / 100
+            flags = [flag for flag in flags if flag not in {"POTENCIAS_CONFLITANTES_MAIOR_ADOTADA", "CLASSIFICACAO_AMBIGUA"}]
+            power_rule = "EXCECAO_SOMA_POTENCIAS_ATIVAS"
+            sum_applied = True
+        else:
+            flags.append("EXCECAO_SOMA_NAO_APLICADA_DADOS_AMBIGUOS")
     starts = sorted({day(r["DTA_SOL_ACES_KCG"]) for r in active if day(r["DTA_SOL_ACES_KCG"])})
     if active and not starts:
         flags.append("DATA_INICIO_GERADORA_DESCONHECIDA")
     ends = sorted({day(r["DTA_FIM_VIGN_KCG"]) for r in rows if day(r["DTA_FIM_VIGN_KCG"]) and day(r["DTA_FIM_VIGN_KCG"]) <= reference})
     return dict(active=bool(active), power=power, split=split,
+                power_rule=power_rule, power_exception=exception if active and exception else "",
+                registration_ids=registration_ids,
+                registration_treatment=("SOMA_REGISTROS_ATIVOS_EXCECAO" if sum_applied
+                    else "UNIFICADOS_POTENCIA_CLASSIFICACAO_IGUAIS" if equivalent_registrations
+                    else "MULTIPLOS_PENDENTES_REVISAO" if len(registration_ids) > 1
+                    else "REGISTRO_UNICO" if registration_ids else "SEM_REGISTRO_ATIVO"),
                 types=" | ".join(sorted({r["COD_TIPO_CSS_GER_KCD"] for r in active if r["COD_TIPO_CSS_GER_KCD"]})),
                 start=starts[0] if starts else "", end=ends[-1] if ends and not active else "",
                 flags=sorted(set(flags)))
@@ -292,6 +336,9 @@ def enrich_links(links, gd, reference):
         flags = set(filter(None, row["STATUS_QUALIDADE"].split(";"))) | set(generator["flags"])
         power = generator["power"]
         row["TIPO_GD_GERADOR"] = generator["types"]
+        row["REGISTROS_GERADOR_ATIVOS"] = " | ".join(generator["registration_ids"])
+        row["TRATAMENTO_REGISTROS_GERADOR"] = generator["registration_treatment"]
+        row["REGRA_POTENCIA_GERADOR"] = generator["power_rule"]
         if power is not None:
             if row["POTENCIA_GERADOR_KW"] and number(row["POTENCIA_GERADOR_KW"]) != power:
                 flags.add("POTENCIA_DIVERGE_BEN")
@@ -319,6 +366,7 @@ def make_states(scope, gd, links, reference, observed, gd_source, ben_source, ba
             g["power"] = max(fallback) if fallback else None
             g["split"]["SEM_CLASSIFICACAO"] = g["power"] or ZERO
             g["flags"].append("GERADORA_APENAS_BEN_FALLBACK")
+            g["power_rule"] = "FALLBACK_BEN_MAIOR_POTENCIA"
         if g["power"] is not None and fallback and fallback != {g["power"]}:
             g["flags"].append("POTENCIA_DIVERGE_BEN")
         starts = sorted({r["DATA_INICIO"] for r in incoming.values()} - {""})
@@ -332,7 +380,15 @@ def make_states(scope, gd, links, reference, observed, gd_source, ben_source, ba
             POTENCIA_GDII_KW=numeric(g["split"]["GDII"]) if g["power"] is not None else "",
             POTENCIA_OUTROS_KW=numeric(g["split"]["OUTROS"]) if g["power"] is not None else "",
             POTENCIA_SEM_CLASSIFICACAO_KW=numeric(g["split"]["SEM_CLASSIFICACAO"]) if g["power"] is not None else "",
+            PCT_POTENCIA_GDI=numeric((g["split"]["GDI"] * 100 / g["power"]).quantize(Decimal("0.000001"))) if g["power"] else "",
+            PCT_POTENCIA_GDII=numeric((g["split"]["GDII"] * 100 / g["power"]).quantize(Decimal("0.000001"))) if g["power"] else "",
+            PCT_POTENCIA_OUTROS=numeric((g["split"]["OUTROS"] * 100 / g["power"]).quantize(Decimal("0.000001"))) if g["power"] else "",
+            PCT_POTENCIA_SEM_CLASSIFICACAO=numeric((g["split"]["SEM_CLASSIFICACAO"] * 100 / g["power"]).quantize(Decimal("0.000001"))) if g["power"] else "",
+            REGRA_POTENCIA_GD=g["power_rule"], OBSERVACAO_EXCECAO_GD=g["power_exception"],
             TIPO_GD_GERA=g["types"], DATA_INICIO_GD=g["start"], DATA_FIM_GD=g["end"],
+            REGISTROS_GD_ATIVOS=" | ".join(g["registration_ids"]),
+            QUANTIDADE_REGISTROS_GD_ATIVOS=len(g["registration_ids"]),
+            TRATAMENTO_REGISTROS_GD=g["registration_treatment"],
             TIPO_GD_BENE=" | ".join(sorted({r.get("TIPO_GD_GERADOR", "") for r in incoming.values()} - {""})),
             GD_BENE_INIC=starts[0] if starts else "",
             GERADORES_EXTERNOS=" | ".join(sorted(set(incoming) - {uc})),
@@ -704,14 +760,14 @@ def stage_full_base(path, destination, bi, gd_columns):
             if field not in headers or field not in allowed or field == "NUM_UC":
                 continue
             cell = worksheet.cell(row_number, headers[field])
-            if field.startswith("POTENCIA_") and text(value):
+            if field.startswith(("POTENCIA_", "PCT_POTENCIA_")) and text(value):
                 value = float(value)
             if isinstance(cell.value, (date, datetime)):
                 old = cell.value.date() if isinstance(cell.value, datetime) else cell.value
                 old = old.isoformat()
             else:
                 old = text(cell.value)
-            if field.startswith("POTENCIA_") and number(old) == number(value):
+            if field.startswith(("POTENCIA_", "PCT_POTENCIA_")) and number(old) == number(value):
                 continue
             if old != text(value):
                 cell.value = value if text(value) else None
@@ -748,7 +804,7 @@ def stage_report(stage, reference):
             headers = reader.fieldnames
             sheet.append(headers)
             for row in reader:
-                sheet.append([float(row[key]) if row[key] and (key.startswith("POTENCIA_") or key in {"QUANTIDADE_GERADORES_EXTERNOS", "BENEFICIARIAS_EXTERNAS", "PERCENTUAL_RATEIO"}) else row[key] for key in headers])
+                sheet.append([float(row[key]) if row[key] and (key.startswith(("POTENCIA_", "PCT_POTENCIA_")) or key in {"QUANTIDADE_GERADORES_EXTERNOS", "BENEFICIARIAS_EXTERNAS", "PERCENTUAL_RATEIO"}) else row[key] for key in headers])
                 for cell in sheet[sheet.max_row]:
                     if isinstance(cell.value, str):
                         cell.data_type = "s"
@@ -765,6 +821,8 @@ def stage_report(stage, reference):
                 ("Início geradora", "DTA_SOL_ACES_KCG conforme regra aprovada; não certifica comissionamento."),
                 ("Início beneficiária", "DTA_INC_XBG conforme regra aprovada."),
                 ("Potência", "kW; maior valor conflitante com flag de revisão. Não somar potência associada entre beneficiárias."),
+                ("Registros equivalentes", "Mesma potência conhecida e mesma classificação/subtipo/percentuais válidos: uma potência e classificação por UC, sem flag de multiplicidade. IDs originais preservados para auditoria."),
+                ("Exceção UC 93911335", "Soma potências ativas distintas após consolidar equivalentes. Parcelas por GD usam a potência de cada registro e seu PCT_DIS_KCD; percentuais agregados calculados sobre o total. Mantém revisão manual."),
                 ("Baseline", "Amostra final 21/07 auditada contra primeiro export; classificação/potência retrospectivas sem vigência histórica própria."),
                 ("Ausências", "Não comprovam encerramento. Autorrelacionamento somente quando registrado."),
                 ("Histórico", "Datas cadastradas, primeira observação e reconstruções identificadas separadamente."),
@@ -883,6 +941,7 @@ def run(copel=COPEL, bi_dir=ROOT, baseline_path=None, full_base=None, dry_run=Fa
         total_base=len(scope), eventos_historicos=len(history), alertas=len(latest),
         eventos_gd_2026=sum(e["TIPO_ALERTA"] == "Alteração GD" for e in history),
         ucs_revisao_gd=sum(r["REVISAO_MANUAL"] == "S" for r in latest_gd.values()),
+        ucs_registros_gd_unificados=sum(r["TRATAMENTO_REGISTROS_GD"] == "UNIFICADOS_POTENCIA_CLASSIFICACAO_IGUAIS" for r in latest_gd.values()),
         divergencias_baseline=sum(r["STATUS"] in {"CORRIGIDO_PELA_FONTE_GD", "DIVERGENCIA_REVISAR", "REVISAR_FONTE_NAO_CONFIRMADA_OU_CONFLITANTE", "AUSENTE_AMOSTRA"} for r in audit),
         ucs_corrigidas_baseline=len({r["NUM_UC"] for r in audit if r["STATUS"] == "CORRIGIDO_PELA_FONTE_GD"}),
         ucs_revisao_baseline=len({r["NUM_UC"] for r in audit if r["STATUS"] in {"DIVERGENCIA_REVISAR", "REVISAR_FONTE_NAO_CONFIRMADA_OU_CONFLITANTE", "AUSENTE_AMOSTRA"}}),
@@ -891,6 +950,7 @@ def run(copel=COPEL, bi_dir=ROOT, baseline_path=None, full_base=None, dry_run=Fa
         arquivo_baseline=baseline_path.name, arquivo_mobiflex=removal.name,
         ucs_sem_atualizacao=len(scope - latest_uc_ids), unidade_potencia="kW",
         regra_inicio_geradora="DTA_SOL_ACES_KCG", regra_inicio_beneficiaria="DTA_INC_XBG",
+        excecoes_soma_potencia=POWER_SUM_EXCEPTIONS,
         fontes=manifest, historico_inicio="2026-01-01", experimento_inicio="2026-03-01",
         regra_ausencia="Ausência não comprova encerramento; nenhuma exclusão automática.",
         baseline_limite="Classificação/potência retrospectivas conforme primeiro export GD; sem histórico de vigência destes campos.")
@@ -903,7 +963,7 @@ def run(copel=COPEL, bi_dir=ROOT, baseline_path=None, full_base=None, dry_run=Fa
     write_rows(stage / "base_consolidada_BI.csv", base.to_dict("records"), list(base.columns))
     write_rows(stage / "gd_atual.csv", latest_gd.values(), gd_columns)
     write_rows(stage / "gd_snapshots.csv", (r for batch in states.values() for r in batch.values()), gd_columns)
-    link_columns = ["UC_GERADORA", "UC_BENEFICIARIA", "POTENCIA_GERADOR_KW", "TIPO_GD_GERADOR", "PERCENTUAL_RATEIO", "PRIORIDADE", "DATA_INICIO", "DATA_INICIO_VIGENCIA", "MODALIDADE", "STATUS_QUALIDADE", "DATA_FONTE", "ARQUIVO_ORIGEM", "STATUS_VINCULO", "AUTO_RELACAO"]
+    link_columns = ["UC_GERADORA", "UC_BENEFICIARIA", "POTENCIA_GERADOR_KW", "TIPO_GD_GERADOR", "REGISTROS_GERADOR_ATIVOS", "TRATAMENTO_REGISTROS_GERADOR", "REGRA_POTENCIA_GERADOR", "PERCENTUAL_RATEIO", "PRIORIDADE", "DATA_INICIO", "DATA_INICIO_VIGENCIA", "MODALIDADE", "STATUS_QUALIDADE", "DATA_FONTE", "ARQUIVO_ORIGEM", "STATUS_VINCULO", "AUTO_RELACAO"]
     write_rows(stage / "gd_vinculos.csv", links, link_columns)
     write_rows(stage / "gd_historico_2026.csv", (e for e in history if e["TIPO_ALERTA"] == "Alteração GD"), ALERT_COLUMNS)
     write_rows(stage / "historico_alertas.csv", history, ALERT_COLUMNS)

@@ -39,6 +39,101 @@ def csv_file(path, rows):
 
 
 class DomainRules(unittest.TestCase):
+    def test_93911335_exception_sums_active_powers_and_keeps_review(self):
+        rows = [{**generator(power="4", sequence="976605", typ="GDI"), "COD_UN_CONS_UEE": "93911335"},
+                {**generator(power="6.25", sequence="976607", typ="GDII"), "COD_UN_CONS_UEE": "93911335"},
+                {**generator(power="6.25", sequence="ended", end="2024-10-01"), "COD_UN_CONS_UEE": "93911335"}]
+        state = generator_state(rows, "2026-10-30")
+        self.assertEqual(state["power"], Decimal("10.25"))
+        self.assertEqual(state["split"]["GDI"], Decimal("4"))
+        self.assertEqual(state["split"]["GDII"], Decimal("6.25"))
+        self.assertIn("EXCECAO_SOMA_POTENCIAS_ATIVAS_REVISAO_MANUAL", state["flags"])
+        self.assertNotIn("POTENCIAS_CONFLITANTES_MAIOR_ADOTADA", state["flags"])
+        self.assertEqual(state["power_rule"], "EXCECAO_SOMA_POTENCIAS_ATIVAS")
+        current = make_states({"93911335"}, {"93911335": rows}, {}, "2026-10-30", "2026-10-30", "GD.csv", "BEN.csv")["93911335"]
+        self.assertEqual(current["PCT_POTENCIA_GDI"], "39.024390")
+        self.assertEqual(current["PCT_POTENCIA_GDII"], "60.975610")
+        self.assertEqual(current["REVISAO_MANUAL"], "S")
+        ordinary = [{**row, "COD_UN_CONS_UEE": "101"} for row in rows]
+        self.assertEqual(generator_state(ordinary, "2026-10-30")["power"], Decimal("6.25"))
+
+    def test_sum_exception_deduplicates_equivalent_entries_and_classification_rows(self):
+        rows = [generator(power="4", sequence="1", percentage="50"),
+                generator(power="4", sequence="1", typ="GDII", percentage="50"),
+                generator(power="4", sequence="duplicate", percentage="50"),
+                generator(power="4", sequence="duplicate", typ="GDII", percentage="50"),
+                generator(power="6.25", sequence="2", typ="GDII")]
+        rows = [{**row, "COD_UN_CONS_UEE": "93911335"} for row in rows]
+        state = generator_state(rows, "2026-10-30")
+        self.assertEqual(state["power"], Decimal("10.25"))
+        self.assertEqual(state["split"]["GDI"], Decimal("2"))
+        self.assertEqual(state["split"]["GDII"], Decimal("8.25"))
+
+    def test_sum_exception_does_not_guess_when_active_data_is_incomplete(self):
+        rows = [{**generator(power=power, sequence=sequence), "COD_UN_CONS_UEE": "93911335"}
+                for sequence, power in (("1", "4"), ("2", ""))]
+        state = generator_state(rows, "2026-10-30")
+        self.assertIn("EXCECAO_SOMA_NAO_APLICADA_DADOS_AMBIGUOS", state["flags"])
+        self.assertNotEqual(state["power_rule"], "EXCECAO_SOMA_POTENCIAS_ATIVAS")
+
+    def test_active_power_split_uses_percentages_not_ended_capacity(self):
+        cases = [("10", "67", "33", "6.7", "6.7", "3.3"),
+                 ("11", "44", "56", "4.86", "4.84", "6.16")]
+        for total, gdi_pct, gdii_pct, old_power, expected_gdi, expected_gdii in cases:
+            with self.subTest(total=total):
+                rows = [generator(power=old_power, sequence="old", end="2025-05-01"),
+                        generator(power=total, sequence="new", typ="GDI", percentage=gdi_pct),
+                        generator(power=total, sequence="new", typ="GDII", percentage=gdii_pct)]
+                state = generator_state(rows, "2026-10-30")
+                self.assertEqual(state["power"], Decimal(total))
+                self.assertEqual(state["split"]["GDI"], Decimal(expected_gdi))
+                self.assertEqual(state["split"]["GDII"], Decimal(expected_gdii))
+                self.assertEqual(sum(state["split"].values()), Decimal(total))
+
+    def test_identical_active_registrations_count_once_without_review(self):
+        state = generator_state([generator(power="12", sequence="1173708"),
+                                 generator(power="12.0", sequence="1180102", start="2023-01-01")], "2026-10-30")
+        self.assertEqual(state["power"], Decimal("12"))
+        self.assertEqual(state["types"], "GDI")
+        self.assertEqual(state["split"]["GDI"], Decimal("12"))
+        self.assertEqual(state["flags"], [])
+        self.assertEqual(state["registration_ids"], ["1173708", "1180102"])
+        self.assertEqual(state["registration_treatment"], "UNIFICADOS_POTENCIA_CLASSIFICACAO_IGUAIS")
+
+    def test_identical_mixed_classifications_keep_single_power_and_split(self):
+        rows = [generator(sequence=sequence, typ=typ, percentage=pct)
+                for sequence in ("1", "2") for typ, pct in (("GDI", "60"), ("GDII", "40"))]
+        state = generator_state(rows, "2026-10-30")
+        self.assertEqual(state["flags"], [])
+        self.assertEqual(state["power"], Decimal("10"))
+        self.assertEqual(state["split"]["GDI"], Decimal("6"))
+        self.assertEqual(state["split"]["GDII"], Decimal("4"))
+
+    def test_different_or_unconfirmed_classifications_stay_flagged(self):
+        cases = {
+            "type": [generator(sequence="1"), generator(sequence="2", typ="GDII")],
+            "allocation": [generator(sequence="1", typ="GDI", percentage="60"), generator(sequence="1", typ="GDII", percentage="40"),
+                           generator(sequence="2", typ="GDI", percentage="70"), generator(sequence="2", typ="GDII", percentage="30")],
+            "subtype": [generator(sequence="1"), {**generator(sequence="2"), "COD_SUB_TIPO_CSS_GER_KCD": "OTHER"}],
+            "missing_power": [generator(sequence="1", power=""), generator(sequence="2", power="")],
+            "missing_type": [generator(sequence="1", typ=""), generator(sequence="2", typ="")],
+            "invalid_allocation": [generator(sequence="1", percentage="90"), generator(sequence="2", percentage="90")],
+        }
+        for label, rows in cases.items():
+            with self.subTest(label=label):
+                self.assertIn("MULTIPLOS_REGISTROS_ATIVOS", generator_state(rows, "2026-10-30")["flags"])
+
+    def test_resolved_generator_clears_inherited_flag_but_keeps_other_issues(self):
+        gd = {"101": [generator(power="12", sequence="1"), generator(power="12", sequence="2")]}
+        for rate, expected in (("25", "N"), ("125", "S")):
+            with self.subTest(rate=rate):
+                links = enrich_links(link_states({("101", "202"): [beneficiary(power="12", percentage=rate)]},
+                                                  "2026-10-30", "BEN.csv", "2026-10-30"), gd, "2026-10-30")
+                states = make_states({"101", "202"}, gd, links, "2026-10-30", "2026-10-30", "GD.csv", "BEN.csv")
+                self.assertNotIn("MULTIPLOS_REGISTROS_ATIVOS", states["202"]["STATUS_QUALIDADE"])
+                self.assertEqual(states["202"]["REVISAO_MANUAL"], expected)
+                self.assertEqual(states["101"]["POTENCIA_INSTALADA_KW"], "12")
+
     def test_undated_generator_is_first_observed_not_assumed_active_in_2025(self):
         gd = {"101": [generator(start="")]}
         old = make_states({"101"}, gd, {}, "2025-12-31", "2026-10-22", "GD.csv", "BEN.csv")
@@ -87,6 +182,7 @@ class DomainRules(unittest.TestCase):
         state = generator_state([generator(), generator(power="15", sequence="2")], "2026-10-22")
         self.assertEqual(state["power"], Decimal("15"))
         self.assertIn("POTENCIAS_CONFLITANTES_MAIOR_ADOTADA", state["flags"])
+        self.assertIn("MULTIPLOS_REGISTROS_ATIVOS", state["flags"])
 
     def test_invalid_split_goes_to_unclassified(self):
         state = generator_state([generator(percentage="90")], "2026-10-22")

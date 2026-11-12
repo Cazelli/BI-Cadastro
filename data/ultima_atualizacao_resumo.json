@@ -9,11 +9,12 @@
   "eventos_historicos": 259,
   "alertas": 1,
   "eventos_gd_2026": 227,
-  "ucs_revisao_gd": 6,
-  "divergencias_baseline": 15,
-  "ucs_corrigidas_baseline": 9,
-  "ucs_revisao_baseline": 4,
-  "campos_complementados_baseline": 11,
+  "ucs_revisao_gd": 2,
+  "ucs_registros_gd_unificados": 1,
+  "divergencias_baseline": 14,
+  "ucs_corrigidas_baseline": 10,
+  "ucs_revisao_baseline": 3,
+  "campos_complementados_baseline": 12,
   "campos_sem_informacao_amostra": 107,
   "arquivo_baseline": "Amostra Final - Tarifa Mobiflex - 21.07.2026.xlsx",
   "arquivo_mobiflex": "relatorio_ucs_removidas.xlsx",
@@ -21,6 +22,9 @@
   "unidade_potencia": "kW",
   "regra_inicio_geradora": "DTA_SOL_ACES_KCG",
   "regra_inicio_beneficiaria": "DTA_INC_XBG",
+  "excecoes_soma_potencia": {
+    "93911335": "Exceção aprovada pelo usuário: somar potências ativas distintas; possível inconsistência cadastral, manter revisão manual."
+  },
   "fontes": [
     {
       "arquivo": "2026-10-22-consulta_BEN.csv",
@@ -1399,6 +1403,6 @@
   "experimento_inicio": "2026-03-01",
   "regra_ausencia": "Ausência não comprova encerramento; nenhuma exclusão automática.",
   "baseline_limite": "Classificação/potência retrospectivas conforme primeiro export GD; sem histórico de vigência destes campos.",
-  "celulas_alteradas_base_completa": 5639,
+  "celulas_alteradas_base_completa": 759,
   "ucs_base_completa_atualizadas": 238
 }
